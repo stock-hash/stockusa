@@ -46,10 +46,10 @@ except ImportError:
 # 1. CONFIGURATION & DIRECTORY SETUP
 # ------------------------------------------------------------------------------
 BASE_DIR = os.getcwd()
-OUTPUT_ROOT = os.path.join(BASE_DIR, "Ultimate_Scanner_Output_Final_v50")
+OUTPUT_ROOT = os.path.join(BASE_DIR, "docs")
 CACHE_DIR = os.path.join(OUTPUT_ROOT, "metadata_cache")
 LOG_DIR = os.path.join(OUTPUT_ROOT, "system_logs")
-WATCHLIST_FILE = os.path.join(BASE_DIR, "TopBottomWatchlist.xlsx")
+WATCHLIST_FILE = os.path.join(BASE_DIR, "Watchlist.xlsx")
 DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
 
 # GMAIL CREDENTIALS
@@ -954,4 +954,5 @@ def main():
         print("CRITICAL: No results generated. Check internet and credentials.")
 
 if __name__ == "__main__":
+
     main()
