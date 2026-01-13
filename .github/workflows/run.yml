@@ -2,8 +2,9 @@ name: Auto Update Stock Dashboard
 
 on:
   schedule:
-    - cron: "0 */3 * * *" # Runs every hour
-  workflow_dispatch:   # Allows manual run
+    # 13:00 EST = 18:00 UTC
+    - cron: "0 18 * * *" 
+  workflow_dispatch:   # Allows you to trigger it manually via the Actions tab
 
 permissions:
   contents: write
@@ -17,6 +18,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0 
+
+      - name: Hard Reset Workspace
+        # This fixes the "Overquota" by ensuring no old cache/sessions are reused
+        run: |
+          git clean -fdx
+          rm -rf cache/ tb_cache/ __pycache__/ Output/
+          mkdir -p docs/
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -33,29 +41,20 @@ jobs:
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          PYTHONUNBUFFERED: "1"
 
       - name: Commit and Push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 1. Take the new HTML files and put them in a 'waiting area' (stash)
-          git add docs/
-          git stash
-
-          # 2. Now that the workspace is 'clean', we can sync with GitHub
-          git pull origin main --rebase
-
-          # 3. Bring the new HTML files back from the waiting area
-          git stash pop || echo "No changes to restore"
-          
-          # 4. Clean up tracking for old/unwanted folders
-          git rm -r --cached Output/ cache/ tb_cache/ __pycache__/ || echo "Already clean"
-          
-          # 5. Add the final files
-          git add docs/
+          # Force add the docs folder and your script file
+          git add -f docs/
           git add finviz_Signal_39_3_2.py
           
-          # 6. Commit and Force Push
-          git commit -m "Auto update dashboard: $(date +'%Y-%m-%d %H:%M')" || exit 0
-          git push origin main --force
+          # Commit only if files actually changed
+          git commit -m "Daily Dashboard Update (1PM EST): $(date +'%Y-%m-%d %H:%M')" || exit 0
+          
+          # Sync with remote to prevent conflicts
+          git pull origin main --rebase
+          git push origin main
