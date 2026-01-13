@@ -68,7 +68,7 @@ INTRA_DAYS = 5
 INTRA_INTERVAL = "5m"
 
 # *** GLOBAL PROCESSING LIMIT ***
-MAX_STOCK_LIMIT = 3000
+MAX_STOCK_LIMIT = 4000
 
 # TECHNICAL INDICATOR SETTINGS
 RSI_PERIOD = 14
@@ -1029,6 +1029,7 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
 
 
 
