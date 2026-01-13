@@ -161,82 +161,149 @@ def extract_tickers_regex(text):
 
 def scan_gmail_inbox_attachments():
     inbox_results = {}
-    if not EMAIL_ADDRESS or "@" not in EMAIL_ADDRESS: return inbox_results
-    try:
-        mail = imaplib.IMAP4_SSL("imap.gmail.com")
-        mail.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        mail.select("inbox")
-        since = (datetime.now() - timedelta(days=INBOX_LOOKBACK_DAYS)).strftime("%d-%b-%Y")
-        _, ids = mail.search(None, f'(SINCE "{since}" FROM "{SENDER_EMAIL}")')
-        if ids[0]:
-            for uid in ids[0].split():
-                if check_limit(len(inbox_results)): break
-                _, data = mail.fetch(uid, "(RFC822)")
-                msg = email.message_from_bytes(data[0][1])
-                try: d_str = parser.parse(msg.get("date")).strftime("%Y-%m-%d")
-                except: d_str = datetime.now().strftime("%Y-%m-%d")
-                for part in msg.walk():
-                    fname = part.get_filename()
-                    if fname and any(ext in fname.lower() for ext in [".csv", ".xlsx", ".xls"]):
-                        try:
-                            content = part.get_payload(decode=True)
-                            df = pd.read_csv(io.BytesIO(content)) if ".csv" in fname.lower() else pd.read_excel(io.BytesIO(content))
-                            t_col = next((c for c in df.columns if "ticker" in c.lower() or "symbol" in c.lower()), df.columns[0])
-                            p_col = next((c for c in df.columns if "price" in c.lower() or "current" in c.lower()), None)
-                            for _, row in df.iterrows():
-                                sym = str(row[t_col]).strip().upper()
-                                if not sym: continue
-                                price = float(row[p_col]) if p_col else 0.0
-                                db_insert_ticker(sym, price, d_str, "InboxFile", fname)
-                                inbox_results[sym] = {'p': price, 'd': d_str}
-                        except: pass
-        mail.logout()
-    except Exception as e: logger.error(f"Inbox scan failed: {e}")
+    if not EMAIL_ADDRESS or "@" not in EMAIL_ADDRESS: 
+        return inbox_results
+
+    max_retries = 2
+    retry_delay = 300  # 5 minutes in seconds
+
+    for attempt in range(max_retries + 1):
+        try:
+            mail = imaplib.IMAP4_SSL("imap.gmail.com")
+            mail.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            mail.select("inbox")
+            
+            since = (datetime.now() - timedelta(days=INBOX_LOOKBACK_DAYS)).strftime("%d-%b-%Y")
+            _, ids = mail.search(None, f'(SINCE "{since}" FROM "{SENDER_EMAIL}")')
+            
+            if ids[0]:
+                for uid in ids[0].split():
+                    if check_limit(len(inbox_results)): 
+                        break
+                    
+                    # Small delay between fetches to prevent triggering OVERQUOTA
+                    time.sleep(0.5) 
+                    
+                    _, data = mail.fetch(uid, "(RFC822)")
+                    msg = email.message_from_bytes(data[0][1])
+                    
+                    try: 
+                        d_str = parser.parse(msg.get("date")).strftime("%Y-%m-%d")
+                    except: 
+                        d_str = datetime.now().strftime("%Y-%m-%d")
+                    
+                    for part in msg.walk():
+                        fname = part.get_filename()
+                        if fname and any(ext in fname.lower() for ext in [".csv", ".xlsx", ".xls"]):
+                            try:
+                                content = part.get_payload(decode=True)
+                                df = pd.read_csv(io.BytesIO(content)) if ".csv" in fname.lower() else pd.read_excel(io.BytesIO(content))
+                                t_col = next((c for c in df.columns if "ticker" in c.lower() or "symbol" in c.lower()), df.columns[0])
+                                p_col = next((c for c in df.columns if "price" in c.lower() or "current" in c.lower()), None)
+                                
+                                for _, row in df.iterrows():
+                                    sym = str(row[t_col]).strip().upper()
+                                    if not sym: continue
+                                    price = float(row[p_col]) if p_col else 0.0
+                                    db_insert_ticker(sym, price, d_str, "InboxFile", fname)
+                                    inbox_results[sym] = {'p': price, 'd': d_str}
+                            except: 
+                                pass
+            mail.logout()
+            return inbox_results  # Success! Exit and return results
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"Inbox scan failed (Attempt {attempt + 1}): {error_msg}")
+            
+            if "OVERQUOTA" in error_msg.upper() and attempt < max_retries:
+                logger.info(f"Quota exceeded. Sleeping for 5 minutes before retry...")
+                time.sleep(retry_delay)
+            else:
+                # If it's a different error or we've run out of retries, exit
+                break
+                
     return inbox_results
 
 def scan_gmail_trash_subjects():
     trash_alerts = {}
-    if not EMAIL_ADDRESS or "@" not in EMAIL_ADDRESS: return trash_alerts
-    try:
-        mail = imaplib.IMAP4_SSL("imap.gmail.com")
-        mail.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        mail.select("[Gmail]/Trash")
-        since = (datetime.now() - timedelta(days=TRASH_LOOKBACK_DAYS)).strftime("%d-%b-%Y")
-        _, ids = mail.search(None, f'(SINCE "{since}")')
-        if ids[0]:
-            uids = ids[0].split()[-TRASH_SCAN_LIMIT:]
-            for uid in uids:
-                if check_limit(len(trash_alerts)): break
-                _, data = mail.fetch(uid, "(RFC822)")
-                msg = email.message_from_bytes(data[0][1])
-                subject = msg.get("subject", "")
-                keywords = ["PPS", "MACD", "BOLLINGER", "AMPS", "SIGNAL", "ALERT", "CROSS", "SPIKE"]
-                if not any(k in subject.upper() for k in keywords): continue
-                try: msg_date = parser.parse(msg.get("date")).strftime("%Y-%m-%d")
-                except: msg_date = datetime.now().strftime("%Y-%m-%d")
-                match = re.search(r'([A-Z]+)\s*\[(.*?)\]', subject, re.IGNORECASE)
-                if match:
-                    ticker = match.group(1).upper()
-                    signal_name = match.group(2).strip()
-                    if ticker not in trash_alerts: trash_alerts[ticker] = []
-                    trash_alerts[ticker].append({'tag': signal_name, 'date': msg_date})
-                else:
-                    found_signals = []
-                    if "PPS" in subject.upper(): found_signals.append("PPS Signal")
-                    if "MACD" in subject.upper(): found_signals.append("MACD Cross")
-                    if "BOLLINGER" in subject.upper(): found_signals.append("Bollinger Alert")
-                    if "AMPS" in subject.upper(): found_signals.append("AMPS Alert")
-                    target_list = extract_tickers_regex(subject)
-                    for t in target_list:
-                        if t not in trash_alerts: trash_alerts[t] = []
-                        if found_signals:
-                            for fs in found_signals: trash_alerts[t].append({'tag': fs, 'date': msg_date})
-                        else:
-                            trash_alerts[t].append({'tag': "Generic Alert", 'date': msg_date})
-        mail.logout()
-    except Exception as e: logger.error(f"Trash scan failed: {e}")
-    return trash_alerts
+    if not EMAIL_ADDRESS or "@" not in EMAIL_ADDRESS: 
+        return trash_alerts
 
+    max_retries = 2
+    retry_delay = 300  # 5 minutes
+
+    for attempt in range(max_retries + 1):
+        try:
+            mail = imaplib.IMAP4_SSL("imap.gmail.com")
+            mail.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            
+            # Gmail Trash folder naming can vary, but [Gmail]/Trash is standard
+            mail.select("[Gmail]/Trash")
+            
+            since = (datetime.now() - timedelta(days=TRASH_LOOKBACK_DAYS)).strftime("%d-%b-%Y")
+            _, ids = mail.search(None, f'(SINCE "{since}")')
+            
+            if ids[0]:
+                uids = ids[0].split()[-TRASH_SCAN_LIMIT:]
+                for uid in uids:
+                    if check_limit(len(trash_alerts)): 
+                        break
+                    
+                    # --- THROTTLING: Prevents OVERQUOTA ---
+                    time.sleep(0.5) 
+                    
+                    _, data = mail.fetch(uid, "(RFC822)")
+                    msg = email.message_from_bytes(data[0][1])
+                    subject = msg.get("subject", "")
+                    
+                    keywords = ["PPS", "MACD", "BOLLINGER", "AMPS", "SIGNAL", "ALERT", "CROSS", "SPIKE","SAR"]
+                    if not any(k in subject.upper() for k in keywords): 
+                        continue
+                        
+                    try: 
+                        msg_date = parser.parse(msg.get("date")).strftime("%Y-%m-%d")
+                    except: 
+                        msg_date = datetime.now().strftime("%Y-%m-%d")
+                    
+                    match = re.search(r'([A-Z]+)\s*\[(.*?)\]', subject, re.IGNORECASE)
+                    if match:
+                        ticker = match.group(1).upper()
+                        signal_name = match.group(2).strip()
+                        if ticker not in trash_alerts: 
+                            trash_alerts[ticker] = []
+                        trash_alerts[ticker].append({'tag': signal_name, 'date': msg_date})
+                    else:
+                        found_signals = []
+                        if "PPS" in subject.upper(): found_signals.append("PPS Signal")
+                        if "MACD" in subject.upper(): found_signals.append("MACD Cross")
+                        if "BOLLINGER" in subject.upper(): found_signals.append("Bollinger Alert")
+                        if "AMPS" in subject.upper(): found_signals.append("AMPS Alert")
+                        
+                        target_list = extract_tickers_regex(subject)
+                        for t in target_list:
+                            if t not in trash_alerts: 
+                                trash_alerts[t] = []
+                            if found_signals:
+                                for fs in found_signals: 
+                                    trash_alerts[t].append({'tag': fs, 'date': msg_date})
+                            else:
+                                trash_alerts[t].append({'tag': "Generic Alert", 'date': msg_date})
+            
+            mail.logout()
+            return trash_alerts # Success!
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"Trash scan failed (Attempt {attempt + 1}): {error_msg}")
+            
+            if "OVERQUOTA" in error_msg.upper() and attempt < max_retries:
+                logger.info("Quota exceeded in Trash scan. Waiting 5 minutes...")
+                time.sleep(retry_delay)
+            else:
+                break
+
+    return trash_alerts
 # ------------------------------------------------------------------------------
 # 4. DATA ACQUISITION
 # ------------------------------------------------------------------------------
@@ -962,5 +1029,6 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
 
 
