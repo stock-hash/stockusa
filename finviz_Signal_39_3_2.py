@@ -952,7 +952,14 @@ def main():
         webbrowser.open(path)
     else:
         print("CRITICAL: No results generated. Check internet and credentials.")
-
+def market_is_open():
+    nyse = mcal.get_calendar("NYSE")
+    now = pd.Timestamp.now(tz="America/New_York")
+    sched = nyse.schedule(start_date=now.date(), end_date=now.date())
+    if sched.empty: return False
+    return sched.iloc[0]["market_open"] <= now <= sched.iloc[0]["market_close"]
 if __name__ == "__main__":
-
+    if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
+    else: logger.info("Market is OPEN.")
     main()
+
