@@ -41,7 +41,7 @@ except ImportError:
     print("CRITICAL ERROR: Missing libraries.")
     print("Run: pip install pandas numpy beautifulsoup4 lxml openpyxl python-dateutil")
     sys.exit(1)
-
+import pandas_market_calendars as mcal
 # ------------------------------------------------------------------------------
 # 1. CONFIGURATION & DIRECTORY SETUP
 # ------------------------------------------------------------------------------
@@ -962,4 +962,5 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
 
