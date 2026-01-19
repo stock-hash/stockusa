@@ -49,7 +49,7 @@ BASE_DIR = os.getcwd()
 OUTPUT_ROOT = os.path.join(BASE_DIR, "docs")
 CACHE_DIR = os.path.join(OUTPUT_ROOT, "metadata_cache")
 LOG_DIR = os.path.join(OUTPUT_ROOT, "system_logs")
-WATCHLIST_FILE = os.path.join(BASE_DIR, "Watchlista.xlsx")
+WATCHLIST_FILE = os.path.join(BASE_DIR, "Waatchlista.xlsx")
 DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
 
 # GMAIL CREDENTIALS
@@ -61,7 +61,7 @@ SENDER_EMAIL = "stockusals@gmail.com"
 THREADS = 30
 REQUEST_TIMEOUT = 20
 INBOX_LOOKBACK_DAYS =200
-TRASH_LOOKBACK_DAYS = 1
+TRASH_LOOKBACK_DAYS = 14
 TRASH_SCAN_LIMIT = 2000
 DAILY_LOOKBACK = 400
 INTRA_DAYS = 5
@@ -1029,6 +1029,7 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
 
 
 
