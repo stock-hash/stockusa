@@ -49,7 +49,7 @@ BASE_DIR = os.getcwd()
 OUTPUT_ROOT = os.path.join(BASE_DIR, "docs")
 CACHE_DIR = os.path.join(OUTPUT_ROOT, "metadata_cache")
 LOG_DIR = os.path.join(OUTPUT_ROOT, "system_logs")
-WATCHLIST_FILE = os.path.join(BASE_DIR, "Waatchlista.xlsx")
+WATCHLIST_FILE = os.path.join(BASE_DIR, "Watchlist.xlsx")
 DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
 
 # GMAIL CREDENTIALS
@@ -959,16 +959,33 @@ document.addEventListener('keydown', (e) => {{ if(e.key === 'Escape') closeModal
 # ------------------------------------------------------------------------------
 # 8. MAIN EXECUTION (Multithreaded with Limit)
 # ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# 8. MAIN EXECUTION (Multithreaded with Limit)
+# ------------------------------------------------------------------------------
 def main():
     print("=== HYBRID SCANNER PRO v50.2: STARTING ENGINE ===")
     print(f"MAX_STOCK_LIMIT = {MAX_STOCK_LIMIT}")
     setup_database()
     
+    # --- DEBUGGING: FILE EXISTENCE CHECK ---
+    # This detects if your Excel file is missing in the GitHub environment
+    if os.path.exists(WATCHLIST_FILE):
+        print(f"[SUCCESS] Watchlist file found: {WATCHLIST_FILE}")
+    else:
+        print(f"[WARNING] Watchlist file NOT found: {WATCHLIST_FILE}")
+        print("          (This is likely why your ticker count is low!)")
+
     # 1. DATA GATHERING
     print("...Scanning Inputs (Inbox, Trash, Excel)")
     inbox = scan_gmail_inbox_attachments()
     trash = scan_gmail_trash_subjects()
     excel = parse_watchlist_excel()
+    
+    # --- DEBUGGING: SOURCE COUNTS ---
+    print(f"--- SOURCES COUNT ---")
+    print(f"Inbox Tickers: {len(inbox)}")
+    print(f"Trash Tickers: {len(trash)}")
+    print(f"Excel Tickers: {sum(len(v) for v in excel.values())}")
     
     all_tickers = set(inbox.keys())
     all_tickers.update(trash.keys())
@@ -981,21 +998,36 @@ def main():
         print(f"*** LIMIT REACHED: Trimming {len(ticker_list)} tickers down to {MAX_STOCK_LIMIT} ***")
         ticker_list = ticker_list[:MAX_STOCK_LIMIT]
     
-    print(f"Total Tickers Queued: {len(ticker_list)}")
+    print(f"Total Unique Tickers Queued: {len(ticker_list)}")
     
     # 2. CONCURRENT PROCESSING
     results = []
     q = queue.Queue()
     for t in ticker_list: q.put(t)
     
+    # Counter for dropped stocks (detects Yahoo blocking)
+    dropped_count = 0
+    lock = threading.Lock()
+
     def worker():
+        nonlocal dropped_count
         while True:
             try:
                 ticker = q.get_nowait()
                 db_data = db_get_entry(ticker)
                 tsig = trash.get(ticker, [])
                 res = process_ticker(ticker, db_data, tsig)
-                if res: results.append(res)
+                
+                if res: 
+                    results.append(res)
+                    # Optional: Print progress every 50 stocks to monitor speed
+                    if len(results) % 50 == 0:
+                        print(f"Processed {len(results)} stocks successfully...")
+                else:
+                    # If res is None, data fetching failed (likely Yahoo block)
+                    with lock:
+                        dropped_count += 1
+                        
                 q.task_done()
             except queue.Empty: break
             except Exception as e:
@@ -1011,14 +1043,25 @@ def main():
     
     q.join()
     
+    # --- FINAL STATS ---
+    print(f"--- FINAL STATS ---")
+    print(f"Total Processed Successfully: {len(results)}")
+    print(f"Total Dropped (No Data/Block): {dropped_count}")
+    
     # 3. FINALIZATION
     if results:
         build_dashboard(results)
         path = os.path.join(OUTPUT_ROOT, "dashboard.html")
         print(f"=== SCAN COMPLETE: {len(results)} STOCKS READY ===")
-        webbrowser.open(path)
+        
+        # Only open browser if NOT running in GitHub Actions (Headless envs crash on webbrowser.open)
+        if os.environ.get('GITHUB_ACTIONS') != 'true':
+            webbrowser.open(path)
+        else:
+            print(f"Dashboard saved to: {path}")
     else:
         print("CRITICAL: No results generated. Check internet and credentials.")
+
 def market_is_open():
     nyse = mcal.get_calendar("NYSE")
     now = pd.Timestamp.now(tz="America/New_York")
@@ -1029,6 +1072,7 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
 
 
 
