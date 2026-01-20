@@ -2,10 +2,10 @@ name: Auto Update Stock Dashboard
 
 on:
   schedule:
-  # Runs at 10:00 AM EST (15:00 UTC)
+    # Runs at 10:00 AM EST (15:00 UTC)
     - cron: "0 15 * * *"
-    # 13:00 EST = 18:00 UTC
-    - cron: "0 18 * * *" 
+    # Runs at 1:00 PM EST (18:00 UTC)
+    - cron: "0 18 * * *"
   workflow_dispatch:   # Allows you to trigger it manually via the Actions tab
 
 permissions:
