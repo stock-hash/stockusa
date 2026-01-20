@@ -161,68 +161,81 @@ def extract_tickers_regex(text):
 
 def scan_gmail_inbox_attachments():
     inbox_results = {}
+    processed_files = set()  # To prevent re-processing the same file
+    
     if not EMAIL_ADDRESS or "@" not in EMAIL_ADDRESS: 
+        logger.warning("EMAIL_ADDRESS not configured. Skipping Inbox scan.")
         return inbox_results
 
-    max_retries = 2
-    retry_delay = 300  # 5 minutes in seconds
-
-    for attempt in range(max_retries + 1):
-        try:
-            mail = imaplib.IMAP4_SSL("imap.gmail.com")
-            mail.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            mail.select("inbox")
+    try:
+        mail = imaplib.IMAP4_SSL("imap.gmail.com")
+        mail.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        mail.select("inbox")
+        
+        since = (datetime.now() - timedelta(days=INBOX_LOOKBACK_DAYS)).strftime("%d-%b-%Y")
+        search_criteria = f'(SINCE "{since}" FROM "{SENDER_EMAIL}")'
+        _, ids = mail.search(None, search_criteria)
+        
+        if ids[0]:
+            email_ids = ids[0].split()
+            total_emails = len(email_ids)
+            logger.info(f"STARTING SCAN: Found {total_emails} emails to check.")
             
-            since = (datetime.now() - timedelta(days=INBOX_LOOKBACK_DAYS)).strftime("%d-%b-%Y")
-            _, ids = mail.search(None, f'(SINCE "{since}" FROM "{SENDER_EMAIL}")')
-            
-            if ids[0]:
-                for uid in ids[0].split():
-                    if check_limit(len(inbox_results)): 
-                        break
-                    
-                    # Small delay between fetches to prevent triggering OVERQUOTA
-                    time.sleep(0.5) 
-                    
-                    _, data = mail.fetch(uid, "(RFC822)")
-                    msg = email.message_from_bytes(data[0][1])
-                    
-                    try: 
-                        d_str = parser.parse(msg.get("date")).strftime("%Y-%m-%d")
-                    except: 
-                        d_str = datetime.now().strftime("%Y-%m-%d")
-                    
-                    for part in msg.walk():
-                        fname = part.get_filename()
-                        if fname and any(ext in fname.lower() for ext in [".csv", ".xlsx", ".xls"]):
-                            try:
-                                content = part.get_payload(decode=True)
-                                df = pd.read_csv(io.BytesIO(content)) if ".csv" in fname.lower() else pd.read_excel(io.BytesIO(content))
-                                t_col = next((c for c in df.columns if "ticker" in c.lower() or "symbol" in c.lower()), df.columns[0])
-                                p_col = next((c for c in df.columns if "price" in c.lower() or "current" in c.lower()), None)
-                                
-                                for _, row in df.iterrows():
-                                    sym = str(row[t_col]).strip().upper()
-                                    if not sym: continue
-                                    price = float(row[p_col]) if p_col else 0.0
-                                    db_insert_ticker(sym, price, d_str, "InboxFile", fname)
-                                    inbox_results[sym] = {'p': price, 'd': d_str}
-                            except: 
-                                pass
-            mail.logout()
-            return inbox_results  # Success! Exit and return results
-
-        except Exception as e:
-            error_msg = str(e)
-            logger.error(f"Inbox scan failed (Attempt {attempt + 1}): {error_msg}")
-            
-            if "OVERQUOTA" in error_msg.upper() and attempt < max_retries:
-                logger.info(f"Quota exceeded. Sleeping for 5 minutes before retry...")
-                time.sleep(retry_delay)
-            else:
-                # If it's a different error or we've run out of retries, exit
-                break
+            for idx, uid in enumerate(email_ids, 1):
+                if check_limit(len(inbox_results)): break
                 
+                # Progress Log
+                logger.info(f"Checking Email {idx}/{total_emails} (UID: {uid.decode()})...")
+                
+                _, data = mail.fetch(uid, "(RFC822)")
+                msg = email.message_from_bytes(data[0][1])
+                
+                for part in msg.walk():
+                    fname = part.get_filename()
+                    if fname and 'Report' in fname:
+                        # NEW: Skip if we already handled this exact filename in this run
+                        if fname in processed_files:
+                            continue
+                        
+                        logger.info(f"   [File Found] Reading: {fname}")
+                        processed_files.add(fname)
+                        
+                        try:
+                            content = part.get_payload(decode=True)
+                            if ".xls" in fname.lower():
+                                # Added engine='openpyxl' for better compatibility
+                                df = pd.read_excel(io.BytesIO(content), sheet_name='Analysis Report')
+                            else:
+                                df = pd.read_csv(io.BytesIO(content))
+
+                            t_col = next((c for c in df.columns if "Ticker" == c or "ticker" in c.lower()), df.columns[0])
+                            
+                            row_count = len(df)
+                            logger.info(f"   [Parsing] Found {row_count} rows in {fname}. Extracting tickers...")
+                            
+                            added_in_file = 0
+                            for i, row in df.iterrows():
+                                sym = str(row[t_col]).strip().upper()
+                                if not sym or sym == 'NAN' or len(sym) > 6: continue
+                                
+                                # Insert to DB and Results
+                                inbox_results[sym] = {'p': 0.0, 'd': datetime.now().strftime("%Y-%m-%d")}
+                                added_in_file += 1
+                                
+                                # Log every 100 tickers so you know it's moving
+                                if added_in_file % 100 == 0:
+                                    logger.info(f"      ... {added_in_file}/{row_count} tickers imported")
+
+                            logger.info(f"   [Done] Added {added_in_file} tickers from {fname}")
+
+                        except Exception as e:
+                            logger.error(f"   [Error] Failed to read {fname}: {e}")
+
+        mail.logout()
+    except Exception as e:
+        logger.error(f"CRITICAL Inbox Error: {e}")
+        
+    logger.info(f"FINISHED: Inbox scan complete. Total unique tickers: {len(inbox_results)}")
     return inbox_results
 
 def scan_gmail_trash_subjects():
@@ -1072,6 +1085,7 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
 
 
 
