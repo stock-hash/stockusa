@@ -1,11 +1,10 @@
 # ==============================================================================
-# HYBRID ULTIMATE MARKET SCANNER - FINAL EXPANDED PRO VERSION (v50.3)
+# HYBRID ULTIMATE MARKET SCANNER - FINAL EXPANDED PRO VERSION (v50.4)
 # ==============================================================================
-# UPDATES (v50.3):
-# 1. ADDED SOURCE TOGGLES: Enable/Disable Inbox, Trash, or Watchlist.
-# 2. DATA COMPRESSION: Implemented GZIP/Base64 encoding for HTML embedding.
-#    - Drastically reduces output HTML size (approx 90% reduction).
-# 3. PRECISION OPTIMIZATION: Forced rounding on chart data to save space.
+# UPDATES (v50.4):
+# 1. ADDED SOURCE FILTERING: Filter Dashboard by Inbox, Trash, or Watchlist.
+# 2. SOURCE TRACKING: Stocks now carry tags showing their origin (e.g., 'Inbox', 'Watchlist').
+# 3. PRESERVED: Compression & GZIP (v50.3) for small file size.
 # ==============================================================================
 
 import os
@@ -49,7 +48,7 @@ BASE_DIR = os.getcwd()
 OUTPUT_ROOT = os.path.join(BASE_DIR, "docs")
 CACHE_DIR = os.path.join(OUTPUT_ROOT, "metadata_cache")
 LOG_DIR = os.path.join(OUTPUT_ROOT, "system_logs")
-WATCHLIST_FILE = os.path.join(BASE_DIR, "watchlist.xlsx")
+WATCHLIST_FILE = os.path.join(BASE_DIR, "Watchlist.xlsx")
 DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
 
 # ==============================================================================
@@ -57,8 +56,8 @@ DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
 # Set these to False to skip specific data sources
 # ==============================================================================
 ENABLE_INBOX     = True   # Set to False to skip Gmail Inbox Attachments
-ENABLE_TRASH     = False   # Set to False to skip Gmail Trash Alerts
-ENABLE_WATCHLIST = False   # Set to False to skip Excel Watchlist
+ENABLE_TRASH     = True   # Set to False to skip Gmail Trash Alerts
+ENABLE_WATCHLIST = True   # Set to False to skip Excel Watchlist
 # ==============================================================================
 
 # GMAIL CREDENTIALS
@@ -69,15 +68,15 @@ SENDER_EMAIL = "stockusals@gmail.com"
 # SCANNING PARAMETERS
 THREADS = 30
 REQUEST_TIMEOUT = 20
-INBOX_LOOKBACK_DAYS = 120
-TRASH_LOOKBACK_DAYS = 30
-TRASH_SCAN_LIMIT = 10000
-DAILY_LOOKBACK = 10000
+INBOX_LOOKBACK_DAYS = 20
+TRASH_LOOKBACK_DAYS = 7
+TRASH_SCAN_LIMIT = 4000
+DAILY_LOOKBACK = 400
 INTRA_DAYS = 5
 INTRA_INTERVAL = "5m"
 
 # *** GLOBAL PROCESSING LIMIT ***
-MAX_STOCK_LIMIT = 10000
+MAX_STOCK_LIMIT = 4000
 
 # TECHNICAL INDICATOR SETTINGS
 RSI_PERIOD = 14
@@ -595,7 +594,7 @@ def generate_ticker_tags(ticker, df_daily, df_intra, meta, earnings_raw):
 # ------------------------------------------------------------------------------
 # 6. CORE SCANNER PROCESSING
 # ------------------------------------------------------------------------------
-def process_ticker(ticker, db_info, trash_signals):
+def process_ticker(ticker, db_info, trash_signals, sources):
     df_daily = fetch_chart_history(ticker, "1d", DAILY_LOOKBACK)
     df_intra = fetch_chart_history(ticker, INTRA_INTERVAL, INTRA_DAYS)
     
@@ -688,16 +687,16 @@ def process_ticker(ticker, db_info, trash_signals):
         'yr_h': yr_h, 'yr_l': yr_l, 'd_h': d_h, 'd_l': d_l,
         'sector': meta['sector'], 'pe': meta['pe'], 'peg': meta['peg'],
         'tags': sorted(list(set(tags))), 
+        'sources': sorted(sources), # NEW: Pass list of sources to frontend
         'trends': trend_data, 'signals': signals, 'earnings': earn,
         'history': history_data,
         'daily_df': df_daily, 'intra_df': df_intra
     }
 
 # ------------------------------------------------------------------------------
-# 7. DASHBOARD GENERATION (COMPRESSION ADDED)
+# 7. DASHBOARD GENERATION (COMPRESSION + SOURCE FILTER)
 # ------------------------------------------------------------------------------
 def round_list(lst):
-    # SIZE REDUCTION: Round all floats to 2 decimal places to save characters
     return [round(x, 2) if isinstance(x, (float, np.float64, np.float32)) else x for x in lst]
 
 def df_to_plotly_json(df):
@@ -742,7 +741,6 @@ def build_trend_badges(trends):
     return html
 
 def compress_data(data_obj):
-    # JSON -> Minify -> GZIP -> Base64
     json_str = json.dumps(data_obj, separators=(',', ':'))
     compressed = gzip.compress(json_str.encode('utf-8'))
     b64_encoded = base64.b64encode(compressed).decode('ascii')
@@ -759,8 +757,7 @@ def build_dashboard(results):
         clean_data.append({k:v for k,v in r.items() if k not in ['daily_df', 'intra_df']})
         for tg in r['tags']: tag_set.add(tg)
 
-    # Compress the massive data payloads
-    print("...Compressing Data for Dashboard (This significantly reduces file size)")
+    print("...Compressing Data for Dashboard")
     compressed_main = compress_data(clean_data)
     compressed_daily = compress_data(charts_daily)
     compressed_intra = compress_data(charts_intra)
@@ -769,19 +766,21 @@ def build_dashboard(results):
     html = f"""<!DOCTYPE html>
 <html>
 <head>
-    <title>Hybrid Ultimate Scanner v50.3</title>
+    <title>Hybrid Ultimate Scanner v50.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <style>
         body {{ background: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }}
         .badge {{ padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }}
+        .badge-source {{ padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }}
         .range-bar-bg {{ height: 6px; background: #334155; border-radius: 3px; position: relative; overflow: hidden; }}
         .range-dot {{ width: 8px; height: 8px; background: #38bdf8; border-radius: 50%; position: absolute; top: -1px; transform: translateX(-50%); box-shadow: 0 0 5px #38bdf8; }}
         .history-table-container {{ max-height: 250px; overflow-y: auto; background: #1e293b; border-radius: 8px; font-size: 10px; margin-top:10px; }}
         .history-table th {{ position: sticky; top: 0; background: #0f172a; padding: 5px; font-weight: 700; text-align: left; z-index: 10; border-bottom: 1px solid #475569; }}
         .history-table td {{ border-bottom: 1px solid #334155; }}
         .active-btn {{ background: #2563eb !important; color: white !important; border-color: #1e40af; }}
+        .source-btn-active {{ background: #3b82f6 !important; color: white !important; border-color: #2563eb; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }}
         ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
         ::-webkit-scrollbar-track {{ background: #0f172a; }}
         ::-webkit-scrollbar-thumb {{ background: #334155; border-radius: 4px; }}
@@ -791,16 +790,24 @@ def build_dashboard(results):
     <div class="max-w-[2200px] mx-auto">
         <div class="flex flex-col lg:flex-row justify-between items-end mb-8 gap-6 border-b border-slate-700 pb-6">
             <div>
-                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">ULTIMATE SCANNER v50.3 <span id="count" class="text-sm text-slate-500 ml-2"></span></h1>
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Price Trends • History Table • Breakouts • SMA Matrix • Volatility</p>
+                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">ULTIMATE SCANNER v50.4 <span id="count" class="text-sm text-slate-500 ml-2"></span></h1>
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Price Trends • History Table • Breakouts • Source Filtering</p>
             </div>
             
-            <div class="bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-700 flex flex-wrap gap-4 items-center">
-                <input type="text" id="search" oninput="filter()" placeholder="Search..." class="bg-slate-900 border border-slate-600 rounded-xl px-4 py-2 text-sm font-bold w-40 text-white">
-                <input type="number" id="maxP" oninput="filter()" placeholder="Max $" class="bg-slate-900 border border-slate-600 rounded-xl px-4 py-2 text-sm font-bold w-24 text-white">
-                <button onclick="setFilter('Breakout Up')" class="bg-emerald-900/30 text-emerald-400 border border-emerald-800 px-3 py-2 rounded-lg text-xs font-black">BREAKOUT UP</button>
-                <button onclick="setFilter('Upcoming Earnings')" class="bg-orange-900/30 text-orange-400 border border-orange-800 px-3 py-2 rounded-lg text-xs font-black">EARNINGS</button>
-                <button onclick="reset()" class="bg-red-900/30 text-red-400 border border-red-800 px-6 py-2 rounded-xl text-xs font-black">RESET</button>
+            <div class="flex flex-col items-end gap-2">
+                <div class="flex gap-2">
+                    <button onclick="setSource('Inbox')" id="btn-inbox" class="bg-slate-800 text-slate-400 border border-slate-600 px-4 py-1.5 rounded-lg text-xs font-black hover:bg-slate-700 transition-all">INBOX</button>
+                    <button onclick="setSource('Trash')" id="btn-trash" class="bg-slate-800 text-slate-400 border border-slate-600 px-4 py-1.5 rounded-lg text-xs font-black hover:bg-slate-700 transition-all">TRASH</button>
+                    <button onclick="setSource('Watchlist')" id="btn-watchlist" class="bg-slate-800 text-slate-400 border border-slate-600 px-4 py-1.5 rounded-lg text-xs font-black hover:bg-slate-700 transition-all">WATCHLIST</button>
+                </div>
+
+                <div class="bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-700 flex flex-wrap gap-4 items-center">
+                    <input type="text" id="search" oninput="filter()" placeholder="Search..." class="bg-slate-900 border border-slate-600 rounded-xl px-4 py-2 text-sm font-bold w-40 text-white">
+                    <input type="number" id="maxP" oninput="filter()" placeholder="Max $" class="bg-slate-900 border border-slate-600 rounded-xl px-4 py-2 text-sm font-bold w-24 text-white">
+                    <button onclick="setFilter('Breakout Up')" class="bg-emerald-900/30 text-emerald-400 border border-emerald-800 px-3 py-2 rounded-lg text-xs font-black">BREAKOUT UP</button>
+                    <button onclick="setFilter('Upcoming Earnings')" class="bg-orange-900/30 text-orange-400 border border-orange-800 px-3 py-2 rounded-lg text-xs font-black">EARNINGS</button>
+                    <button onclick="reset()" class="bg-red-900/30 text-red-400 border border-red-800 px-6 py-2 rounded-xl text-xs font-black">RESET</button>
+                </div>
             </div>
         </div>
 
@@ -826,7 +833,6 @@ def build_dashboard(results):
     </div>
 
 <script>
-// DECOMPRESSION LOGIC
 function decompress(b64Data) {{
     try {{
         const strData = atob(b64Data);
@@ -840,19 +846,18 @@ function decompress(b64Data) {{
     }}
 }}
 
-// RAW COMPRESSED DATA
 const rawMain = "{compressed_main}";
 const rawDaily = "{compressed_daily}";
 const rawIntra = "{compressed_intra}";
 const rawTags = "{compressed_tags}";
 
-// INFLATE ON LOAD
 const data = decompress(rawMain);
 const cDaily = decompress(rawDaily);
 const cIntra = decompress(rawIntra);
 const tags = decompress(rawTags);
 
 let activeTags = new Set();
+let activeSource = null; // New Source Filter
 
 function toggleId(id) {{
     const el = document.getElementById(id);
@@ -863,12 +868,31 @@ function getPos(curr, l, h) {{
     return Math.min(Math.max(((curr-l)/(h-l))*100, 0), 100);
 }}
 
+function setSource(src) {{
+    // Toggle Logic
+    if(activeSource === src) activeSource = null;
+    else activeSource = src;
+    
+    // Update Button Styles
+    ['Inbox','Trash','Watchlist'].forEach(s => {{
+        const btn = document.getElementById('btn-'+s.toLowerCase());
+        if(activeSource === s) btn.className = "bg-blue-600 text-white border border-blue-500 px-4 py-1.5 rounded-lg text-xs font-black shadow-lg transform scale-105 transition-all";
+        else btn.className = "bg-slate-800 text-slate-400 border border-slate-600 px-4 py-1.5 rounded-lg text-xs font-black hover:bg-slate-700 transition-all";
+    }});
+    filter();
+}}
+
 function filter() {{
     const s = document.getElementById('search').value.toUpperCase();
     const p = parseFloat(document.getElementById('maxP').value) || 999999;
+    
     const filt = data.filter(i => {{
+        // Check Source
+        if(activeSource && !i.sources.includes(activeSource)) return false;
+        // Check standard filters
         return i.ticker.includes(s) && i.price <= p && Array.from(activeTags).every(t => i.tags.includes(t));
     }});
+    
     document.getElementById('count').innerText = `(${{filt.length}}/${{data.length}})`;
     renderFilters(filt);
     renderGrid(filt);
@@ -903,7 +927,8 @@ function renderFilters(currentData) {{
 function renderGrid(items) {{
     const g = document.getElementById('grid');
     g.innerHTML = items.map(i => `
-        <div class="bg-slate-800 p-5 rounded-3xl border border-slate-700 shadow-lg hover:border-blue-500 transition-all duration-200">
+        <div class="bg-slate-800 p-5 rounded-3xl border border-slate-700 shadow-lg hover:border-blue-500 transition-all duration-200 relative overflow-hidden">
+            
             <div class="flex justify-between mb-3 cursor-pointer" onclick="openChart('${{i.ticker}}')">
                 <div>
                     <div class="text-3xl font-black text-white tracking-tight">${{i.ticker}}</div>
@@ -913,6 +938,16 @@ function renderGrid(items) {{
                     <div class="text-2xl font-black ${{i.chg>=0?'text-green-400':'text-red-400'}}">${{(i.chg*100).toFixed(2)}}%</div>
                     <div class="text-sm font-bold text-slate-500">$${{i.price.toFixed(2)}}</div>
                 </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-1 mb-3">
+                ${{i.sources.map(src => {{
+                    let color = 'bg-gray-600';
+                    if(src==='Inbox') color='bg-purple-900 text-purple-200 border border-purple-700';
+                    if(src==='Trash') color='bg-red-900 text-red-200 border border-red-700';
+                    if(src==='Watchlist') color='bg-blue-900 text-blue-200 border border-blue-700';
+                    return `<span class="badge-source ${{color}}">${{src}}</span>`
+                }}).join('')}}
             </div>
 
             ${{i.trend_html}}
@@ -997,7 +1032,7 @@ function plot(id, d, title) {{
 }}
 
 function closeModal() {{ document.getElementById('modal').style.display = 'none'; }}
-function reset() {{ activeTags.clear(); document.getElementById('search').value=''; document.getElementById('maxP').value=''; filter(); }}
+function reset() {{ activeTags.clear(); activeSource=null; setSource(null); document.getElementById('search').value=''; document.getElementById('maxP').value=''; filter(); }}
 window.onload = filter;
 document.addEventListener('keydown', (e) => {{ if(e.key === 'Escape') closeModal(); }});
 </script>
@@ -1010,10 +1045,9 @@ document.addEventListener('keydown', (e) => {{ if(e.key === 'Escape') closeModal
 # 8. MAIN EXECUTION (Multithreaded with Limit)
 # ------------------------------------------------------------------------------
 def main():
-    print("=== HYBRID SCANNER PRO v50.3: STARTING ENGINE ===")
+    print("=== HYBRID SCANNER PRO v50.4: STARTING ENGINE ===")
     print(f"MAX_STOCK_LIMIT = {MAX_STOCK_LIMIT}")
     
-    # CONFIG LOGGING
     print(f"--- SOURCE CONFIGURATION ---")
     print(f"   [INBOX]:     {'ENABLED' if ENABLE_INBOX else 'DISABLED'}")
     print(f"   [TRASH]:     {'ENABLED' if ENABLE_TRASH else 'DISABLED'}")
@@ -1021,23 +1055,36 @@ def main():
     
     setup_database()
     
-    # 1. DATA GATHERING (Conditionals Applied)
     print("...Scanning Enabled Inputs")
     inbox = scan_gmail_inbox_attachments() if ENABLE_INBOX else {}
     trash = scan_gmail_trash_subjects() if ENABLE_TRASH else {}
     excel = parse_watchlist_excel() if ENABLE_WATCHLIST else {}
     
-    # --- DEBUGGING: SOURCE COUNTS ---
     print(f"--- SOURCES COUNT ---")
     print(f"Inbox Tickers: {len(inbox)}")
     print(f"Trash Tickers: {len(trash)}")
     print(f"Excel Tickers: {sum(len(v) for v in excel.values())}")
+
+    # MASTER LIST BUILDING WITH SOURCE TRACKING
+    all_tickers = set()
+    ticker_sources = {} 
+
+    # Helper to add sources
+    def add_source(t, src):
+        t = t.upper()
+        if t not in ticker_sources: ticker_sources[t] = set()
+        ticker_sources[t].add(src)
+        all_tickers.add(t)
+
+    for t in inbox: add_source(t, 'Inbox')
+    for t in trash: add_source(t, 'Trash')
+    for sheet_tickers in excel.values():
+        for t in sheet_tickers: add_source(t, 'Watchlist')
     
-    all_tickers = set(inbox.keys())
-    all_tickers.update(trash.keys())
-    for sheet_tickers in excel.values(): all_tickers.update(sheet_tickers)
-    all_tickers.update(LEVERAGED_ETFS + COMMODITY_ETFS + CRYPTO_ETFS)
-    
+    # Add Special categories (tagged as 'System')
+    for t in LEVERAGED_ETFS + COMMODITY_ETFS + CRYPTO_ETFS:
+        add_source(t, 'System')
+
     # APPLY LIMIT
     ticker_list = list(all_tickers)
     if len(ticker_list) > MAX_STOCK_LIMIT:
@@ -1046,7 +1093,6 @@ def main():
     
     print(f"Total Unique Tickers Queued: {len(ticker_list)}")
     
-    # 2. CONCURRENT PROCESSING
     results = []
     q = queue.Queue()
     for t in ticker_list: q.put(t)
@@ -1061,12 +1107,15 @@ def main():
                 ticker = q.get_nowait()
                 db_data = db_get_entry(ticker)
                 tsig = trash.get(ticker, [])
-                res = process_ticker(ticker, db_data, tsig)
+                srcs = list(ticker_sources.get(ticker, [])) # Get sources for this ticker
+                
+                res = process_ticker(ticker, db_data, tsig, srcs)
                 
                 if res: 
-                    results.append(res)
-                    if len(results) % 50 == 0:
-                        print(f"Processed {len(results)} stocks successfully...")
+                    with lock:
+                        results.append(res)
+                        if len(results) % 50 == 0:
+                            print(f"Processed {len(results)} stocks successfully...")
                 else:
                     with lock:
                         dropped_count += 1
@@ -1086,23 +1135,20 @@ def main():
     
     q.join()
     
-    # --- FINAL STATS ---
     print(f"--- FINAL STATS ---")
     print(f"Total Processed Successfully: {len(results)}")
     print(f"Total Dropped (No Data/Block): {dropped_count}")
     
-    # 3. FINALIZATION
     if results:
         build_dashboard(results)
         path = os.path.join(OUTPUT_ROOT, "dashboard.html")
         print(f"=== SCAN COMPLETE: {len(results)} STOCKS READY ===")
-        
         if os.environ.get('GITHUB_ACTIONS') != 'true':
             webbrowser.open(path)
         else:
             print(f"Dashboard saved to: {path}")
     else:
-        print("CRITICAL: No results generated. Check internet and credentials.")
+        print("CRITICAL: No results generated.")
 
 def market_is_open():
     nyse = mcal.get_calendar("NYSE")
@@ -1115,5 +1161,3 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
-
-
