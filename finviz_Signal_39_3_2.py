@@ -57,7 +57,7 @@ DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
 # Set these to False to skip specific data sources
 # ==============================================================================
 ENABLE_INBOX     = True   # Set to False to skip Gmail Inbox Attachments
-ENABLE_TRASH     = False   # Set to False to skip Gmail Trash Alerts
+ENABLE_TRASH     = True   # Set to False to skip Gmail Trash Alerts
 ENABLE_WATCHLIST = False   # Set to False to skip Excel Watchlist
 # ==============================================================================
 
@@ -69,15 +69,15 @@ SENDER_EMAIL = "stockusals@gmail.com"
 # SCANNING PARAMETERS
 THREADS = 30
 REQUEST_TIMEOUT = 20
-INBOX_LOOKBACK_DAYS = 60
-TRASH_LOOKBACK_DAYS = 3
-TRASH_SCAN_LIMIT = 1000
-DAILY_LOOKBACK = 400
+INBOX_LOOKBACK_DAYS = 120
+TRASH_LOOKBACK_DAYS = 30
+TRASH_SCAN_LIMIT = 10000
+DAILY_LOOKBACK = 10000
 INTRA_DAYS = 5
 INTRA_INTERVAL = "5m"
 
 # *** GLOBAL PROCESSING LIMIT ***
-MAX_STOCK_LIMIT = 1000
+MAX_STOCK_LIMIT = 10000
 
 # TECHNICAL INDICATOR SETTINGS
 RSI_PERIOD = 14
@@ -1115,3 +1115,4 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
