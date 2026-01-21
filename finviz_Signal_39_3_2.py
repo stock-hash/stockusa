@@ -49,7 +49,7 @@ BASE_DIR = os.getcwd()
 OUTPUT_ROOT = os.path.join(BASE_DIR, "docs")
 CACHE_DIR = os.path.join(OUTPUT_ROOT, "metadata_cache")
 LOG_DIR = os.path.join(OUTPUT_ROOT, "system_logs")
-WATCHLIST_FILE = os.path.join(BASE_DIR, "watchlist.xlsx")
+WATCHLIST_FILE = os.path.join(BASE_DIR, "Watchlist.xlsx")
 DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
 
 # GMAIL CREDENTIALS
@@ -60,15 +60,15 @@ SENDER_EMAIL = "stockusals@gmail.com"
 # SCANNING PARAMETERS
 THREADS = 30
 REQUEST_TIMEOUT = 20
-INBOX_LOOKBACK_DAYS =9
-TRASH_LOOKBACK_DAYS = 1
-TRASH_SCAN_LIMIT = 3000
+INBOX_LOOKBACK_DAYS =60
+TRASH_LOOKBACK_DAYS =3
+TRASH_SCAN_LIMIT = 2000
 DAILY_LOOKBACK = 400
 INTRA_DAYS = 5
 INTRA_INTERVAL = "5m"
 
 # *** GLOBAL PROCESSING LIMIT ***
-MAX_STOCK_LIMIT = 3000
+MAX_STOCK_LIMIT = 2000
 
 # TECHNICAL INDICATOR SETTINGS
 RSI_PERIOD = 14
@@ -1085,6 +1085,7 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
 
 
 
