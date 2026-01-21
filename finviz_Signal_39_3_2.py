@@ -68,7 +68,7 @@ SENDER_EMAIL = "stockusals@gmail.com"
 # SCANNING PARAMETERS
 THREADS = 30
 REQUEST_TIMEOUT = 20
-INBOX_LOOKBACK_DAYS = 20
+INBOX_LOOKBACK_DAYS = 90
 TRASH_LOOKBACK_DAYS = 7
 TRASH_SCAN_LIMIT = 4000
 DAILY_LOOKBACK = 400
@@ -1161,4 +1161,5 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
 
