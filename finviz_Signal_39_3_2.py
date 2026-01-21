@@ -1,14 +1,11 @@
 # ==============================================================================
-# HYBRID ULTIMATE MARKET SCANNER - FINAL EXPANDED PRO VERSION (v50.2)
+# HYBRID ULTIMATE MARKET SCANNER - FINAL EXPANDED PRO VERSION (v50.3)
 # ==============================================================================
-# FIXED: KeyError 'BB_Upper' on Intraday Dataframe.
-#
-# v50.0 FEATURES PRESERVED:
-# 1. PRICE TREND MATRIX: 2D to 360D returns.
-# 2. BREAKOUTS: 20-Day High/Low detection.
-# 3. SMA MATRIX: Price vs SMA 20/50/200.
-# 4. VOLATILITY: High/Low IV filters.
-# 5. UI: History Toggle, Trend Bars, Forecast Links.
+# UPDATES (v50.3):
+# 1. ADDED SOURCE TOGGLES: Enable/Disable Inbox, Trash, or Watchlist.
+# 2. DATA COMPRESSION: Implemented GZIP/Base64 encoding for HTML embedding.
+#    - Drastically reduces output HTML size (approx 90% reduction).
+# 3. PRECISION OPTIMIZATION: Forced rounding on chart data to save space.
 # ==============================================================================
 
 import os
@@ -28,6 +25,8 @@ import io
 import webbrowser
 import urllib.request
 import urllib.parse
+import gzip
+import base64
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from datetime import datetime, timedelta, timezone
 
@@ -42,6 +41,7 @@ except ImportError:
     print("Run: pip install pandas numpy beautifulsoup4 lxml openpyxl python-dateutil")
     sys.exit(1)
 import pandas_market_calendars as mcal
+
 # ------------------------------------------------------------------------------
 # 1. CONFIGURATION & DIRECTORY SETUP
 # ------------------------------------------------------------------------------
@@ -49,8 +49,17 @@ BASE_DIR = os.getcwd()
 OUTPUT_ROOT = os.path.join(BASE_DIR, "docs")
 CACHE_DIR = os.path.join(OUTPUT_ROOT, "metadata_cache")
 LOG_DIR = os.path.join(OUTPUT_ROOT, "system_logs")
-WATCHLIST_FILE = os.path.join(BASE_DIR, "Watchlist.xlsx")
+WATCHLIST_FILE = os.path.join(BASE_DIR, "watchlist.xlsx")
 DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
+
+# ==============================================================================
+# *** SOURCE CONTROL TOGGLES ***
+# Set these to False to skip specific data sources
+# ==============================================================================
+ENABLE_INBOX     = True   # Set to False to skip Gmail Inbox Attachments
+ENABLE_TRASH     = False   # Set to False to skip Gmail Trash Alerts
+ENABLE_WATCHLIST = False   # Set to False to skip Excel Watchlist
+# ==============================================================================
 
 # GMAIL CREDENTIALS
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS", "your_email@gmail.com")
@@ -60,15 +69,15 @@ SENDER_EMAIL = "stockusals@gmail.com"
 # SCANNING PARAMETERS
 THREADS = 30
 REQUEST_TIMEOUT = 20
-INBOX_LOOKBACK_DAYS =60
-TRASH_LOOKBACK_DAYS =3
+INBOX_LOOKBACK_DAYS = 60
+TRASH_LOOKBACK_DAYS = 3
 TRASH_SCAN_LIMIT = 1000
 DAILY_LOOKBACK = 400
 INTRA_DAYS = 5
 INTRA_INTERVAL = "5m"
 
 # *** GLOBAL PROCESSING LIMIT ***
-MAX_STOCK_LIMIT = 1500
+MAX_STOCK_LIMIT = 1000
 
 # TECHNICAL INDICATOR SETTINGS
 RSI_PERIOD = 14
@@ -81,14 +90,6 @@ PRICE_TREND_DAYS = [2, 3, 5, 7, 9, 11, 15, 30, 60, 90, 180, 360]
 LEVERAGED_ETFS = ["TQQQ", "SQQQ", "SPXL", "SPXU", "UPRO", "SOXL", "SOXS", "TMF", "TMV", "UCO", "SCO"]
 COMMODITY_ETFS = ["GLD", "SLV", "USO", "UNG", "DBA", "WEAT", "CORN", "SOYB"]
 CRYPTO_ETFS = ["IBIT", "FBTC", "BITB", "ARKB", "BTCO", "GBTC", "BITO", "ETHE"]
-
-SECTOR_MAP = {
-    "Technology": "Tech", "Financial Services": "Financial", "Financial": "Financial",
-    "Healthcare": "Healthcare", "Industrials": "Industrials", "Energy": "Energy",
-    "Utilities": "Utilities", "Communication Services": "Communication",
-    "Real Estate": "RealEstate", "Consumer Cyclical": "ConsumerCyclical",
-    "Consumer Defensive": "ConsumerDefensive", "Basic Materials": "Materials"
-}
 
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -141,6 +142,10 @@ def check_limit(current_count):
 
 def parse_watchlist_excel():
     data_map = {}
+    if not ENABLE_WATCHLIST:
+        logger.info("SKIPPING Watchlist Scan (Configuration Disabled)")
+        return data_map
+
     if not os.path.exists(WATCHLIST_FILE): return data_map
     try:
         xls = pd.ExcelFile(WATCHLIST_FILE)
@@ -161,7 +166,11 @@ def extract_tickers_regex(text):
 
 def scan_gmail_inbox_attachments():
     inbox_results = {}
-    processed_files = set()  # To prevent re-processing the same file
+    if not ENABLE_INBOX:
+        logger.info("SKIPPING Inbox Scan (Configuration Disabled)")
+        return inbox_results
+
+    processed_files = set()
     
     if not EMAIL_ADDRESS or "@" not in EMAIL_ADDRESS: 
         logger.warning("EMAIL_ADDRESS not configured. Skipping Inbox scan.")
@@ -184,7 +193,6 @@ def scan_gmail_inbox_attachments():
             for idx, uid in enumerate(email_ids, 1):
                 if check_limit(len(inbox_results)): break
                 
-                # Progress Log
                 logger.info(f"Checking Email {idx}/{total_emails} (UID: {uid.decode()})...")
                 
                 _, data = mail.fetch(uid, "(RFC822)")
@@ -193,9 +201,7 @@ def scan_gmail_inbox_attachments():
                 for part in msg.walk():
                     fname = part.get_filename()
                     if fname and 'Report' in fname:
-                        # NEW: Skip if we already handled this exact filename in this run
-                        if fname in processed_files:
-                            continue
+                        if fname in processed_files: continue
                         
                         logger.info(f"   [File Found] Reading: {fname}")
                         processed_files.add(fname)
@@ -203,7 +209,6 @@ def scan_gmail_inbox_attachments():
                         try:
                             content = part.get_payload(decode=True)
                             if ".xls" in fname.lower():
-                                # Added engine='openpyxl' for better compatibility
                                 df = pd.read_excel(io.BytesIO(content), sheet_name='Analysis Report')
                             else:
                                 df = pd.read_csv(io.BytesIO(content))
@@ -211,18 +216,14 @@ def scan_gmail_inbox_attachments():
                             t_col = next((c for c in df.columns if "Ticker" == c or "ticker" in c.lower()), df.columns[0])
                             
                             row_count = len(df)
-                            logger.info(f"   [Parsing] Found {row_count} rows in {fname}. Extracting tickers...")
-                            
                             added_in_file = 0
                             for i, row in df.iterrows():
                                 sym = str(row[t_col]).strip().upper()
                                 if not sym or sym == 'NAN' or len(sym) > 6: continue
                                 
-                                # Insert to DB and Results
                                 inbox_results[sym] = {'p': 0.0, 'd': datetime.now().strftime("%Y-%m-%d")}
                                 added_in_file += 1
                                 
-                                # Log every 100 tickers so you know it's moving
                                 if added_in_file % 100 == 0:
                                     logger.info(f"      ... {added_in_file}/{row_count} tickers imported")
 
@@ -240,18 +241,20 @@ def scan_gmail_inbox_attachments():
 
 def scan_gmail_trash_subjects():
     trash_alerts = {}
+    if not ENABLE_TRASH:
+        logger.info("SKIPPING Trash Scan (Configuration Disabled)")
+        return trash_alerts
+
     if not EMAIL_ADDRESS or "@" not in EMAIL_ADDRESS: 
         return trash_alerts
 
     max_retries = 2
-    retry_delay = 300  # 5 minutes
+    retry_delay = 300
 
     for attempt in range(max_retries + 1):
         try:
             mail = imaplib.IMAP4_SSL("imap.gmail.com")
             mail.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-            
-            # Gmail Trash folder naming can vary, but [Gmail]/Trash is standard
             mail.select("[Gmail]/Trash")
             
             since = (datetime.now() - timedelta(days=TRASH_LOOKBACK_DAYS)).strftime("%d-%b-%Y")
@@ -260,10 +263,8 @@ def scan_gmail_trash_subjects():
             if ids[0]:
                 uids = ids[0].split()[-TRASH_SCAN_LIMIT:]
                 for uid in uids:
-                    if check_limit(len(trash_alerts)): 
-                        break
+                    if check_limit(len(trash_alerts)): break
                     
-                    # --- THROTTLING: Prevents OVERQUOTA ---
                     time.sleep(0.5) 
                     
                     _, data = mail.fetch(uid, "(RFC822)")
@@ -271,20 +272,16 @@ def scan_gmail_trash_subjects():
                     subject = msg.get("subject", "")
                     
                     keywords = ["PPS", "MACD", "BOLLINGER", "AMPS", "SIGNAL", "ALERT", "CROSS", "SPIKE","SAR"]
-                    if not any(k in subject.upper() for k in keywords): 
-                        continue
+                    if not any(k in subject.upper() for k in keywords): continue
                         
-                    try: 
-                        msg_date = parser.parse(msg.get("date")).strftime("%Y-%m-%d")
-                    except: 
-                        msg_date = datetime.now().strftime("%Y-%m-%d")
+                    try: msg_date = parser.parse(msg.get("date")).strftime("%Y-%m-%d")
+                    except: msg_date = datetime.now().strftime("%Y-%m-%d")
                     
                     match = re.search(r'([A-Z]+)\s*\[(.*?)\]', subject, re.IGNORECASE)
                     if match:
                         ticker = match.group(1).upper()
                         signal_name = match.group(2).strip()
-                        if ticker not in trash_alerts: 
-                            trash_alerts[ticker] = []
+                        if ticker not in trash_alerts: trash_alerts[ticker] = []
                         trash_alerts[ticker].append({'tag': signal_name, 'date': msg_date})
                     else:
                         found_signals = []
@@ -295,16 +292,14 @@ def scan_gmail_trash_subjects():
                         
                         target_list = extract_tickers_regex(subject)
                         for t in target_list:
-                            if t not in trash_alerts: 
-                                trash_alerts[t] = []
+                            if t not in trash_alerts: trash_alerts[t] = []
                             if found_signals:
-                                for fs in found_signals: 
-                                    trash_alerts[t].append({'tag': fs, 'date': msg_date})
+                                for fs in found_signals: trash_alerts[t].append({'tag': fs, 'date': msg_date})
                             else:
                                 trash_alerts[t].append({'tag': "Generic Alert", 'date': msg_date})
             
             mail.logout()
-            return trash_alerts # Success!
+            return trash_alerts
 
         except Exception as e:
             error_msg = str(e)
@@ -317,6 +312,7 @@ def scan_gmail_trash_subjects():
                 break
 
     return trash_alerts
+
 # ------------------------------------------------------------------------------
 # 4. DATA ACQUISITION
 # ------------------------------------------------------------------------------
@@ -459,7 +455,7 @@ def run_technical_calculations(df):
     # SAR & VWAP
     d['SAR'] = calculate_sar(d)
     d['TypPrice'] = (d['High'] + d['Low'] + d['Close']) / 3
-    d['VWAP'] = d['TypPrice'] # Simplification for daily rows
+    d['VWAP'] = d['TypPrice'] 
     d['VWAP_Status'] = np.where(d['Close'] > d['VWAP'], "Above", "Below")
     d['HV'] = calculate_volatility(d)
     
@@ -580,7 +576,7 @@ def generate_ticker_tags(ticker, df_daily, df_intra, meta, earnings_raw):
     elif cap > 300e6: tags.append("Small Cap")
     elif cap > 0: tags.append("Micro Cap")
 
-    # Earnings (Strict 7-Day Logic)
+    # Earnings
     if earnings_raw != "N/A":
         try:
             e_dt = parser.parse(f"{earnings_raw} {datetime.now().year}")
@@ -606,7 +602,6 @@ def process_ticker(ticker, db_info, trash_signals):
     if df_daily.empty or len(df_daily) < 50: return None
     
     df_daily = run_technical_calculations(df_daily)
-    # FIX: Ensure Intraday Dataframe also has techs for Charting
     if not df_intra.empty:
         df_intra = run_technical_calculations(df_intra)
 
@@ -654,7 +649,7 @@ def process_ticker(ticker, db_info, trash_signals):
     signals['AMPS'] = f"{amps_score}/4"
     if amps_score >= 3: tags.append("High AMPS Score")
 
-    # NEW: Price Trend Matrix (2D to 360D)
+    # Trend Data
     trend_data = {}
     for d in PRICE_TREND_DAYS:
         if len(df_daily) > d:
@@ -699,19 +694,24 @@ def process_ticker(ticker, db_info, trash_signals):
     }
 
 # ------------------------------------------------------------------------------
-# 7. DASHBOARD GENERATION
+# 7. DASHBOARD GENERATION (COMPRESSION ADDED)
 # ------------------------------------------------------------------------------
+def round_list(lst):
+    # SIZE REDUCTION: Round all floats to 2 decimal places to save characters
+    return [round(x, 2) if isinstance(x, (float, np.float64, np.float32)) else x for x in lst]
+
 def df_to_plotly_json(df):
     if df is None or df.empty: return {}
     d = df.tail(150)
-    # Safe checks for columns
     return {
         'dates': [t.strftime("%Y-%m-%d %H:%M") if ' ' in str(t) else t.strftime("%Y-%m-%d") for t in d['Date']],
-        'o': d['Open'].tolist(), 'h': d['High'].tolist(), 
-        'l': d['Low'].tolist(), 'c': d['Close'].tolist(),
-        'bbu': d['BB_Upper'].tolist() if 'BB_Upper' in d.columns else [],
-        'bbl': d['BB_Lower'].tolist() if 'BB_Lower' in d.columns else [],
-        'sma20': d['SMA20'].tolist() if 'SMA20' in d.columns else []
+        'o': round_list(d['Open'].tolist()), 
+        'h': round_list(d['High'].tolist()), 
+        'l': round_list(d['Low'].tolist()), 
+        'c': round_list(d['Close'].tolist()),
+        'bbu': round_list(d['BB_Upper'].tolist()) if 'BB_Upper' in d.columns else [],
+        'bbl': round_list(d['BB_Lower'].tolist()) if 'BB_Lower' in d.columns else [],
+        'sma20': round_list(d['SMA20'].tolist()) if 'SMA20' in d.columns else []
     }
 
 def build_history_table_rows(history):
@@ -741,6 +741,13 @@ def build_trend_badges(trends):
     html += '</div>'
     return html
 
+def compress_data(data_obj):
+    # JSON -> Minify -> GZIP -> Base64
+    json_str = json.dumps(data_obj, separators=(',', ':'))
+    compressed = gzip.compress(json_str.encode('utf-8'))
+    b64_encoded = base64.b64encode(compressed).decode('ascii')
+    return b64_encoded
+
 def build_dashboard(results):
     clean_data = []; charts_daily = {}; charts_intra = {}; tag_set = set()
     for r in results:
@@ -752,12 +759,20 @@ def build_dashboard(results):
         clean_data.append({k:v for k,v in r.items() if k not in ['daily_df', 'intra_df']})
         for tg in r['tags']: tag_set.add(tg)
 
+    # Compress the massive data payloads
+    print("...Compressing Data for Dashboard (This significantly reduces file size)")
+    compressed_main = compress_data(clean_data)
+    compressed_daily = compress_data(charts_daily)
+    compressed_intra = compress_data(charts_intra)
+    compressed_tags = compress_data(sorted(list(tag_set)))
+
     html = f"""<!DOCTYPE html>
 <html>
 <head>
-    <title>Hybrid Ultimate Scanner v50.2</title>
+    <title>Hybrid Ultimate Scanner v50.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <style>
         body {{ background: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }}
         .badge {{ padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; }}
@@ -776,7 +791,7 @@ def build_dashboard(results):
     <div class="max-w-[2200px] mx-auto">
         <div class="flex flex-col lg:flex-row justify-between items-end mb-8 gap-6 border-b border-slate-700 pb-6">
             <div>
-                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">ULTIMATE SCANNER v50.2 <span id="count" class="text-sm text-slate-500 ml-2"></span></h1>
+                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">ULTIMATE SCANNER v50.3 <span id="count" class="text-sm text-slate-500 ml-2"></span></h1>
                 <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Price Trends • History Table • Breakouts • SMA Matrix • Volatility</p>
             </div>
             
@@ -811,10 +826,32 @@ def build_dashboard(results):
     </div>
 
 <script>
-const data = {json.dumps(clean_data)};
-const cDaily = {json.dumps(charts_daily)};
-const cIntra = {json.dumps(charts_intra)};
-const tags = {json.dumps(sorted(list(tag_set)))};
+// DECOMPRESSION LOGIC
+function decompress(b64Data) {{
+    try {{
+        const strData = atob(b64Data);
+        const charData = strData.split('').map(x => x.charCodeAt(0));
+        const binData = new Uint8Array(charData);
+        const data = pako.inflate(binData, {{ to: 'string' }});
+        return JSON.parse(data);
+    }} catch (e) {{
+        console.error("Decompression failed", e);
+        return [];
+    }}
+}}
+
+// RAW COMPRESSED DATA
+const rawMain = "{compressed_main}";
+const rawDaily = "{compressed_daily}";
+const rawIntra = "{compressed_intra}";
+const rawTags = "{compressed_tags}";
+
+// INFLATE ON LOAD
+const data = decompress(rawMain);
+const cDaily = decompress(rawDaily);
+const cIntra = decompress(rawIntra);
+const tags = decompress(rawTags);
+
 let activeTags = new Set();
 
 function toggleId(id) {{
@@ -972,27 +1009,23 @@ document.addEventListener('keydown', (e) => {{ if(e.key === 'Escape') closeModal
 # ------------------------------------------------------------------------------
 # 8. MAIN EXECUTION (Multithreaded with Limit)
 # ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# 8. MAIN EXECUTION (Multithreaded with Limit)
-# ------------------------------------------------------------------------------
 def main():
-    print("=== HYBRID SCANNER PRO v50.2: STARTING ENGINE ===")
+    print("=== HYBRID SCANNER PRO v50.3: STARTING ENGINE ===")
     print(f"MAX_STOCK_LIMIT = {MAX_STOCK_LIMIT}")
+    
+    # CONFIG LOGGING
+    print(f"--- SOURCE CONFIGURATION ---")
+    print(f"   [INBOX]:     {'ENABLED' if ENABLE_INBOX else 'DISABLED'}")
+    print(f"   [TRASH]:     {'ENABLED' if ENABLE_TRASH else 'DISABLED'}")
+    print(f"   [WATCHLIST]: {'ENABLED' if ENABLE_WATCHLIST else 'DISABLED'}")
+    
     setup_database()
     
-    # --- DEBUGGING: FILE EXISTENCE CHECK ---
-    # This detects if your Excel file is missing in the GitHub environment
-    if os.path.exists(WATCHLIST_FILE):
-        print(f"[SUCCESS] Watchlist file found: {WATCHLIST_FILE}")
-    else:
-        print(f"[WARNING] Watchlist file NOT found: {WATCHLIST_FILE}")
-        print("          (This is likely why your ticker count is low!)")
-
-    # 1. DATA GATHERING
-    print("...Scanning Inputs (Inbox, Trash, Excel)")
-    inbox = scan_gmail_inbox_attachments()
-    trash = scan_gmail_trash_subjects()
-    excel = parse_watchlist_excel()
+    # 1. DATA GATHERING (Conditionals Applied)
+    print("...Scanning Enabled Inputs")
+    inbox = scan_gmail_inbox_attachments() if ENABLE_INBOX else {}
+    trash = scan_gmail_trash_subjects() if ENABLE_TRASH else {}
+    excel = parse_watchlist_excel() if ENABLE_WATCHLIST else {}
     
     # --- DEBUGGING: SOURCE COUNTS ---
     print(f"--- SOURCES COUNT ---")
@@ -1018,7 +1051,6 @@ def main():
     q = queue.Queue()
     for t in ticker_list: q.put(t)
     
-    # Counter for dropped stocks (detects Yahoo blocking)
     dropped_count = 0
     lock = threading.Lock()
 
@@ -1033,11 +1065,9 @@ def main():
                 
                 if res: 
                     results.append(res)
-                    # Optional: Print progress every 50 stocks to monitor speed
                     if len(results) % 50 == 0:
                         print(f"Processed {len(results)} stocks successfully...")
                 else:
-                    # If res is None, data fetching failed (likely Yahoo block)
                     with lock:
                         dropped_count += 1
                         
@@ -1067,7 +1097,6 @@ def main():
         path = os.path.join(OUTPUT_ROOT, "dashboard.html")
         print(f"=== SCAN COMPLETE: {len(results)} STOCKS READY ===")
         
-        # Only open browser if NOT running in GitHub Actions (Headless envs crash on webbrowser.open)
         if os.environ.get('GITHUB_ACTIONS') != 'true':
             webbrowser.open(path)
         else:
@@ -1081,22 +1110,8 @@ def market_is_open():
     sched = nyse.schedule(start_date=now.date(), end_date=now.date())
     if sched.empty: return False
     return sched.iloc[0]["market_open"] <= now <= sched.iloc[0]["market_close"]
+
 if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
