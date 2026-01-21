@@ -57,7 +57,7 @@ DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
 # Set these to False to skip specific data sources
 # ==============================================================================
 ENABLE_INBOX     = True   # Set to False to skip Gmail Inbox Attachments
-ENABLE_TRASH     = True   # Set to False to skip Gmail Trash Alerts
+ENABLE_TRASH     = False   # Set to False to skip Gmail Trash Alerts
 ENABLE_WATCHLIST = False   # Set to False to skip Excel Watchlist
 # ==============================================================================
 
@@ -1115,4 +1115,5 @@ if __name__ == "__main__":
     if not market_is_open(): logger.info("Market is currently CLOSED. Running in offline/review mode.")
     else: logger.info("Market is OPEN.")
     main()
+
 
