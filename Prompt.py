@@ -1,4 +1,5 @@
 import os
+import shutil
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -12,10 +13,21 @@ import plotly.express as px
 OUTPUT_FOLDER = "docs"
 OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "StockMarket_Opportunity_Dashboard.html")
 
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
 LOOKBACK = "1y"
 MIN_LIQUIDITY = 20_000_000
+
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# ==========================================
+# CLEAN OLD FILE + CACHE
+# ==========================================
+
+if os.path.exists(OUTPUT_HTML):
+    os.remove(OUTPUT_HTML)
+
+cache_dir = os.path.expanduser("~/.cache/yfinance")
+if os.path.exists(cache_dir):
+    shutil.rmtree(cache_dir)
 
 # ==========================================
 # 1️⃣ UNIVERSE
@@ -36,11 +48,10 @@ extra_assets = [
 ]
 
 tickers = list(set(sp500_tickers + extra_assets))
-
 print("Universe Size:", len(tickers))
 
 # ==========================================
-# 2️⃣ DOWNLOAD DATA
+# 2️⃣ DOWNLOAD DATA SAFELY
 # ==========================================
 
 prices = yf.download(
@@ -56,17 +67,25 @@ if prices.empty:
     print("Download failed")
     exit()
 
-benchmark = yf.download("SPY", period=LOOKBACK, auto_adjust=True, progress=False)["Close"]
-benchmark_ret = benchmark.pct_change()
+# Safe SPY benchmark
+try:
+    benchmark = yf.download("SPY", period=LOOKBACK, auto_adjust=True, progress=False)["Close"]
+    benchmark_ret = benchmark.pct_change().dropna()
+except:
+    benchmark_ret = pd.Series(dtype=float)
 
 data = []
 
 # ==========================================
-# 3️⃣ OPPORTUNITY ENGINE
+# 3️⃣ OPPORTUNITY ENGINE (ROBUST)
 # ==========================================
 
 for ticker in tickers:
+
     try:
+        if ticker not in prices:
+            continue
+
         df = prices[ticker].dropna()
 
         if df.empty or len(df) < 200:
@@ -75,6 +94,9 @@ for ticker in tickers:
         close = df["Close"]
         volume = df["Volume"]
         returns = close.pct_change().dropna()
+
+        if len(returns) < 150:
+            continue
 
         avg_dollar_vol = (close * volume).mean()
         if avg_dollar_vol < MIN_LIQUIDITY:
@@ -85,19 +107,21 @@ for ticker in tickers:
         ma200 = close.rolling(200).mean().iloc[-1]
         trend = ma50 > ma200
 
-        # Breakout (near 52-week high)
-        high_52w = close.max()
+        # Breakout
+        high_52w = close.rolling(252).max().iloc[-1]
         breakout = close.iloc[-1] > high_52w * 0.95
 
-        # Pullback in uptrend
+        # Pullback
         pullback = trend and close.iloc[-1] < ma50
 
         # Momentum
         mom6 = close.pct_change(126).iloc[-1]
         mom12 = close.pct_change(252).iloc[-1]
 
-        # Relative Strength vs SPY
-        rel = returns.mean() - benchmark_ret.mean()
+        # Relative Strength
+        rel = 0
+        if not benchmark_ret.empty:
+            rel = returns.mean() - benchmark_ret.mean()
 
         # Risk
         vol = returns.std()
@@ -109,26 +133,25 @@ for ticker in tickers:
             vol * 0.1
         )
 
-        # Signal Classification
+        # Signal
         if trend and breakout and rel > 0:
-            signal = "STRONG BUY"
+            signal = "🚀 STRONG BUY"
         elif trend and pullback:
-            signal = "BUY PULLBACK"
+            signal = "🟢 BUY PULLBACK"
         elif not trend and rel < 0:
-            signal = "AVOID"
+            signal = "🔴 AVOID"
         else:
-            signal = "WATCH"
+            signal = "🟡 WATCH"
 
         data.append({
             "Ticker": ticker,
             "Signal": signal,
             "Trend": trend,
-            "Breakout": breakout,
-            "Pullback": pullback,
-            "Momentum6M": round(mom6, 2),
-            "Momentum12M": round(mom12, 2),
+            "Momentum6M": round(mom6, 3),
+            "Momentum12M": round(mom12, 3),
             "RelStrength": round(rel, 4),
             "Volatility": round(vol, 4),
+            "Liquidity": int(avg_dollar_vol),
             "Score": round(score, 4)
         })
 
@@ -141,18 +164,29 @@ if df.empty:
     print("No qualifying stocks found")
     exit()
 
-df = df.sort_values("Score", ascending=False)
+df = df.sort_values(by="Score", ascending=False)
 
 # ==========================================
-# 4️⃣ OPPORTUNITY SUMMARY
+# ADD EXTERNAL LINKS
 # ==========================================
 
-strong_buys = df[df["Signal"] == "STRONG BUY"]
-pullbacks = df[df["Signal"] == "BUY PULLBACK"]
-avoids = df[df["Signal"] == "AVOID"]
+def make_links(t):
+    finviz = f"https://finviz.com/quote.ashx?t={t}"
+    forecast = f"https://stockanalysis.com/stocks/{t.lower()}/forecast/"
+    return f'<a href="{finviz}" target="_blank">{t}</a>', f'<a href="{forecast}" target="_blank">Forecast</a>'
+
+df["Finviz"], df["Forecast"] = zip(*df["Ticker"].apply(make_links))
 
 # ==========================================
-# 5️⃣ VISUAL MAP
+# SUMMARY
+# ==========================================
+
+strong_buys = df[df["Signal"].str.contains("STRONG")]
+pullbacks = df[df["Signal"].str.contains("PULLBACK")]
+avoids = df[df["Signal"].str.contains("AVOID")]
+
+# ==========================================
+# VISUAL MAP
 # ==========================================
 
 fig = px.scatter(
@@ -161,14 +195,14 @@ fig = px.scatter(
     y="RelStrength",
     color="Signal",
     hover_name="Ticker",
-    size="Volatility",
+    size="Liquidity",
     title="Market Opportunity Map"
 )
 
 plot_html = fig.to_html(full_html=False)
 
 # ==========================================
-# 6️⃣ DASHBOARD OUTPUT
+# DASHBOARD
 # ==========================================
 
 html = f"""
@@ -176,16 +210,14 @@ html = f"""
 <head>
 <title>Stock Market Opportunity Dashboard</title>
 <style>
-body {{font-family: Arial; background:#0f172a; color:white;}}
+body {{font-family:Arial;background:#0f172a;color:white;}}
 h1 {{color:#38bdf8;}}
 h2 {{color:#facc15;}}
-table {{border-collapse: collapse; width:100%;}}
-th, td {{padding:8px; border:1px solid #334155;}}
+table {{border-collapse:collapse;width:100%;}}
+th,td {{padding:8px;border:1px solid #334155;text-align:center;}}
 th {{background:#1e293b;}}
 tr:nth-child(even){{background:#1e293b;}}
-.buy {{color:#22c55e; font-weight:bold;}}
-.avoid {{color:#ef4444; font-weight:bold;}}
-.watch {{color:#facc15; font-weight:bold;}}
+a {{color:#38bdf8;text-decoration:none;}}
 </style>
 </head>
 <body>
@@ -194,19 +226,19 @@ tr:nth-child(even){{background:#1e293b;}}
 <p>Date: {datetime.datetime.now()}</p>
 
 <h2>🔥 Strong Buy Opportunities ({len(strong_buys)})</h2>
-{strong_buys.head(20).to_html(index=False)}
+{strong_buys.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 
 <h2>📉 Buy the Pullback ({len(pullbacks)})</h2>
-{pullbacks.head(20).to_html(index=False)}
+{pullbacks.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 
 <h2>⚠ Avoid List ({len(avoids)})</h2>
-{avoids.head(20).to_html(index=False)}
+{avoids.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 
 <h2>📈 Market Opportunity Map</h2>
 {plot_html}
 
-<h2>📊 Top 30 Ranked Overall</h2>
-{df.head(30).to_html(index=False)}
+<h2>🏆 Top 30 Ranked Overall</h2>
+{df.head(30)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 
 </body>
 </html>
@@ -215,4 +247,4 @@ tr:nth-child(even){{background:#1e293b;}}
 with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
     f.write(html)
 
-print("Opportunity Dashboard Created:", OUTPUT_HTML)
+print("✅ Opportunity Dashboard Created:", OUTPUT_HTML)
