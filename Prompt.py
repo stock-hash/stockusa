@@ -7,17 +7,20 @@ import datetime
 import plotly.express as px
 from time import sleep
 import re
+import concurrent.futures
 
 # ================= SETTINGS =================
 OUTPUT_FOLDER = "docs"
 OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "StockMarket_Opportunity_Dashboard.html")
-LOOKBACK = "1y"
+LOOKBACK = "2y"  # increased for proper 200MA + 12M momentum
 MIN_LIQUIDITY = 20_000_000
-CHUNK_SIZE = 200  # chunk size for large downloads
+CHUNK_SIZE = 150
+MAX_WORKERS = 4
+MIN_PRICE = 5
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# ================ CLEAN OLD FILE + CACHE =================
+# ================= CLEAN =================
 if os.path.exists(OUTPUT_HTML):
     os.remove(OUTPUT_HTML)
 
@@ -25,61 +28,86 @@ cache_dir = os.path.expanduser("~/.cache/yfinance")
 if os.path.exists(cache_dir):
     shutil.rmtree(cache_dir)
 
-# ================= FULL MARKET UNIVERSE =================
-nasdaq = pd.read_csv("https://raw.githubusercontent.com/datasets/nasdaq-listings/master/data/nasdaq-listed-symbols.csv")
-nyse = pd.read_csv("https://raw.githubusercontent.com/datasets/nyse-other-listings/master/data/nyse-listed.csv")
-amex = pd.read_csv("https://raw.githubusercontent.com/datasets/nyse-other-listings/master/data/other-listed.csv")
+# ================= LOAD FULL US MARKET =================
+def load_universe():
+    nasdaq = pd.read_csv("https://raw.githubusercontent.com/datasets/nasdaq-listings/master/data/nasdaq-listed-symbols.csv")
+    nyse = pd.read_csv("https://raw.githubusercontent.com/datasets/nyse-other-listings/master/data/nyse-listed.csv")
+    amex = pd.read_csv("https://raw.githubusercontent.com/datasets/nyse-other-listings/master/data/other-listed.csv")
 
-nasdaq_tickers = nasdaq["Symbol"].str.strip().tolist()
-nyse_tickers = nyse["ACT Symbol"].str.strip().tolist()
-amex_tickers = amex["ACT Symbol"].str.strip().tolist()
+    tickers = []
 
-extra_assets = [
-    "SPY","QQQ","IWM","DIA","VTI",
-    "XLF","XLK","XLE","XLV","XLI",
-    "TQQQ","SOXL","SPXL","UPRO",
-    "IBIT","ETHA","BTC-USD","ETH-USD",
-    "AAPL","MSFT","NVDA","AMZN","META",
-    "GOOGL","TSLA","AVGO","AMD","JPM"
-]
+    if "Symbol" in nasdaq.columns:
+        tickers += nasdaq["Symbol"].dropna().tolist()
+    if "ACT Symbol" in nyse.columns:
+        tickers += nyse["ACT Symbol"].dropna().tolist()
+    if "ACT Symbol" in amex.columns:
+        tickers += amex["ACT Symbol"].dropna().tolist()
 
-tickers = list(set(nasdaq_tickers + nyse_tickers + amex_tickers + extra_assets))
-print("Full Market Universe Size:", len(tickers))
+    return list(set(tickers))
 
-# ================= SANITIZE TICKERS =================
+raw_tickers = load_universe()
+print("Raw Universe:", len(raw_tickers))
+
+# ================= SANITIZE =================
 def sanitize_ticker(t):
+    if pd.isna(t) or not isinstance(t, str):
+        return None
     t = t.upper().strip()
-    # Remove invalid Yahoo characters
-    t = re.sub(r'[^A-Z0-9\-\.]', '', t)
+    t = re.sub(r'[^A-Z0-9\-.]', '', t)
+    if len(t) < 1 or len(t) > 6:
+        return None
     return t
 
-tickers = [sanitize_ticker(t) for t in tickers if sanitize_ticker(t)]
-print("Sanitized tickers count:", len(tickers))
+tickers = list(set(filter(None, [sanitize_ticker(t) for t in raw_tickers])))
+print("Sanitized Universe:", len(tickers))
 
-# ================= CHUNKED DOWNLOAD =================
-def chunked_download(ticker_list, period="1y", chunk_size=CHUNK_SIZE):
-    combined = {}
-    for i in range(0, len(ticker_list), chunk_size):
-        batch = ticker_list[i:i+chunk_size]
-        print(f"Downloading chunk {i}-{i+len(batch)}")
-        try:
-            part = yf.download(batch, period=period, auto_adjust=True, threads=True, progress=False)
-            if isinstance(part, pd.DataFrame) and isinstance(part.columns, pd.MultiIndex):
-                for t in batch:
-                    if t in part.columns.get_level_values(0):
-                        combined[t] = part[t].dropna()
-            elif isinstance(part, pd.DataFrame):
-                for t in batch:
-                    if t in part.columns:
-                        combined[t] = part.dropna()
-        except Exception as e:
-            print("Chunk error:", e)
-        sleep(1)
-    return combined
+# ================= SAFE DOWNLOAD =================
+def download_batch(batch):
+    result = {}
+    try:
+        data = yf.download(batch, period=LOOKBACK, auto_adjust=True, progress=False, threads=True)
 
-prices_data = chunked_download(tickers)
+        if data is None or len(data) == 0:
+            return result
 
-# ================= SAFE BENCHMARK =================
+        # Multi ticker
+        if isinstance(data.columns, pd.MultiIndex):
+            for t in batch:
+                if t in data.columns.get_level_values(0):
+                    df = data[t].dropna()
+                    if not df.empty and {"Close","Volume"}.issubset(df.columns):
+                        result[t] = df
+
+        # Single ticker case
+        else:
+            df = data.dropna()
+            if not df.empty and {"Close","Volume"}.issubset(df.columns):
+                result[batch[0]] = df
+
+    except Exception as e:
+        print("Download error:", e)
+
+    return result
+
+
+def chunked_parallel_download(ticker_list):
+    all_data = {}
+    batches = [ticker_list[i:i+CHUNK_SIZE] for i in range(0, len(ticker_list), CHUNK_SIZE)]
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [executor.submit(download_batch, batch) for batch in batches]
+        for i, future in enumerate(concurrent.futures.as_completed(futures)):
+            batch_data = future.result()
+            all_data.update(batch_data)
+            print(f"Downloaded batch {i+1}/{len(batches)}")
+
+    return all_data
+
+
+prices_data = chunked_parallel_download(tickers)
+print("Successfully downloaded:", len(prices_data))
+
+# ================= BENCHMARK =================
 try:
     benchmark = yf.download("SPY", period=LOOKBACK, auto_adjust=True, progress=False)["Close"]
     benchmark_ret = benchmark.pct_change().dropna()
@@ -88,49 +116,44 @@ except:
 
 # ================= OPPORTUNITY ENGINE =================
 data = []
-failed_tickers = []
 
-for ticker in tickers:
-    if ticker not in prices_data:
-        failed_tickers.append(ticker)
-        continue
-    df_t = prices_data[ticker]
-    if df_t.empty or len(df_t) < 150:
-        failed_tickers.append(ticker)
+for ticker, df_t in prices_data.items():
+
+    if len(df_t) < 252:
         continue
 
     try:
         close = df_t["Close"]
         volume = df_t["Volume"]
-        returns = close.pct_change().dropna()
+
+        if close.iloc[-1] < MIN_PRICE:
+            continue
+
         avg_dollar_vol = (close * volume).mean()
         if avg_dollar_vol < MIN_LIQUIDITY:
             continue
 
-        # Trend & breakout
+        returns = close.pct_change().dropna()
+
         ma50 = close.rolling(50).mean().iloc[-1]
         ma200 = close.rolling(200).mean().iloc[-1]
         trend = ma50 > ma200
+
         high_52w = close.rolling(252).max().iloc[-1]
         breakout = close.iloc[-1] > high_52w * 0.95
         pullback = trend and close.iloc[-1] < ma50
 
-        # Momentum
         mom6 = close.pct_change(126).iloc[-1]
         mom12 = close.pct_change(252).iloc[-1]
 
-        # Relative Strength
-        rel = 0
-        if not benchmark_ret.empty:
-            rel = returns.mean() - benchmark_ret.mean()
-
-        # Risk
+        rel = returns.mean() - benchmark_ret.mean() if not benchmark_ret.empty else 0
         vol = returns.std()
 
-        # Score
         score = mom6*0.4 + mom12*0.3 + rel*0.2 - vol*0.1
 
-        # Signal
+        if np.isnan(score):
+            continue
+
         if trend and breakout and rel > 0:
             signal = "STRONG BUY"
         elif trend and pullback:
@@ -143,98 +166,95 @@ for ticker in tickers:
         data.append({
             "Ticker": ticker,
             "Signal": signal,
-            "Momentum6M": float(mom6),
-            "Momentum12M": float(mom12),
-            "RelStrength": float(rel),
-            "Volatility": float(vol),
+            "Momentum6M": round(mom6,4),
+            "Momentum12M": round(mom12,4),
+            "RelStrength": round(rel,4),
+            "Volatility": round(vol,4),
             "Liquidity": int(avg_dollar_vol),
-            "Score": float(score)
+            "Score": round(score,4)
         })
+
     except:
-        failed_tickers.append(ticker)
         continue
 
+
 df = pd.DataFrame(data)
-if failed_tickers:
-    print(f"⚠ Skipped/failed tickers: {len(failed_tickers)}")
 
 if df.empty:
-    print("No qualifying stocks found, dashboard will be empty.")
-else:
-    df["Score"] = pd.to_numeric(df["Score"], errors="coerce")
-    df = df.dropna(subset=["Score"]).sort_values("Score", ascending=False).reset_index(drop=True)
+    print("No qualifying stocks found.")
+    exit()
 
-    # ================= ADD LINKS =================
-    def make_links(t):
-        finviz = f"https://finviz.com/quote.ashx?t={t}"
-        forecast = f"https://stockanalysis.com/stocks/{t.lower()}/forecast/"
-        return f'<a href="{finviz}" target="_blank">{t}</a>', f'<a href="{forecast}" target="_blank">Forecast</a>'
+df = df.sort_values("Score", ascending=False).reset_index(drop=True)
 
-    df["Finviz"], df["Forecast"] = zip(*df["Ticker"].apply(make_links))
-
-    # ================= SUMMARY =================
-    strong_buys = df[df["Signal"].str.contains("STRONG")]
-    pullbacks = df[df["Signal"].str.contains("PULLBACK")]
-    avoids = df[df["Signal"].str.contains("AVOID")]
-
-    # ================= VISUAL MAP =================
-    fig = px.scatter(
-        df.head(150),
-        x="Momentum6M",
-        y="RelStrength",
-        color="Signal",
-        hover_data=["Momentum6M","Momentum12M","RelStrength","Volatility","Score"],
-        hover_name="Ticker",
-        size="Liquidity",
-        title="Market Opportunity Map"
+# ================= LINKS =================
+def make_links(t):
+    return (
+        f'<a href="https://finviz.com/quote.ashx?t={t}" target="_blank">{t}</a>',
+        f'<a href="https://stockanalysis.com/stocks/{t.lower()}/forecast/" target="_blank">Forecast</a>'
     )
-    plot_html = fig.to_html(full_html=False)
 
-    # ================= DASHBOARD =================
-    html = f"""
-    <html>
-    <head>
-    <title>Stock Market Opportunity Dashboard</title>
-    <style>
-    body {{font-family:Arial;background:#0f172a;color:white;}}
-    h1 {{color:#38bdf8;}}
-    h2 {{color:#facc15;}}
-    table {{border-collapse:collapse;width:100%;}}
-    th,td {{padding:8px;border:1px solid #334155;text-align:center;}}
-    th {{background:#1e293b;}}
-    tr:nth-child(even){{background:#1e293b;}}
-    a {{color:#38bdf8;text-decoration:none;}}
-    .STRONG {{color:#22c55e;font-weight:bold;}}
-    .PULLBACK {{color:#facc15;font-weight:bold;}}
-    .AVOID {{color:#ef4444;font-weight:bold;}}
-    .WATCH {{color:#fcd34d;font-weight:bold;}}
-    </style>
-    </head>
-    <body>
+df["Finviz"], df["Forecast"] = zip(*df["Ticker"].apply(make_links))
 
-    <h1>📊 Stock Market Opportunity Dashboard</h1>
-    <p>Date: {datetime.datetime.now()}</p>
+strong_buys = df[df["Signal"]=="STRONG BUY"]
+pullbacks = df[df["Signal"]=="BUY PULLBACK"]
+avoids = df[df["Signal"]=="AVOID"]
 
-    <h2>🔥 Strong Buy Opportunities ({len(strong_buys)})</h2>
-    {strong_buys.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+# ================= VISUAL =================
+fig = px.scatter(
+    df.head(150),
+    x="Momentum6M",
+    y="RelStrength",
+    color="Signal",
+    size="Liquidity",
+    hover_name="Ticker",
+    title="Market Opportunity Map"
+)
 
-    <h2>📉 Buy the Pullback ({len(pullbacks)})</h2>
-    {pullbacks.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+plot_html = fig.to_html(full_html=False)
 
-    <h2>⚠ Avoid List ({len(avoids)})</h2>
-    {avoids.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+# ================= DASHBOARD =================
+html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Professional Quant Scanner</title>
+<style>
+body {{font-family:Arial;background:#0f172a;color:white;padding:30px;}}
+h1 {{color:#38bdf8;}}
+h2 {{color:#facc15;margin-top:40px;}}
+table {{border-collapse:collapse;width:100%;}}
+th,td {{padding:6px;border:1px solid #334155;text-align:center;}}
+th {{background:#1e293b;}}
+tr:nth-child(even){{background:#1e293b;}}
+a {{color:#38bdf8;text-decoration:none;}}
+</style>
+</head>
+<body>
 
-    <h2>📈 Market Opportunity Map</h2>
-    {plot_html}
+<h1>📊 Professional Quant Opportunity Scanner</h1>
+<p>{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
 
-    <h2>🏆 Top 30 Ranked Overall</h2>
-    {df.head(30)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+<h2>🔥 Strong Buy ({len(strong_buys)})</h2>
+{strong_buys.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 
-    </body>
-    </html>
-    """
+<h2>📉 Pullbacks ({len(pullbacks)})</h2>
+{pullbacks.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 
-    with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
-        f.write(html)
+<h2>⚠ Avoid ({len(avoids)})</h2>
+{avoids.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 
-    print("✅ Opportunity Dashboard Created:", OUTPUT_HTML)
+<h2>📈 Market Map</h2>
+{plot_html}
+
+<hh2>🏆 Top 30 Overall</h2>
+{df.head(30)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+
+</body>
+</html>
+"""
+
+with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
+    f.write(html)
+
+print("✅ Dashboard Created:", OUTPUT_HTML)
