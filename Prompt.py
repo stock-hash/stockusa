@@ -72,6 +72,7 @@ except:
     benchmark_ret = pd.Series(dtype=float)
 
 data = []
+failed_tickers = []
 
 # ==========================================
 # 3️⃣ OPPORTUNITY ENGINE (ROBUST)
@@ -81,20 +82,19 @@ for ticker in valid_tickers:
         # Handle multi-index
         if isinstance(prices.columns, pd.MultiIndex):
             if ticker not in prices.columns.get_level_values(0):
+                failed_tickers.append(ticker)
                 continue
             df_t = prices[ticker].dropna()
         else:
             df_t = prices.dropna()
 
-        if df_t.empty or len(df_t) < 200:
+        if df_t.empty or len(df_t) < 150:
+            failed_tickers.append(ticker)
             continue
 
         close = df_t["Close"]
         volume = df_t["Volume"]
         returns = close.pct_change().dropna()
-
-        if len(returns) < 150:
-            continue
 
         avg_dollar_vol = (close * volume).mean()
         if avg_dollar_vol < MIN_LIQUIDITY:
@@ -121,12 +121,7 @@ for ticker in valid_tickers:
         vol = returns.std()
 
         # Score
-        score = (
-            mom6 * 0.4 +
-            mom12 * 0.3 +
-            rel * 0.2 -
-            vol * 0.1
-        )
+        score = mom6 * 0.4 + mom12 * 0.3 + rel * 0.2 - vol * 0.1
 
         # Signal
         if trend and breakout and rel > 0:
@@ -149,19 +144,21 @@ for ticker in valid_tickers:
             "Score": float(score)
         })
 
-    except:
+    except Exception:
+        failed_tickers.append(ticker)
         continue
 
 df = pd.DataFrame(data)
 
-if df.empty:
-    print("No qualifying stocks found")
-    exit()
+if failed_tickers:
+    print("⚠ Skipped / failed tickers:", failed_tickers)
 
-# Force Score numeric & drop invalid
-df["Score"] = pd.to_numeric(df["Score"], errors="coerce")
-df = df.dropna(subset=["Score"])
-df = df.sort_values("Score", ascending=False).reset_index(drop=True)
+if df.empty:
+    print("No qualifying stocks found, dashboard will be empty.")
+else:
+    df["Score"] = pd.to_numeric(df["Score"], errors="coerce")
+    df = df.dropna(subset=["Score"])
+    df = df.sort_values("Score", ascending=False).reset_index(drop=True)
 
 # ==========================================
 # 4️⃣ ADD EXTERNAL LINKS
