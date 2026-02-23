@@ -9,10 +9,8 @@ import plotly.express as px
 # ==========================================
 # SETTINGS
 # ==========================================
-
 OUTPUT_FOLDER = "docs"
 OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "StockMarket_Opportunity_Dashboard.html")
-
 LOOKBACK = "1y"
 MIN_LIQUIDITY = 20_000_000
 
@@ -21,7 +19,6 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 # ==========================================
 # CLEAN OLD FILE + CACHE
 # ==========================================
-
 if os.path.exists(OUTPUT_HTML):
     os.remove(OUTPUT_HTML)
 
@@ -32,11 +29,7 @@ if os.path.exists(cache_dir):
 # ==========================================
 # 1️⃣ UNIVERSE
 # ==========================================
-
-sp500 = pd.read_csv(
-    "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv"
-)
-
+sp500 = pd.read_csv("https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv")
 sp500_tickers = sp500["Symbol"].str.replace(".", "-", regex=False).tolist()
 
 extra_assets = [
@@ -53,11 +46,9 @@ print("Universe Size:", len(tickers))
 # ==========================================
 # 2️⃣ DOWNLOAD DATA SAFELY
 # ==========================================
-
 prices = yf.download(
     tickers,
     period=LOOKBACK,
-    group_by="ticker",
     auto_adjust=True,
     threads=True,
     progress=False
@@ -67,7 +58,13 @@ if prices.empty:
     print("Download failed")
     exit()
 
-# Safe SPY benchmark
+# Determine valid tickers from actual download (handles delisted)
+if isinstance(prices.columns, pd.MultiIndex):
+    valid_tickers = prices.columns.get_level_values(0).unique().tolist()
+else:
+    valid_tickers = tickers
+
+# Safe benchmark
 try:
     benchmark = yf.download("SPY", period=LOOKBACK, auto_adjust=True, progress=False)["Close"]
     benchmark_ret = benchmark.pct_change().dropna()
@@ -79,20 +76,21 @@ data = []
 # ==========================================
 # 3️⃣ OPPORTUNITY ENGINE (ROBUST)
 # ==========================================
-
-for ticker in tickers:
-
+for ticker in valid_tickers:
     try:
-        if ticker not in prices:
+        # Handle multi-index
+        if isinstance(prices.columns, pd.MultiIndex):
+            if ticker not in prices.columns.get_level_values(0):
+                continue
+            df_t = prices[ticker].dropna()
+        else:
+            df_t = prices.dropna()
+
+        if df_t.empty or len(df_t) < 200:
             continue
 
-        df = prices[ticker].dropna()
-
-        if df.empty or len(df) < 200:
-            continue
-
-        close = df["Close"]
-        volume = df["Volume"]
+        close = df_t["Close"]
+        volume = df_t["Volume"]
         returns = close.pct_change().dropna()
 
         if len(returns) < 150:
@@ -102,16 +100,12 @@ for ticker in tickers:
         if avg_dollar_vol < MIN_LIQUIDITY:
             continue
 
-        # Trend
+        # Trend & breakout
         ma50 = close.rolling(50).mean().iloc[-1]
         ma200 = close.rolling(200).mean().iloc[-1]
         trend = ma50 > ma200
-
-        # Breakout
         high_52w = close.rolling(252).max().iloc[-1]
         breakout = close.iloc[-1] > high_52w * 0.95
-
-        # Pullback
         pullback = trend and close.iloc[-1] < ma50
 
         # Momentum
@@ -126,6 +120,7 @@ for ticker in tickers:
         # Risk
         vol = returns.std()
 
+        # Score
         score = (
             mom6 * 0.4 +
             mom12 * 0.3 +
@@ -146,13 +141,12 @@ for ticker in tickers:
         data.append({
             "Ticker": ticker,
             "Signal": signal,
-            "Trend": trend,
-            "Momentum6M": round(mom6, 3),
-            "Momentum12M": round(mom12, 3),
-            "RelStrength": round(rel, 4),
-            "Volatility": round(vol, 4),
+            "Momentum6M": float(mom6),
+            "Momentum12M": float(mom12),
+            "RelStrength": float(rel),
+            "Volatility": float(vol),
             "Liquidity": int(avg_dollar_vol),
-            "Score": round(score, 4)
+            "Score": float(score)
         })
 
     except:
@@ -164,12 +158,14 @@ if df.empty:
     print("No qualifying stocks found")
     exit()
 
-df = df.sort_values(by="Score", ascending=False)
+# Force Score numeric & drop invalid
+df["Score"] = pd.to_numeric(df["Score"], errors="coerce")
+df = df.dropna(subset=["Score"])
+df = df.sort_values("Score", ascending=False).reset_index(drop=True)
 
 # ==========================================
-# ADD EXTERNAL LINKS
+# 4️⃣ ADD EXTERNAL LINKS
 # ==========================================
-
 def make_links(t):
     finviz = f"https://finviz.com/quote.ashx?t={t}"
     forecast = f"https://stockanalysis.com/stocks/{t.lower()}/forecast/"
@@ -178,17 +174,15 @@ def make_links(t):
 df["Finviz"], df["Forecast"] = zip(*df["Ticker"].apply(make_links))
 
 # ==========================================
-# SUMMARY
+# 5️⃣ SUMMARY
 # ==========================================
-
 strong_buys = df[df["Signal"].str.contains("STRONG")]
 pullbacks = df[df["Signal"].str.contains("PULLBACK")]
 avoids = df[df["Signal"].str.contains("AVOID")]
 
 # ==========================================
-# VISUAL MAP
+# 6️⃣ VISUAL MAP
 # ==========================================
-
 fig = px.scatter(
     df.head(150),
     x="Momentum6M",
@@ -198,13 +192,11 @@ fig = px.scatter(
     size="Liquidity",
     title="Market Opportunity Map"
 )
-
 plot_html = fig.to_html(full_html=False)
 
 # ==========================================
-# DASHBOARD
+# 7️⃣ DASHBOARD OUTPUT
 # ==========================================
-
 html = f"""
 <html>
 <head>
