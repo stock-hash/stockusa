@@ -2,207 +2,218 @@ import os
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from scipy.stats import zscore
 import datetime
-from jinja2 import Template
 import plotly.express as px
 
-# ==============================
+# ==========================================
 # SETTINGS
-# ==============================
-
-MIN_MARKET_CAP = 10_000_000_000
+# ==========================================
 
 OUTPUT_FOLDER = "docs"
 OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "MultiUniverse_Institutional_Dashboard.html")
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# ==============================
-# 1️⃣ UNIVERSE BUILDING
-# ==============================
+LOOKBACK = "1y"
+MIN_LIQUIDITY = 20_000_000  # Avg Dollar Volume Filter
 
-# S&P 500 Constituents
+# ==========================================
+# 1️⃣ UNIVERSE BUILDING (ROBUST)
+# ==========================================
+
 sp500 = pd.read_csv(
     "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv"
 )
 sp500_tickers = sp500["Symbol"].str.replace(".", "-", regex=False).tolist()
 
-# Nasdaq 100 (Top 100 Nasdaq Listings)
 nasdaq100 = pd.read_csv(
     "https://raw.githubusercontent.com/datasets/nasdaq-listings/master/data/nasdaq-listed-symbols.csv"
 )
 nasdaq_tickers = nasdaq100["Symbol"].tolist()[:100]
 
-# Major ETFs
-etf_tickers = [
+major_etfs = [
     "SPY","QQQ","VTI","IWM","DIA",
     "XLF","XLK","XLE","XLV","XLI",
     "TLT","GLD","VNQ","ARKK"
 ]
 
-tickers = list(set(sp500_tickers + nasdaq_tickers + etf_tickers))
+leveraged_etfs = [
+    "TQQQ","SQQQ","SOXL","SOXS",
+    "SPXL","SPXS","UPRO","SDOW",
+    "LABU","LABD","FNGU","FNGD"
+]
 
-print(f"Total Universe Size: {len(tickers)}")
+crypto_etfs = [
+    "IBIT","FBTC","ARKB","BITO",
+    "ETHA","ETHE"
+]
 
-# ==============================
-# 2️⃣ DATA DOWNLOAD
-# ==============================
+crypto_spot = [
+    "BTC-USD","ETH-USD","SOL-USD","XRP-USD"
+]
 
-benchmark = yf.Ticker("SPY").history(period="1y")["Close"].pct_change()
+mega_caps = [
+    "AAPL","MSFT","NVDA","AMZN","GOOGL",
+    "META","TSLA","AVGO","AMD","JPM"
+]
+
+tickers = list(set(
+    sp500_tickers +
+    nasdaq_tickers +
+    major_etfs +
+    leveraged_etfs +
+    crypto_etfs +
+    crypto_spot +
+    mega_caps
+))
+
+print("Total Universe Size:", len(tickers))
+
+# ==========================================
+# 2️⃣ BULK DATA DOWNLOAD (STABLE)
+# ==========================================
+
+prices = yf.download(
+    tickers,
+    period=LOOKBACK,
+    group_by="ticker",
+    auto_adjust=True,
+    threads=True,
+    progress=False
+)
+
+if prices.empty:
+    print("Download failed.")
+    exit()
 
 data = []
 
+# ==========================================
+# 3️⃣ FACTOR CALCULATION (PRICE-BASED)
+# ==========================================
+
 for ticker in tickers:
     try:
-        stock = yf.Ticker(ticker)
-        info = stock.info
+        df = prices[ticker].dropna()
 
-        if info.get("marketCap", 0) < MIN_MARKET_CAP:
+        if df.empty or len(df) < 200:
             continue
 
-        hist = stock.history(period="1y")
-        if hist.empty:
-            continue
+        close = df["Close"]
+        volume = df["Volume"]
 
-        returns = hist["Close"].pct_change().dropna()
+        returns = close.pct_change().dropna()
 
         if len(returns) < 200:
             continue
 
-        ret6 = returns[-126:].mean() / returns[-126:].std()
-        ret12 = returns.mean() / returns.std()
-        rel_strength = returns.mean() - benchmark.mean()
+        # Liquidity filter
+        avg_dollar_vol = (close * volume).mean()
+        if avg_dollar_vol < MIN_LIQUIDITY:
+            continue
 
-        ma50 = hist["Close"].rolling(50).mean().iloc[-1]
-        ma200 = hist["Close"].rolling(200).mean().iloc[-1]
+        # Momentum
+        mom_6m = close.pct_change(126).iloc[-1]
+        mom_12m = close.pct_change(252).iloc[-1]
+
+        # Volatility
+        vol = returns.std()
+
+        # Trend
+        ma50 = close.rolling(50).mean().iloc[-1]
+        ma200 = close.rolling(200).mean().iloc[-1]
+        trend = 1 if ma50 > ma200 else 0
+
+        # Risk-adjusted return
+        sharpe = returns.mean() / returns.std()
 
         data.append({
             "Ticker": ticker,
-            "Sector": info.get("sector","ETF"),
-            "ForwardPE": info.get("forwardPE"),
-            "PEG": info.get("pegRatio"),
-            "ROE": info.get("returnOnEquity"),
-            "DebtEquity": info.get("debtToEquity"),
-            "RevenueGrowth": info.get("revenueGrowth"),
-            "EarningsGrowth": info.get("earningsGrowth"),
-            "Momentum6M": ret6,
-            "Momentum12M": ret12,
-            "RelStrength": rel_strength,
-            "Trend": 1 if ma50 > ma200 else 0,
-            "Volatility": returns.std()
+            "Momentum6M": mom_6m,
+            "Momentum12M": mom_12m,
+            "Volatility": vol,
+            "Trend": trend,
+            "Sharpe": sharpe,
+            "Liquidity": avg_dollar_vol
         })
 
     except:
         continue
 
-df = pd.DataFrame(data).dropna()
+df = pd.DataFrame(data)
 
 if df.empty:
-    print("No qualifying securities found.")
+    print("No qualifying securities after filtering.")
     exit()
 
-# ==============================
-# 3️⃣ SECTOR NEUTRAL Z-SCORE
-# ==============================
+# ==========================================
+# 4️⃣ FACTOR ENGINE (INSTITUTIONAL STYLE)
+# ==========================================
 
-factor_cols = [
-    "ForwardPE","PEG","ROE","DebtEquity",
-    "RevenueGrowth","EarningsGrowth",
-    "Momentum6M","Momentum12M",
-    "RelStrength","Volatility"
-]
+for col in ["Momentum6M","Momentum12M","Volatility","Sharpe"]:
+    df[col+"_z"] = (df[col] - df[col].mean()) / df[col].std()
 
-for col in factor_cols:
-    df[col+"_z"] = df.groupby("Sector")[col].transform(
-        lambda x: zscore(x, nan_policy="omit")
-    )
-
-# ==============================
-# 4️⃣ FACTOR MODEL
-# ==============================
-
-df["Value"] = -df["ForwardPE_z"] - df["PEG_z"]
-df["Quality"] = df["ROE_z"] - df["DebtEquity_z"] + df["RevenueGrowth_z"]
-df["Momentum"] = df["Momentum6M_z"] + df["Momentum12M_z"] + df["RelStrength_z"] + df["Trend"]
+df["MomentumScore"] = df["Momentum6M_z"] + df["Momentum12M_z"]
 df["LowRisk"] = -df["Volatility_z"]
+df["Quality"] = df["Sharpe_z"]
 
 df["TotalScore"] = (
-    df["Value"] * 0.30 +
-    df["Quality"] * 0.25 +
-    df["Momentum"] * 0.20 +
-    df["LowRisk"] * 0.10 +
-    df["EarningsGrowth_z"] * 0.15
+    df["MomentumScore"] * 0.50 +
+    df["Quality"] * 0.30 +
+    df["LowRisk"] * 0.20 +
+    df["Trend"] * 0.10
 )
 
-# ==============================
-# 5️⃣ CYCLIC TRAP FILTER
-# ==============================
-
-df["CyclicRisk"] = np.where(
-    (df["ForwardPE"] > 25) &
-    (df["EarningsGrowth"] < 0),
-    "⚠ Risk",
-    "OK"
-)
-
-df = df[df["CyclicRisk"] == "OK"]
 df = df.sort_values("TotalScore", ascending=False)
 
-# ==============================
-# 6️⃣ VISUALIZATION
-# ==============================
+# ==========================================
+# 5️⃣ VISUALIZATION
+# ==========================================
 
 fig = px.scatter(
     df.head(150),
-    x="Value",
+    x="MomentumScore",
     y="Quality",
-    size="Momentum",
+    size="Liquidity",
     hover_name="Ticker",
-    title="Multi-Universe Institutional Factor Map"
+    title="Institutional Multi-Asset Momentum Map"
 )
 
 plot_html = fig.to_html(full_html=False)
 
-# ==============================
-# 7️⃣ DASHBOARD GENERATION
-# ==============================
+# ==========================================
+# 6️⃣ DASHBOARD OUTPUT
+# ==========================================
 
-template = Template("""
+html = f"""
 <html>
 <head>
-<title>Multi-Universe Institutional Dashboard</title>
+<title>Institutional Multi-Universe Dashboard</title>
 <style>
-body {font-family: Arial; background:#0f172a; color:white;}
-h1 {color:#38bdf8;}
-table {border-collapse: collapse; width:100%;}
-th, td {padding:8px; border:1px solid #334155;}
-th {background:#1e293b;}
-tr:nth-child(even){background:#1e293b;}
+body {{font-family: Arial; background:#0f172a; color:white;}}
+h1 {{color:#38bdf8;}}
+table {{border-collapse: collapse; width:100%;}}
+th, td {{padding:8px; border:1px solid #334155;}}
+th {{background:#1e293b;}}
+tr:nth-child(even){{background:#1e293b;}}
 </style>
 </head>
 <body>
 
-<h1>Institutional Multi-Universe VQM Model</h1>
-<p>Date: {{date}}</p>
+<h1>Institutional Multi-Asset Quant Model</h1>
+<p>Date: {datetime.datetime.now()}</p>
 
-<h2>Top 30 Ranked Securities</h2>
-{{table}}
+<h2>Top 30 Ranked Assets</h2>
+{df.head(30).to_html(index=False)}
 
 <h2>Factor Map</h2>
-{{plot}}
+{plot_html}
 
 </body>
 </html>
-""")
-
-html_out = template.render(
-    date=datetime.datetime.now(),
-    table=df.head(30).to_html(index=False),
-    plot=plot_html
-)
+"""
 
 with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
-    f.write(html_out)
+    f.write(html)
 
 print("Dashboard Created:", OUTPUT_HTML)
