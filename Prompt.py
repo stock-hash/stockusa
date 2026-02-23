@@ -6,13 +6,14 @@ import numpy as np
 import datetime
 import plotly.express as px
 from time import sleep
+import re
 
 # ================= SETTINGS =================
 OUTPUT_FOLDER = "docs"
 OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "StockMarket_Opportunity_Dashboard.html")
 LOOKBACK = "1y"
 MIN_LIQUIDITY = 20_000_000
-CHUNK_SIZE = 200  # for chunked downloads
+CHUNK_SIZE = 200  # chunk size for large downloads
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
@@ -45,28 +46,32 @@ extra_assets = [
 tickers = list(set(nasdaq_tickers + nyse_tickers + amex_tickers + extra_assets))
 print("Full Market Universe Size:", len(tickers))
 
+# ================= SANITIZE TICKERS =================
+def sanitize_ticker(t):
+    t = t.upper().strip()
+    # Remove invalid Yahoo characters
+    t = re.sub(r'[^A-Z0-9\-\.]', '', t)
+    return t
+
+tickers = [sanitize_ticker(t) for t in tickers if sanitize_ticker(t)]
+print("Sanitized tickers count:", len(tickers))
+
 # ================= CHUNKED DOWNLOAD =================
 def chunked_download(ticker_list, period="1y", chunk_size=CHUNK_SIZE):
     combined = {}
     for i in range(0, len(ticker_list), chunk_size):
         batch = ticker_list[i:i+chunk_size]
-        print(f"Downloading chunk {i}–{i+len(batch)}")
+        print(f"Downloading chunk {i}-{i+len(batch)}")
         try:
-            part = yf.download(
-                batch,
-                period=period,
-                auto_adjust=True,
-                threads=True,
-                progress=False
-            )
+            part = yf.download(batch, period=period, auto_adjust=True, threads=True, progress=False)
             if isinstance(part, pd.DataFrame) and isinstance(part.columns, pd.MultiIndex):
                 for t in batch:
                     if t in part.columns.get_level_values(0):
-                        combined[t] = part[t]
+                        combined[t] = part[t].dropna()
             elif isinstance(part, pd.DataFrame):
                 for t in batch:
                     if t in part.columns:
-                        combined[t] = part
+                        combined[t] = part.dropna()
         except Exception as e:
             print("Chunk error:", e)
         sleep(1)
@@ -86,15 +91,15 @@ data = []
 failed_tickers = []
 
 for ticker in tickers:
-    try:
-        if ticker not in prices_data:
-            failed_tickers.append(ticker)
-            continue
-        df_t = prices_data[ticker].dropna()
-        if df_t.empty or len(df_t) < 150:
-            failed_tickers.append(ticker)
-            continue
+    if ticker not in prices_data:
+        failed_tickers.append(ticker)
+        continue
+    df_t = prices_data[ticker]
+    if df_t.empty or len(df_t) < 150:
+        failed_tickers.append(ticker)
+        continue
 
+    try:
         close = df_t["Close"]
         volume = df_t["Volume"]
         returns = close.pct_change().dropna()
@@ -127,13 +132,13 @@ for ticker in tickers:
 
         # Signal
         if trend and breakout and rel > 0:
-            signal = "🚀 STRONG BUY"
+            signal = "STRONG BUY"
         elif trend and pullback:
-            signal = "🟢 BUY PULLBACK"
+            signal = "BUY PULLBACK"
         elif not trend and rel < 0:
-            signal = "🔴 AVOID"
+            signal = "AVOID"
         else:
-            signal = "🟡 WATCH"
+            signal = "WATCH"
 
         data.append({
             "Ticker": ticker,
@@ -151,7 +156,7 @@ for ticker in tickers:
 
 df = pd.DataFrame(data)
 if failed_tickers:
-    print("⚠ Skipped / failed tickers:", failed_tickers)
+    print(f"⚠ Skipped/failed tickers: {len(failed_tickers)}")
 
 if df.empty:
     print("No qualifying stocks found, dashboard will be empty.")
