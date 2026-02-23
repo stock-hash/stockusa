@@ -1,3 +1,4 @@
+import os
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -6,20 +7,28 @@ import datetime
 from jinja2 import Template
 import plotly.express as px
 
+# ==============================
+# SETTINGS
+# ==============================
+
 MIN_MARKET_CAP = 10_000_000_000
-OUTPUT_HTML = "MultiUniverse_Institutional_Dashboard.html"
 
-# -----------------------------------
+OUTPUT_FOLDER = "docs"
+OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "MultiUniverse_Institutional_Dashboard.html")
+
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# ==============================
 # 1️⃣ UNIVERSE BUILDING
-# -----------------------------------
+# ==============================
 
-# S&P 500
+# S&P 500 Constituents
 sp500 = pd.read_csv(
     "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv"
 )
 sp500_tickers = sp500["Symbol"].str.replace(".", "-", regex=False).tolist()
 
-# Nasdaq 100
+# Nasdaq 100 (Top 100 Nasdaq Listings)
 nasdaq100 = pd.read_csv(
     "https://raw.githubusercontent.com/datasets/nasdaq-listings/master/data/nasdaq-listed-symbols.csv"
 )
@@ -32,14 +41,13 @@ etf_tickers = [
     "TLT","GLD","VNQ","ARKK"
 ]
 
-# Combine
 tickers = list(set(sp500_tickers + nasdaq_tickers + etf_tickers))
 
 print(f"Total Universe Size: {len(tickers)}")
 
-# -----------------------------------
+# ==============================
 # 2️⃣ DATA DOWNLOAD
-# -----------------------------------
+# ==============================
 
 benchmark = yf.Ticker("SPY").history(period="1y")["Close"].pct_change()
 
@@ -54,6 +62,9 @@ for ticker in tickers:
             continue
 
         hist = stock.history(period="1y")
+        if hist.empty:
+            continue
+
         returns = hist["Close"].pct_change().dropna()
 
         if len(returns) < 200:
@@ -87,23 +98,29 @@ for ticker in tickers:
 
 df = pd.DataFrame(data).dropna()
 
-# -----------------------------------
-# 3️⃣ SECTOR NEUTRAL Z-SCORE
-# -----------------------------------
+if df.empty:
+    print("No qualifying securities found.")
+    exit()
 
-for col in [
+# ==============================
+# 3️⃣ SECTOR NEUTRAL Z-SCORE
+# ==============================
+
+factor_cols = [
     "ForwardPE","PEG","ROE","DebtEquity",
     "RevenueGrowth","EarningsGrowth",
     "Momentum6M","Momentum12M",
     "RelStrength","Volatility"
-]:
+]
+
+for col in factor_cols:
     df[col+"_z"] = df.groupby("Sector")[col].transform(
         lambda x: zscore(x, nan_policy="omit")
     )
 
-# -----------------------------------
+# ==============================
 # 4️⃣ FACTOR MODEL
-# -----------------------------------
+# ==============================
 
 df["Value"] = -df["ForwardPE_z"] - df["PEG_z"]
 df["Quality"] = df["ROE_z"] - df["DebtEquity_z"] + df["RevenueGrowth_z"]
@@ -118,9 +135,9 @@ df["TotalScore"] = (
     df["EarningsGrowth_z"] * 0.15
 )
 
-# -----------------------------------
+# ==============================
 # 5️⃣ CYCLIC TRAP FILTER
-# -----------------------------------
+# ==============================
 
 df["CyclicRisk"] = np.where(
     (df["ForwardPE"] > 25) &
@@ -132,9 +149,9 @@ df["CyclicRisk"] = np.where(
 df = df[df["CyclicRisk"] == "OK"]
 df = df.sort_values("TotalScore", ascending=False)
 
-# -----------------------------------
+# ==============================
 # 6️⃣ VISUALIZATION
-# -----------------------------------
+# ==============================
 
 fig = px.scatter(
     df.head(150),
@@ -147,9 +164,9 @@ fig = px.scatter(
 
 plot_html = fig.to_html(full_html=False)
 
-# -----------------------------------
-# 7️⃣ DASHBOARD
-# -----------------------------------
+# ==============================
+# 7️⃣ DASHBOARD GENERATION
+# ==============================
 
 template = Template("""
 <html>
@@ -185,7 +202,7 @@ html_out = template.render(
     plot=plot_html
 )
 
-with open(OUTPUT_HTML, "w") as f:
+with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
     f.write(html_out)
 
 print("Dashboard Created:", OUTPUT_HTML)
