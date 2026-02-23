@@ -5,22 +5,23 @@ import pandas as pd
 import numpy as np
 import datetime
 import plotly.express as px
-from time import sleep
 import re
 import concurrent.futures
+import time
 
 # ================= SETTINGS =================
 OUTPUT_FOLDER = "docs"
 OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "StockMarket_Opportunity_Dashboard.html")
-LOOKBACK = "2y"  # increased for proper 200MA + 12M momentum
+
+LOOKBACK = "2y"
 MIN_LIQUIDITY = 20_000_000
-CHUNK_SIZE = 150
-MAX_WORKERS = 4
 MIN_PRICE = 5
+CHUNK_SIZE = 100
+MAX_WORKERS = 3
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# ================= CLEAN =================
+# ================= CLEAN PREVIOUS =================
 if os.path.exists(OUTPUT_HTML):
     os.remove(OUTPUT_HTML)
 
@@ -38,64 +39,88 @@ def load_universe():
 
     if "Symbol" in nasdaq.columns:
         tickers += nasdaq["Symbol"].dropna().tolist()
+
     if "ACT Symbol" in nyse.columns:
         tickers += nyse["ACT Symbol"].dropna().tolist()
+
     if "ACT Symbol" in amex.columns:
         tickers += amex["ACT Symbol"].dropna().tolist()
 
     return list(set(tickers))
 
-raw_tickers = load_universe()
-print("Raw Universe:", len(raw_tickers))
 
 # ================= SANITIZE =================
 def sanitize_ticker(t):
     if pd.isna(t) or not isinstance(t, str):
         return None
-    t = t.upper().strip()
-    t = re.sub(r'[^A-Z0-9\-.]', '', t)
-    if len(t) < 1 or len(t) > 6:
+
+    t = t.strip().upper()
+
+    # Remove special securities
+    if any(x in t for x in [".W", ".U", ".R", "^", "/", "="]):
         return None
+
+    # Only allow A-Z and dash
+    if not re.match(r"^[A-Z\-.]+$", t):
+        return None
+
+    # Convert BRK.B → BRK-B for Yahoo
+    t = t.replace(".", "-")
+
+    if len(t) > 6:
+        return None
+
     return t
 
+
+raw_tickers = load_universe()
 tickers = list(set(filter(None, [sanitize_ticker(t) for t in raw_tickers])))
-print("Sanitized Universe:", len(tickers))
+
+print("Final Universe:", len(tickers))
+
 
 # ================= SAFE DOWNLOAD =================
 def download_batch(batch):
     result = {}
-    try:
-        data = yf.download(batch, period=LOOKBACK, auto_adjust=True, progress=False, threads=True)
 
-        if data is None or len(data) == 0:
+    try:
+        data = yf.download(
+            batch,
+            period=LOOKBACK,
+            auto_adjust=True,
+            progress=False,
+            threads=False
+        )
+
+        if data is None or data.empty:
             return result
 
-        # Multi ticker
         if isinstance(data.columns, pd.MultiIndex):
             for t in batch:
                 if t in data.columns.get_level_values(0):
                     df = data[t].dropna()
-                    if not df.empty and {"Close","Volume"}.issubset(df.columns):
+                    if {"Close", "Volume"}.issubset(df.columns):
                         result[t] = df
 
-        # Single ticker case
         else:
             df = data.dropna()
-            if not df.empty and {"Close","Volume"}.issubset(df.columns):
+            if {"Close", "Volume"}.issubset(df.columns):
                 result[batch[0]] = df
 
     except Exception as e:
         print("Download error:", e)
 
+    time.sleep(1)
     return result
 
 
 def chunked_parallel_download(ticker_list):
     all_data = {}
-    batches = [ticker_list[i:i+CHUNK_SIZE] for i in range(0, len(ticker_list), CHUNK_SIZE)]
+    batches = [ticker_list[i:i + CHUNK_SIZE] for i in range(0, len(ticker_list), CHUNK_SIZE)]
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         futures = [executor.submit(download_batch, batch) for batch in batches]
+
         for i, future in enumerate(concurrent.futures.as_completed(futures)):
             batch_data = future.result()
             all_data.update(batch_data)
@@ -107,15 +132,17 @@ def chunked_parallel_download(ticker_list):
 prices_data = chunked_parallel_download(tickers)
 print("Successfully downloaded:", len(prices_data))
 
+
 # ================= BENCHMARK =================
 try:
-    benchmark = yf.download("SPY", period=LOOKBACK, auto_adjust=True, progress=False)["Close"]
-    benchmark_ret = benchmark.pct_change().dropna()
+    spy = yf.download("SPY", period=LOOKBACK, auto_adjust=True, progress=False)
+    benchmark_ret = spy["Close"].pct_change().dropna()
 except:
     benchmark_ret = pd.Series(dtype=float)
 
+
 # ================= OPPORTUNITY ENGINE =================
-data = []
+results = []
 
 for ticker, df_t in prices_data.items():
 
@@ -137,12 +164,8 @@ for ticker, df_t in prices_data.items():
 
         ma50 = close.rolling(50).mean().iloc[-1]
         ma200 = close.rolling(200).mean().iloc[-1]
+
         trend = ma50 > ma200
-
-        high_52w = close.rolling(252).max().iloc[-1]
-        breakout = close.iloc[-1] > high_52w * 0.95
-        pullback = trend and close.iloc[-1] < ma50
-
         mom6 = close.pct_change(126).iloc[-1]
         mom12 = close.pct_change(252).iloc[-1]
 
@@ -154,37 +177,38 @@ for ticker, df_t in prices_data.items():
         if np.isnan(score):
             continue
 
-        if trend and breakout and rel > 0:
+        if trend and mom6 > 0 and rel > 0:
             signal = "STRONG BUY"
-        elif trend and pullback:
+        elif trend and mom6 > 0:
             signal = "BUY PULLBACK"
         elif not trend and rel < 0:
             signal = "AVOID"
         else:
             signal = "WATCH"
 
-        data.append({
+        results.append({
             "Ticker": ticker,
             "Signal": signal,
-            "Momentum6M": round(mom6,4),
-            "Momentum12M": round(mom12,4),
-            "RelStrength": round(rel,4),
-            "Volatility": round(vol,4),
+            "Momentum6M": round(mom6, 4),
+            "Momentum12M": round(mom12, 4),
+            "RelStrength": round(rel, 4),
+            "Volatility": round(vol, 4),
             "Liquidity": int(avg_dollar_vol),
-            "Score": round(score,4)
+            "Score": round(score, 4)
         })
 
     except:
         continue
 
 
-df = pd.DataFrame(data)
+df = pd.DataFrame(results)
 
 if df.empty:
     print("No qualifying stocks found.")
     exit()
 
 df = df.sort_values("Score", ascending=False).reset_index(drop=True)
+
 
 # ================= LINKS =================
 def make_links(t):
@@ -195,13 +219,15 @@ def make_links(t):
 
 df["Finviz"], df["Forecast"] = zip(*df["Ticker"].apply(make_links))
 
-strong_buys = df[df["Signal"]=="STRONG BUY"]
-pullbacks = df[df["Signal"]=="BUY PULLBACK"]
-avoids = df[df["Signal"]=="AVOID"]
+
+strong_buys = df[df["Signal"] == "STRONG BUY"]
+pullbacks = df[df["Signal"] == "BUY PULLBACK"]
+avoids = df[df["Signal"] == "AVOID"]
+
 
 # ================= VISUAL =================
 fig = px.scatter(
-    df.head(150),
+    df.head(200),
     x="Momentum6M",
     y="RelStrength",
     color="Signal",
@@ -212,27 +238,33 @@ fig = px.scatter(
 
 plot_html = fig.to_html(full_html=False)
 
-# ================= DASHBOARD =================
+
+# ================= PROFESSIONAL HTML =================
 html = f"""
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Professional Quant Scanner</title>
+<title>Quant Market Scanner</title>
 <style>
-body {{font-family:Arial;background:#0f172a;color:white;padding:30px;}}
+body {{font-family:Inter,Arial;background:#0b1220;color:#e2e8f0;padding:40px;}}
 h1 {{color:#38bdf8;}}
-h2 {{color:#facc15;margin-top:40px;}}
-table {{border-collapse:collapse;width:100%;}}
-th,td {{padding:6px;border:1px solid #334155;text-align:center;}}
+h2 {{color:#facc15;margin-top:50px;}}
+table {{border-collapse:collapse;width:100%;margin-top:15px;}}
+th,td {{padding:8px;border:1px solid #1e293b;text-align:center;}}
 th {{background:#1e293b;}}
-tr:nth-child(even){{background:#1e293b;}}
-a {{color:#38bdf8;text-decoration:none;}}
+tr:nth-child(even){{background:#111827;}}
+a {{color:#38bdf8;text-decoration:none;font-weight:600;}}
+.badge {{padding:4px 8px;border-radius:6px;font-weight:bold;}}
+.STRONG {{background:#065f46;color:#10b981;}}
+.PULLBACK {{background:#78350f;color:#facc15;}}
+.AVOID {{background:#7f1d1d;color:#ef4444;}}
+.WATCH {{background:#1e293b;color:#94a3b8;}}
 </style>
 </head>
 <body>
 
-<h1>📊 Professional Quant Opportunity Scanner</h1>
+<h1>📊 Institutional Quant Opportunity Scanner</h1>
 <p>{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
 
 <h2>🔥 Strong Buy ({len(strong_buys)})</h2>
@@ -244,10 +276,10 @@ a {{color:#38bdf8;text-decoration:none;}}
 <h2>⚠ Avoid ({len(avoids)})</h2>
 {avoids.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 
-<h2>📈 Market Map</h2>
+<h2>📈 Market Opportunity Map</h2>
 {plot_html}
 
-<hh2>🏆 Top 30 Overall</h2>
+<h2>🏆 Top 30 Overall</h2>
 {df.head(30)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 
 </body>
