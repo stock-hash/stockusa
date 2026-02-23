@@ -3,7 +3,8 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import datetime
-import plotly.express as px
+import plotly.graph_objects as go
+from scipy.optimize import minimize
 
 # ==========================================
 # SETTINGS
@@ -11,184 +12,170 @@ import plotly.express as px
 
 OUTPUT_FOLDER = "docs"
 OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "MultiUniverse_Institutional_Dashboard.html")
-
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-LOOKBACK = "1y"
-MIN_LIQUIDITY = 20_000_000  # Avg Dollar Volume Filter
+LOOKBACK_YEARS = 10
+VOL_TARGET = 0.15
+TOP_N = 20
+BOTTOM_N = 20
 
 # ==========================================
-# 1️⃣ UNIVERSE BUILDING (ROBUST)
+# UNIVERSE
 # ==========================================
 
-sp500 = pd.read_csv(
-    "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv"
-)
-sp500_tickers = sp500["Symbol"].str.replace(".", "-", regex=False).tolist()
-
-nasdaq100 = pd.read_csv(
-    "https://raw.githubusercontent.com/datasets/nasdaq-listings/master/data/nasdaq-listed-symbols.csv"
-)
-nasdaq_tickers = nasdaq100["Symbol"].tolist()[:100]
-
-major_etfs = [
-    "SPY","QQQ","VTI","IWM","DIA",
+major_assets = [
+    "SPY","QQQ","IWM","DIA","VTI",
     "XLF","XLK","XLE","XLV","XLI",
-    "TLT","GLD","VNQ","ARKK"
+    "TQQQ","SOXL","SPXL","UPRO",
+    "IBIT","ETHA","BTC-USD","ETH-USD",
+    "AAPL","MSFT","NVDA","AMZN","META",
+    "GOOGL","TSLA","AVGO","AMD","JPM"
 ]
 
-leveraged_etfs = [
-    "TQQQ","SQQQ","SOXL","SOXS",
-    "SPXL","SPXS","UPRO","SDOW",
-    "LABU","LABD","FNGU","FNGD"
-]
-
-crypto_etfs = [
-    "IBIT","FBTC","ARKB","BITO",
-    "ETHA","ETHE"
-]
-
-crypto_spot = [
-    "BTC-USD","ETH-USD","SOL-USD","XRP-USD"
-]
-
-mega_caps = [
-    "AAPL","MSFT","NVDA","AMZN","GOOGL",
-    "META","TSLA","AVGO","AMD","JPM"
-]
-
-tickers = list(set(
-    sp500_tickers +
-    nasdaq_tickers +
-    major_etfs +
-    leveraged_etfs +
-    crypto_etfs +
-    crypto_spot +
-    mega_caps
-))
-
-print("Total Universe Size:", len(tickers))
+tickers = list(set(major_assets))
+print("Universe Size:", len(tickers))
 
 # ==========================================
-# 2️⃣ BULK DATA DOWNLOAD (STABLE)
+# DOWNLOAD 10 YEARS DATA
 # ==========================================
 
 prices = yf.download(
     tickers,
-    period=LOOKBACK,
-    group_by="ticker",
+    period=f"{LOOKBACK_YEARS}y",
     auto_adjust=True,
     threads=True,
     progress=False
+)["Close"]
+
+prices = prices.dropna(axis=1, how="all").dropna()
+
+returns = prices.pct_change().dropna()
+
+# ==========================================
+# MACRO REGIME FILTER (SPY Trend)
+# ==========================================
+
+spy = prices["SPY"]
+spy_ma200 = spy.rolling(200).mean()
+macro_regime = np.where(spy > spy_ma200, 1, 0)
+
+# ==========================================
+# FACTOR SCORES
+# ==========================================
+
+momentum_12m = prices.pct_change(252)
+volatility = returns.rolling(63).std()
+sharpe = returns.rolling(252).mean() / returns.rolling(252).std()
+
+latest_scores = pd.DataFrame({
+    "Momentum": momentum_12m.iloc[-1],
+    "Volatility": volatility.iloc[-1],
+    "Sharpe": sharpe.iloc[-1]
+}).dropna()
+
+latest_scores["Momentum_z"] = (latest_scores["Momentum"] - latest_scores["Momentum"].mean()) / latest_scores["Momentum"].std()
+latest_scores["Sharpe_z"] = (latest_scores["Sharpe"] - latest_scores["Sharpe"].mean()) / latest_scores["Sharpe"].std()
+latest_scores["LowRisk_z"] = -(latest_scores["Volatility"] - latest_scores["Volatility"].mean()) / latest_scores["Volatility"].std()
+
+latest_scores["TotalScore"] = (
+    latest_scores["Momentum_z"] * 0.5 +
+    latest_scores["Sharpe_z"] * 0.3 +
+    latest_scores["LowRisk_z"] * 0.2
 )
 
-if prices.empty:
-    print("Download failed.")
-    exit()
-
-data = []
+latest_scores = latest_scores.sort_values("TotalScore", ascending=False)
 
 # ==========================================
-# 3️⃣ FACTOR CALCULATION (PRICE-BASED)
+# LONG / SHORT SELECTION
 # ==========================================
 
-for ticker in tickers:
-    try:
-        df = prices[ticker].dropna()
-
-        if df.empty or len(df) < 200:
-            continue
-
-        close = df["Close"]
-        volume = df["Volume"]
-
-        returns = close.pct_change().dropna()
-
-        if len(returns) < 200:
-            continue
-
-        # Liquidity filter
-        avg_dollar_vol = (close * volume).mean()
-        if avg_dollar_vol < MIN_LIQUIDITY:
-            continue
-
-        # Momentum
-        mom_6m = close.pct_change(126).iloc[-1]
-        mom_12m = close.pct_change(252).iloc[-1]
-
-        # Volatility
-        vol = returns.std()
-
-        # Trend
-        ma50 = close.rolling(50).mean().iloc[-1]
-        ma200 = close.rolling(200).mean().iloc[-1]
-        trend = 1 if ma50 > ma200 else 0
-
-        # Risk-adjusted return
-        sharpe = returns.mean() / returns.std()
-
-        data.append({
-            "Ticker": ticker,
-            "Momentum6M": mom_6m,
-            "Momentum12M": mom_12m,
-            "Volatility": vol,
-            "Trend": trend,
-            "Sharpe": sharpe,
-            "Liquidity": avg_dollar_vol
-        })
-
-    except:
-        continue
-
-df = pd.DataFrame(data)
-
-if df.empty:
-    print("No qualifying securities after filtering.")
-    exit()
+long_assets = latest_scores.head(TOP_N).index.tolist()
+short_assets = latest_scores.tail(BOTTOM_N).index.tolist()
 
 # ==========================================
-# 4️⃣ FACTOR ENGINE (INSTITUTIONAL STYLE)
+# PORTFOLIO OPTIMIZER (Sharpe Maximization)
 # ==========================================
 
-for col in ["Momentum6M","Momentum12M","Volatility","Sharpe"]:
-    df[col+"_z"] = (df[col] - df[col].mean()) / df[col].std()
+selected = long_assets
+ret_sel = returns[selected]
 
-df["MomentumScore"] = df["Momentum6M_z"] + df["Momentum12M_z"]
-df["LowRisk"] = -df["Volatility_z"]
-df["Quality"] = df["Sharpe_z"]
+def neg_sharpe(weights):
+    port_ret = np.dot(ret_sel.mean(), weights)
+    port_vol = np.sqrt(np.dot(weights.T, np.dot(ret_sel.cov(), weights)))
+    return -(port_ret / port_vol)
 
-df["TotalScore"] = (
-    df["MomentumScore"] * 0.50 +
-    df["Quality"] * 0.30 +
-    df["LowRisk"] * 0.20 +
-    df["Trend"] * 0.10
-)
+constraints = ({'type': 'eq', 'fun': lambda w: np.sum(w) - 1})
+bounds = tuple((0, 1) for _ in selected)
+init_guess = np.array(len(selected) * [1. / len(selected)])
 
-df = df.sort_values("TotalScore", ascending=False)
+opt = minimize(neg_sharpe, init_guess, bounds=bounds, constraints=constraints)
+weights = opt.x
+
+weights_df = pd.DataFrame({
+    "Ticker": selected,
+    "Weight": weights
+}).sort_values("Weight", ascending=False)
 
 # ==========================================
-# 5️⃣ VISUALIZATION
+# LONG/SHORT RETURNS
 # ==========================================
 
-fig = px.scatter(
-    df.head(150),
-    x="MomentumScore",
-    y="Quality",
-    size="Liquidity",
-    hover_name="Ticker",
-    title="Institutional Multi-Asset Momentum Map"
+long_returns = returns[long_assets].mean(axis=1)
+short_returns = returns[short_assets].mean(axis=1)
+
+strategy_returns = long_returns - short_returns
+
+# Apply Macro Regime Filter
+strategy_returns = strategy_returns * macro_regime[-len(strategy_returns):]
+
+# ==========================================
+# VOLATILITY TARGETING
+# ==========================================
+
+rolling_vol = strategy_returns.rolling(21).std()
+scaling = VOL_TARGET / (rolling_vol * np.sqrt(252))
+strategy_scaled = strategy_returns * scaling.shift(1)
+strategy_scaled = strategy_scaled.dropna()
+
+# ==========================================
+# 10-YEAR BACKTEST METRICS
+# ==========================================
+
+equity_curve = (1 + strategy_scaled).cumprod()
+
+cagr = equity_curve.iloc[-1] ** (252/len(equity_curve)) - 1
+sharpe_ratio = strategy_scaled.mean() / strategy_scaled.std() * np.sqrt(252)
+max_dd = (equity_curve / equity_curve.cummax() - 1).min()
+
+# ==========================================
+# VISUALIZATION
+# ==========================================
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(
+    x=equity_curve.index,
+    y=equity_curve,
+    mode="lines",
+    name="Strategy Equity Curve"
+))
+
+fig.update_layout(
+    template="plotly_dark",
+    title="10-Year Institutional Long/Short Strategy",
+    xaxis_title="Date",
+    yaxis_title="Equity"
 )
 
 plot_html = fig.to_html(full_html=False)
 
 # ==========================================
-# 6️⃣ DASHBOARD OUTPUT
+# DASHBOARD OUTPUT
 # ==========================================
 
 html = f"""
 <html>
 <head>
-<title>Institutional Multi-Universe Dashboard</title>
+<title>Institutional Quant System</title>
 <style>
 body {{font-family: Arial; background:#0f172a; color:white;}}
 h1 {{color:#38bdf8;}}
@@ -200,13 +187,21 @@ tr:nth-child(even){{background:#1e293b;}}
 </head>
 <body>
 
-<h1>Institutional Multi-Asset Quant Model</h1>
+<h1>Institutional Multi-Asset Quant System</h1>
 <p>Date: {datetime.datetime.now()}</p>
 
-<h2>Top 30 Ranked Assets</h2>
-{df.head(30).to_html(index=False)}
+<h2>Performance Metrics</h2>
+<ul>
+<li>CAGR: {round(cagr*100,2)}%</li>
+<li>Sharpe Ratio: {round(sharpe_ratio,2)}</li>
+<li>Max Drawdown: {round(max_dd*100,2)}%</li>
+<li>Macro Regime (1=Risk On): {macro_regime[-1]}</li>
+</ul>
 
-<h2>Factor Map</h2>
+<h2>Optimized Long Portfolio Weights</h2>
+{weights_df.to_html(index=False)}
+
+<h2>Equity Curve</h2>
 {plot_html}
 
 </body>
@@ -216,4 +211,4 @@ tr:nth-child(even){{background:#1e293b;}}
 with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
     f.write(html)
 
-print("Dashboard Created:", OUTPUT_HTML)
+print("Institutional Dashboard Created:", OUTPUT_HTML)
