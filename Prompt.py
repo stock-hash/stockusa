@@ -6,7 +6,6 @@ import numpy as np
 import datetime
 import plotly.express as px
 import re
-import concurrent.futures
 import time
 
 # ================= SETTINGS =================
@@ -16,12 +15,14 @@ OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "StockMarket_Opportunity_Dashboard.htm
 LOOKBACK = "2y"
 MIN_LIQUIDITY = 20_000_000
 MIN_PRICE = 5
-CHUNK_SIZE = 100
-MAX_WORKERS = 3
+
+CHUNK_SIZE = 50
+REQUEST_SLEEP = 2
+MAX_RETRIES = 3
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# ================= CLEAN PREVIOUS =================
+# ================= CLEAN =================
 if os.path.exists(OUTPUT_HTML):
     os.remove(OUTPUT_HTML)
 
@@ -29,7 +30,7 @@ cache_dir = os.path.expanduser("~/.cache/yfinance")
 if os.path.exists(cache_dir):
     shutil.rmtree(cache_dir)
 
-# ================= LOAD FULL US MARKET =================
+# ================= LOAD UNIVERSE =================
 def load_universe():
     nasdaq = pd.read_csv("https://raw.githubusercontent.com/datasets/nasdaq-listings/master/data/nasdaq-listed-symbols.csv")
     nyse = pd.read_csv("https://raw.githubusercontent.com/datasets/nyse-other-listings/master/data/nyse-listed.csv")
@@ -39,15 +40,12 @@ def load_universe():
 
     if "Symbol" in nasdaq.columns:
         tickers += nasdaq["Symbol"].dropna().tolist()
-
     if "ACT Symbol" in nyse.columns:
         tickers += nyse["ACT Symbol"].dropna().tolist()
-
     if "ACT Symbol" in amex.columns:
         tickers += amex["ACT Symbol"].dropna().tolist()
 
     return list(set(tickers))
-
 
 # ================= SANITIZE =================
 def sanitize_ticker(t):
@@ -56,15 +54,12 @@ def sanitize_ticker(t):
 
     t = t.strip().upper()
 
-    # Remove special securities
     if any(x in t for x in [".W", ".U", ".R", "^", "/", "="]):
         return None
 
-    # Only allow A-Z and dash
     if not re.match(r"^[A-Z\-.]+$", t):
         return None
 
-    # Convert BRK.B → BRK-B for Yahoo
     t = t.replace(".", "-")
 
     if len(t) > 6:
@@ -72,66 +67,97 @@ def sanitize_ticker(t):
 
     return t
 
+raw = load_universe()
+tickers = list(set(filter(None, [sanitize_ticker(t) for t in raw])))
 
-raw_tickers = load_universe()
-tickers = list(set(filter(None, [sanitize_ticker(t) for t in raw_tickers])))
+print("Initial Universe:", len(tickers))
 
-print("Final Universe:", len(tickers))
+# ================= LIQUIDITY PREFILTER =================
+print("Running liquidity prefilter...")
 
+def liquidity_filter(tickers):
+    liquid = []
+    batches = [tickers[i:i+50] for i in range(0, len(tickers), 50)]
+
+    for i, batch in enumerate(batches):
+        try:
+            data = yf.download(batch, period="1mo", progress=False, threads=False)
+
+            if isinstance(data.columns, pd.MultiIndex):
+                for t in batch:
+                    if t in data.columns.get_level_values(0):
+                        df = data[t].dropna()
+                        if not df.empty:
+                            avg_dollar = (df["Close"] * df["Volume"]).mean()
+                            if avg_dollar > MIN_LIQUIDITY:
+                                liquid.append(t)
+
+            time.sleep(REQUEST_SLEEP)
+
+        except:
+            time.sleep(REQUEST_SLEEP * 2)
+
+        print(f"Prefilter batch {i+1}/{len(batches)}")
+
+    return liquid
+
+tickers = liquidity_filter(tickers)
+print("Liquid Universe:", len(tickers))
 
 # ================= SAFE DOWNLOAD =================
 def download_batch(batch):
     result = {}
 
-    try:
-        data = yf.download(
-            batch,
-            period=LOOKBACK,
-            auto_adjust=True,
-            progress=False,
-            threads=False
-        )
+    for attempt in range(MAX_RETRIES):
+        try:
+            data = yf.download(
+                batch,
+                period=LOOKBACK,
+                auto_adjust=True,
+                progress=False,
+                threads=False
+            )
 
-        if data is None or data.empty:
+            if data is None or data.empty:
+                return result
+
+            if isinstance(data.columns, pd.MultiIndex):
+                for t in batch:
+                    if t in data.columns.get_level_values(0):
+                        df = data[t].dropna()
+                        if {"Close","Volume"}.issubset(df.columns):
+                            result[t] = df
+            else:
+                df = data.dropna()
+                if {"Close","Volume"}.issubset(df.columns):
+                    result[batch[0]] = df
+
+            time.sleep(REQUEST_SLEEP)
             return result
 
-        if isinstance(data.columns, pd.MultiIndex):
-            for t in batch:
-                if t in data.columns.get_level_values(0):
-                    df = data[t].dropna()
-                    if {"Close", "Volume"}.issubset(df.columns):
-                        result[t] = df
+        except:
+            print("Retrying batch...")
+            time.sleep(REQUEST_SLEEP * 3)
 
-        else:
-            df = data.dropna()
-            if {"Close", "Volume"}.issubset(df.columns):
-                result[batch[0]] = df
-
-    except Exception as e:
-        print("Download error:", e)
-
-    time.sleep(1)
     return result
 
-
-def chunked_parallel_download(ticker_list):
+def sequential_download(tickers):
     all_data = {}
-    batches = [ticker_list[i:i + CHUNK_SIZE] for i in range(0, len(ticker_list), CHUNK_SIZE)]
+    batches = [tickers[i:i+CHUNK_SIZE] for i in range(0, len(tickers), CHUNK_SIZE)]
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = [executor.submit(download_batch, batch) for batch in batches]
-
-        for i, future in enumerate(concurrent.futures.as_completed(futures)):
-            batch_data = future.result()
-            all_data.update(batch_data)
-            print(f"Downloaded batch {i+1}/{len(batches)}")
+    for i, batch in enumerate(batches):
+        batch_data = download_batch(batch)
+        all_data.update(batch_data)
+        print(f"Downloaded batch {i+1}/{len(batches)}")
 
     return all_data
 
-
-prices_data = chunked_parallel_download(tickers)
+prices_data = sequential_download(tickers)
 print("Successfully downloaded:", len(prices_data))
 
+if len(prices_data) == 0:
+    print("Download failed due to rate limiting.")
+    exit()
 
 # ================= BENCHMARK =================
 try:
@@ -139,7 +165,6 @@ try:
     benchmark_ret = spy["Close"].pct_change().dropna()
 except:
     benchmark_ret = pd.Series(dtype=float)
-
 
 # ================= OPPORTUNITY ENGINE =================
 results = []
@@ -149,57 +174,52 @@ for ticker, df_t in prices_data.items():
     if len(df_t) < 252:
         continue
 
-    try:
-        close = df_t["Close"]
-        volume = df_t["Volume"]
+    close = df_t["Close"]
+    volume = df_t["Volume"]
 
-        if close.iloc[-1] < MIN_PRICE:
-            continue
-
-        avg_dollar_vol = (close * volume).mean()
-        if avg_dollar_vol < MIN_LIQUIDITY:
-            continue
-
-        returns = close.pct_change().dropna()
-
-        ma50 = close.rolling(50).mean().iloc[-1]
-        ma200 = close.rolling(200).mean().iloc[-1]
-
-        trend = ma50 > ma200
-        mom6 = close.pct_change(126).iloc[-1]
-        mom12 = close.pct_change(252).iloc[-1]
-
-        rel = returns.mean() - benchmark_ret.mean() if not benchmark_ret.empty else 0
-        vol = returns.std()
-
-        score = mom6*0.4 + mom12*0.3 + rel*0.2 - vol*0.1
-
-        if np.isnan(score):
-            continue
-
-        if trend and mom6 > 0 and rel > 0:
-            signal = "STRONG BUY"
-        elif trend and mom6 > 0:
-            signal = "BUY PULLBACK"
-        elif not trend and rel < 0:
-            signal = "AVOID"
-        else:
-            signal = "WATCH"
-
-        results.append({
-            "Ticker": ticker,
-            "Signal": signal,
-            "Momentum6M": round(mom6, 4),
-            "Momentum12M": round(mom12, 4),
-            "RelStrength": round(rel, 4),
-            "Volatility": round(vol, 4),
-            "Liquidity": int(avg_dollar_vol),
-            "Score": round(score, 4)
-        })
-
-    except:
+    if close.iloc[-1] < MIN_PRICE:
         continue
 
+    avg_dollar_vol = (close * volume).mean()
+    if avg_dollar_vol < MIN_LIQUIDITY:
+        continue
+
+    returns = close.pct_change().dropna()
+
+    ma50 = close.rolling(50).mean().iloc[-1]
+    ma200 = close.rolling(200).mean().iloc[-1]
+
+    trend = ma50 > ma200
+    mom6 = close.pct_change(126).iloc[-1]
+    mom12 = close.pct_change(252).iloc[-1]
+
+    rel = returns.mean() - benchmark_ret.mean() if not benchmark_ret.empty else 0
+    vol = returns.std()
+
+    score = mom6*0.4 + mom12*0.3 + rel*0.2 - vol*0.1
+
+    if np.isnan(score):
+        continue
+
+    if trend and mom6 > 0 and rel > 0:
+        signal = "STRONG BUY"
+    elif trend and mom6 > 0:
+        signal = "BUY PULLBACK"
+    elif not trend and rel < 0:
+        signal = "AVOID"
+    else:
+        signal = "WATCH"
+
+    results.append({
+        "Ticker": ticker,
+        "Signal": signal,
+        "Momentum6M": round(mom6,4),
+        "Momentum12M": round(mom12,4),
+        "RelStrength": round(rel,4),
+        "Volatility": round(vol,4),
+        "Liquidity": int(avg_dollar_vol),
+        "Score": round(score,4)
+    })
 
 df = pd.DataFrame(results)
 
@@ -208,7 +228,6 @@ if df.empty:
     exit()
 
 df = df.sort_values("Score", ascending=False).reset_index(drop=True)
-
 
 # ================= LINKS =================
 def make_links(t):
@@ -219,11 +238,9 @@ def make_links(t):
 
 df["Finviz"], df["Forecast"] = zip(*df["Ticker"].apply(make_links))
 
-
-strong_buys = df[df["Signal"] == "STRONG BUY"]
-pullbacks = df[df["Signal"] == "BUY PULLBACK"]
-avoids = df[df["Signal"] == "AVOID"]
-
+strong_buys = df[df["Signal"]=="STRONG BUY"]
+pullbacks = df[df["Signal"]=="BUY PULLBACK"]
+avoids = df[df["Signal"]=="AVOID"]
 
 # ================= VISUAL =================
 fig = px.scatter(
@@ -238,8 +255,7 @@ fig = px.scatter(
 
 plot_html = fig.to_html(full_html=False)
 
-
-# ================= PROFESSIONAL HTML =================
+# ================= HTML =================
 html = f"""
 <!DOCTYPE html>
 <html>
@@ -255,11 +271,6 @@ th,td {{padding:8px;border:1px solid #1e293b;text-align:center;}}
 th {{background:#1e293b;}}
 tr:nth-child(even){{background:#111827;}}
 a {{color:#38bdf8;text-decoration:none;font-weight:600;}}
-.badge {{padding:4px 8px;border-radius:6px;font-weight:bold;}}
-.STRONG {{background:#065f46;color:#10b981;}}
-.PULLBACK {{background:#78350f;color:#facc15;}}
-.AVOID {{background:#7f1d1d;color:#ef4444;}}
-.WATCH {{background:#1e293b;color:#94a3b8;}}
 </style>
 </head>
 <body>
