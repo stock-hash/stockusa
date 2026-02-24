@@ -1,5 +1,4 @@
 import os
-import shutil
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -7,6 +6,7 @@ import datetime
 import plotly.express as px
 import re
 import time
+import random
 
 # ================= SETTINGS =================
 OUTPUT_FOLDER = "docs"
@@ -16,40 +16,39 @@ LOOKBACK = "2y"
 MIN_LIQUIDITY = 20_000_000
 MIN_PRICE = 5
 
-CHUNK_SIZE = 50
-REQUEST_SLEEP = 2
-MAX_RETRIES = 3
+CHUNK_SIZE = 25              # smaller = safer
+REQUEST_SLEEP = 1.5          # delay between batches
+MAX_RETRIES = 4
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# ================= CLEAN =================
-if os.path.exists(OUTPUT_HTML):
-    os.remove(OUTPUT_HTML)
-
-cache_dir = os.path.expanduser("~/.cache/yfinance")
-if os.path.exists(cache_dir):
-    shutil.rmtree(cache_dir)
-
 # ================= LOAD UNIVERSE =================
 def load_universe():
-    nasdaq = pd.read_csv("https://raw.githubusercontent.com/datasets/nasdaq-listings/master/data/nasdaq-listed-symbols.csv")
-    nyse = pd.read_csv("https://raw.githubusercontent.com/datasets/nyse-other-listings/master/data/nyse-listed.csv")
-    amex = pd.read_csv("https://raw.githubusercontent.com/datasets/nyse-other-listings/master/data/other-listed.csv")
+    print("Loading US stock universe...")
+
+    urls = [
+        "https://raw.githubusercontent.com/datasets/nasdaq-listings/master/data/nasdaq-listed-symbols.csv",
+        "https://raw.githubusercontent.com/datasets/nyse-other-listings/master/data/nyse-listed.csv",
+        "https://raw.githubusercontent.com/datasets/nyse-other-listings/master/data/other-listed.csv",
+    ]
 
     tickers = []
 
-    if "Symbol" in nasdaq.columns:
-        tickers += nasdaq["Symbol"].dropna().tolist()
-    if "ACT Symbol" in nyse.columns:
-        tickers += nyse["ACT Symbol"].dropna().tolist()
-    if "ACT Symbol" in amex.columns:
-        tickers += amex["ACT Symbol"].dropna().tolist()
+    for url in urls:
+        try:
+            df = pd.read_csv(url)
+            for col in ["Symbol", "ACT Symbol"]:
+                if col in df.columns:
+                    tickers += df[col].dropna().tolist()
+        except:
+            pass
 
     return list(set(tickers))
 
+
 # ================= SANITIZE =================
 def sanitize_ticker(t):
-    if pd.isna(t) or not isinstance(t, str):
+    if not isinstance(t, str):
         return None
 
     t = t.strip().upper()
@@ -67,47 +66,15 @@ def sanitize_ticker(t):
 
     return t
 
+
 raw = load_universe()
 tickers = list(set(filter(None, [sanitize_ticker(t) for t in raw])))
 
 print("Initial Universe:", len(tickers))
 
-# ================= LIQUIDITY PREFILTER =================
-print("Running liquidity prefilter...")
-
-def liquidity_filter(tickers):
-    liquid = []
-    batches = [tickers[i:i+50] for i in range(0, len(tickers), 50)]
-
-    for i, batch in enumerate(batches):
-        try:
-            data = yf.download(batch, period="1mo", progress=False, threads=False)
-
-            if isinstance(data.columns, pd.MultiIndex):
-                for t in batch:
-                    if t in data.columns.get_level_values(0):
-                        df = data[t].dropna()
-                        if not df.empty:
-                            avg_dollar = (df["Close"] * df["Volume"]).mean()
-                            if avg_dollar > MIN_LIQUIDITY:
-                                liquid.append(t)
-
-            time.sleep(REQUEST_SLEEP)
-
-        except:
-            time.sleep(REQUEST_SLEEP * 2)
-
-        print(f"Prefilter batch {i+1}/{len(batches)}")
-
-    return liquid
-
-tickers = liquidity_filter(tickers)
-print("Liquid Universe:", len(tickers))
 
 # ================= SAFE DOWNLOAD =================
 def download_batch(batch):
-    result = {}
-
     for attempt in range(MAX_RETRIES):
         try:
             data = yf.download(
@@ -115,31 +82,35 @@ def download_batch(batch):
                 period=LOOKBACK,
                 auto_adjust=True,
                 progress=False,
-                threads=False
+                threads=False,
+                group_by="ticker"
             )
 
-            if data is None or data.empty:
-                return result
+            if data is None or len(data) == 0:
+                return {}
+
+            result = {}
 
             if isinstance(data.columns, pd.MultiIndex):
                 for t in batch:
-                    if t in data.columns.get_level_values(0):
+                    if t in data.columns.levels[0]:
                         df = data[t].dropna()
-                        if {"Close","Volume"}.issubset(df.columns):
+                        if not df.empty:
                             result[t] = df
             else:
                 df = data.dropna()
-                if {"Close","Volume"}.issubset(df.columns):
+                if not df.empty:
                     result[batch[0]] = df
 
-            time.sleep(REQUEST_SLEEP)
             return result
 
-        except:
-            print("Retrying batch...")
-            time.sleep(REQUEST_SLEEP * 3)
+        except Exception as e:
+            sleep_time = REQUEST_SLEEP * (2 ** attempt) + random.uniform(0, 1)
+            print(f"Retry {attempt+1} — sleeping {round(sleep_time,2)}s")
+            time.sleep(sleep_time)
 
-    return result
+    return {}
+
 
 def sequential_download(tickers):
     all_data = {}
@@ -148,16 +119,22 @@ def sequential_download(tickers):
     for i, batch in enumerate(batches):
         batch_data = download_batch(batch)
         all_data.update(batch_data)
-        print(f"Downloaded batch {i+1}/{len(batches)}")
+
+        print(f"Downloaded batch {i+1}/{len(batches)} | Total stocks: {len(all_data)}")
+
+        time.sleep(REQUEST_SLEEP)
 
     return all_data
 
+
 prices_data = sequential_download(tickers)
+
 print("Successfully downloaded:", len(prices_data))
 
 if len(prices_data) == 0:
-    print("Download failed due to rate limiting.")
+    print("Download failed (rate limited or blocked).")
     exit()
+
 
 # ================= BENCHMARK =================
 try:
@@ -165,6 +142,7 @@ try:
     benchmark_ret = spy["Close"].pct_change().dropna()
 except:
     benchmark_ret = pd.Series(dtype=float)
+
 
 # ================= OPPORTUNITY ENGINE =================
 results = []
@@ -221,6 +199,7 @@ for ticker, df_t in prices_data.items():
         "Score": round(score,4)
     })
 
+
 df = pd.DataFrame(results)
 
 if df.empty:
@@ -228,6 +207,7 @@ if df.empty:
     exit()
 
 df = df.sort_values("Score", ascending=False).reset_index(drop=True)
+
 
 # ================= LINKS =================
 def make_links(t):
@@ -242,6 +222,7 @@ strong_buys = df[df["Signal"]=="STRONG BUY"]
 pullbacks = df[df["Signal"]=="BUY PULLBACK"]
 avoids = df[df["Signal"]=="AVOID"]
 
+
 # ================= VISUAL =================
 fig = px.scatter(
     df.head(200),
@@ -255,22 +236,56 @@ fig = px.scatter(
 
 plot_html = fig.to_html(full_html=False)
 
-# ================= HTML =================
+
+# ================= MODERN HTML =================
 html = f"""
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Quant Market Scanner</title>
+<title>Institutional Quant Market Scanner</title>
 <style>
-body {{font-family:Inter,Arial;background:#0b1220;color:#e2e8f0;padding:40px;}}
-h1 {{color:#38bdf8;}}
-h2 {{color:#facc15;margin-top:50px;}}
-table {{border-collapse:collapse;width:100%;margin-top:15px;}}
-th,td {{padding:8px;border:1px solid #1e293b;text-align:center;}}
-th {{background:#1e293b;}}
-tr:nth-child(even){{background:#111827;}}
-a {{color:#38bdf8;text-decoration:none;font-weight:600;}}
+body {{
+    font-family: Inter, Arial;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 40px;
+}}
+h1 {{
+    color: #38bdf8;
+    font-size: 32px;
+}}
+h2 {{
+    color: #facc15;
+    margin-top: 60px;
+}}
+.card {{
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}}
+table {{
+    border-collapse: collapse;
+    width: 100%;
+}}
+th, td {{
+    padding: 10px;
+    border-bottom: 1px solid #334155;
+    text-align: center;
+}}
+th {{
+    background: #111827;
+}}
+tr:hover {{
+    background: #1f2937;
+}}
+a {{
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 600;
+}}
 </style>
 </head>
 <body>
@@ -278,20 +293,30 @@ a {{color:#38bdf8;text-decoration:none;font-weight:600;}}
 <h1>📊 Institutional Quant Opportunity Scanner</h1>
 <p>{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
 
+<div class="card">
 <h2>🔥 Strong Buy ({len(strong_buys)})</h2>
-{strong_buys.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+{strong_buys.head(20)[["Finviz","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+</div>
 
+<div class="card">
 <h2>📉 Pullbacks ({len(pullbacks)})</h2>
-{pullbacks.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+{pullbacks.head(20)[["Finviz","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+</div>
 
+<div class="card">
 <h2>⚠ Avoid ({len(avoids)})</h2>
-{avoids.head(20)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+{avoids.head(20)[["Finviz","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+</div>
 
+<div class="card">
 <h2>📈 Market Opportunity Map</h2>
 {plot_html}
+</div>
 
+<div class="card">
 <h2>🏆 Top 30 Overall</h2>
-{df.head(30)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+{df.head(30)[["Finviz","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+</div>
 
 </body>
 </html>
