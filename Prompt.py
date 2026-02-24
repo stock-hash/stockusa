@@ -12,15 +12,14 @@ pd.options.mode.use_inf_as_na = True
 
 # ================= SETTINGS =================
 OUTPUT_FOLDER = "docs"
-OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "StockMarket_Reversal_Dashboard.html")
+OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "StockMarket_Opportunity_Dashboard.html")
 
 LOOKBACK = "2y"
 MIN_LIQUIDITY = 20_000_000
 MIN_PRICE = 5
-EARNINGS_BUFFER_DAYS = 7
 
-CHUNK_SIZE = 20
-REQUEST_SLEEP = 2
+CHUNK_SIZE = 25
+REQUEST_SLEEP = 1.5
 MAX_RETRIES = 4
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -34,6 +33,7 @@ def load_universe():
     ]
 
     tickers = []
+
     for url in urls:
         try:
             df = pd.read_csv(url)
@@ -49,14 +49,20 @@ def load_universe():
 def sanitize_ticker(t):
     if not isinstance(t, str):
         return None
+
     t = t.strip().upper()
+
     if any(x in t for x in [".W", ".U", ".R", "^", "/", "="]):
         return None
+
     if not re.match(r"^[A-Z\-.]+$", t):
         return None
+
     t = t.replace(".", "-")
+
     if len(t) > 6:
         return None
+
     return t
 
 
@@ -123,20 +129,25 @@ if len(prices_data) == 0:
     exit()
 
 # ================= BENCHMARK =================
-spy = yf.download("SPY", period=LOOKBACK, auto_adjust=True, progress=False)
-benchmark_ret = spy["Close"].pct_change().dropna()
+try:
+    spy = yf.download("SPY", period=LOOKBACK, auto_adjust=True, progress=False)
+    benchmark_ret = spy["Close"].pct_change().dropna()
+except:
+    benchmark_ret = pd.Series(dtype=float)
 
-# ================= REVERSAL ENGINE =================
+# ================= OPPORTUNITY ENGINE =================
 results = []
-today = datetime.datetime.now()
 
 for ticker, df_t in prices_data.items():
     try:
         if len(df_t) < 252:
             continue
 
-        close = df_t["Close"]
-        volume = df_t["Volume"]
+        if not {"Close", "Volume"}.issubset(df_t.columns):
+            continue
+
+        close = df_t["Close"].squeeze()
+        volume = df_t["Volume"].squeeze()
 
         if close.iloc[-1] < MIN_PRICE:
             continue
@@ -145,63 +156,46 @@ for ticker, df_t in prices_data.items():
         if avg_dollar_vol < MIN_LIQUIDITY:
             continue
 
-        # Earnings filter safe
-        days_to_earnings = None
-        try:
-            cal = yf.Ticker(ticker).calendar
-            if cal is not None and not cal.empty:
-                earnings_date = cal.iloc[0][0]
-                if isinstance(earnings_date, pd.Timestamp):
-                    days_to_earnings = (earnings_date - today).days
-                    if 0 <= days_to_earnings <= EARNINGS_BUFFER_DAYS:
-                        continue
-        except:
-            pass
-
         returns = close.pct_change().dropna()
-        ma20 = close.rolling(20).mean().iloc[-1]
-        ma50 = close.rolling(50).mean().iloc[-1]
-        ma200 = close.rolling(200).mean().iloc[-1]
 
-        rsi = 100 - (100 / (1 + returns.rolling(14).mean().iloc[-1] / 
-                             returns.rolling(14).std().iloc[-1] if returns.rolling(14).std().iloc[-1] != 0 else 1))
+        ma50 = float(close.rolling(50).mean().iloc[-1])
+        ma200 = float(close.rolling(200).mean().iloc[-1])
 
-        mom3 = close.pct_change(63).iloc[-1]
-        mom6 = close.pct_change(126).iloc[-1]
+        mom6 = float(close.pct_change(126).iloc[-1])
+        mom12 = float(close.pct_change(252).iloc[-1])
 
-        rel = returns.mean() - benchmark_ret.mean()
-        vol = returns.std()
+        rel = float(returns.mean() - benchmark_ret.mean()) if not benchmark_ret.empty else 0
+        vol = float(returns.std())
 
-        # ===== REVERSAL CONDITIONS =====
-        oversold = rsi < 35
-        above_ma20 = close.iloc[-1] > ma20
-        improving_momentum = mom3 > mom6
-
-        if not (oversold and above_ma20 and improving_momentum):
-            continue
-
-        # ===== REVERSAL SCORE =====
         score = (
-            abs(mom6) * 0.3 +
-            (35 - rsi) * 0.3 +
-            rel * 0.2 -
-            vol * 0.2
+            mom6 * 0.35 +
+            mom12 * 0.30 +
+            rel * 0.20 -
+            vol * 0.15
         )
 
         if pd.isna(score):
             continue
 
+        # ===== CLEAR SIGNAL RULES =====
+        if ma50 > ma200 and mom6 > 0.10 and rel > 0:
+            signal = "STRONG BUY"
+        elif ma50 > ma200 and mom6 > 0:
+            signal = "BUY"
+        elif ma50 < ma200 and rel < 0:
+            signal = "AVOID"
+        else:
+            signal = "WATCH"
+
         results.append({
             "Ticker": ticker,
-            "Signal": "REVERSAL",
-            "Score": round(float(score),4),
-            "RSI": round(float(rsi),2),
-            "Momentum3M": round(float(mom3*100),2),
-            "Momentum6M": round(float(mom6*100),2),
-            "RelStrength": round(float(rel*100),2),
-            "Volatility": round(float(vol*100),2),
-            "Liquidity": int(avg_dollar_vol),
-            "DaysToEarnings": days_to_earnings
+            "Signal": signal,
+            "Score": round(score,4),
+            "Momentum6M": round(mom6*100,2),
+            "Momentum12M": round(mom12*100,2),
+            "RelStrength": round(rel*100,2),
+            "Volatility": round(vol*100,2),
+            "Liquidity": int(avg_dollar_vol)
         })
 
     except Exception:
@@ -210,57 +204,117 @@ for ticker, df_t in prices_data.items():
 df = pd.DataFrame(results)
 
 if df.empty:
-    print("No reversal stocks found.")
+    print("No qualifying stocks found.")
     exit()
 
 df = df.sort_values("Score", ascending=False).reset_index(drop=True)
 
-# ================= ADD LINKS =================
-df["Ticker"] = df["Ticker"].apply(
-    lambda x: f'<a href="https://finviz.com/quote.ashx?t={x}" target="_blank">{x}</a>'
-)
+# ================= LINKS =================
+def make_links(t):
+    return (
+        f'<a href="https://finviz.com/quote.ashx?t={t}" target="_blank">{t}</a>',
+        f'<a href="https://stockanalysis.com/stocks/{t.lower()}/forecast/" target="_blank">Forecast</a>'
+    )
 
-df["Forecast"] = df["Ticker"].str.extract(r'>(.*?)<')[0].apply(
-    lambda x: f'<a href="https://stockanalysis.com/stocks/{x.lower()}/forecast/" target="_blank">Forecast</a>'
-)
+df["Finviz"], df["Forecast"] = zip(*df["Ticker"].apply(make_links))
 
-# ================= DASHBOARD =================
+# ================= SUMMARY STATS =================
+strong_count = len(df[df["Signal"]=="STRONG BUY"])
+buy_count = len(df[df["Signal"]=="BUY"])
+avoid_count = len(df[df["Signal"]=="AVOID"])
+watch_count = len(df[df["Signal"]=="WATCH"])
+
+# ================= VISUAL =================
 fig = px.scatter(
     df.head(300),
-    x="Momentum3M",
+    x="Momentum6M",
     y="RelStrength",
+    color="Signal",
     size="Liquidity",
-    hover_name=df["Ticker"].str.extract(r'>(.*?)<')[0],
-    title="Reversal Strength Map"
+    hover_name="Ticker",
+    title="Market Strength Positioning Map"
 )
 
 plot_html = fig.to_html(full_html=False)
 
+# ================= PROFESSIONAL DASHBOARD =================
 html = f"""
+<!DOCTYPE html>
 <html>
 <head>
-<title>Institutional Reversal Scanner</title>
+<meta charset="UTF-8">
+<title>Institutional Market Scanner</title>
 <style>
-body {{ background:#0b1220; color:white; font-family:Arial; padding:40px; }}
-.card {{ background:#111827; padding:25px; border-radius:12px; margin-top:40px; }}
-table {{ width:100%; border-collapse:collapse; }}
-th, td {{ padding:10px; border-bottom:1px solid #1f2937; text-align:center; }}
+body {{
+    font-family: Inter, Arial;
+    background: #0b1220;
+    color: #e2e8f0;
+    padding: 40px;
+}}
+h1 {{
+    color: #38bdf8;
+    font-size: 34px;
+}}
+.summary {{
+    display:flex;
+    gap:20px;
+    margin-top:20px;
+}}
+.badge {{
+    padding:15px 25px;
+    border-radius:10px;
+    font-weight:bold;
+    font-size:18px;
+}}
+.strong {{ background:#14532d; }}
+.buy {{ background:#1e3a8a; }}
+.watch {{ background:#78350f; }}
+.avoid {{ background:#7f1d1d; }}
+
+.card {{
+    background:#111827;
+    padding:25px;
+    border-radius:14px;
+    margin-top:40px;
+}}
+
+table {{
+    width:100%;
+    border-collapse:collapse;
+}}
+th, td {{
+    padding:10px;
+    border-bottom:1px solid #1f2937;
+    text-align:center;
+}}
 th {{ background:#1f2937; }}
-a {{ color:#38bdf8; text-decoration:none; font-weight:bold; }}
+
+a {{
+    color:#38bdf8;
+    text-decoration:none;
+    font-weight:600;
+}}
 </style>
 </head>
 <body>
 
-<h1>📊 Institutional Reversal Market Scanner</h1>
-<p>{today.strftime("%Y-%m-%d %H:%M:%S")}</p>
+<h1>📊 Institutional Quant Market Scanner</h1>
+<p>{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
 
-<div class="card">
-<h2>🔥 Top Reversal Stocks</h2>
-{df.head(30).to_html(index=False, escape=False)}
+<div class="summary">
+<div class="badge strong">🔥 Strong Buy: {strong_count}</div>
+<div class="badge buy">📈 Buy: {buy_count}</div>
+<div class="badge watch">👀 Watch: {watch_count}</div>
+<div class="badge avoid">⚠ Avoid: {avoid_count}</div>
 </div>
 
 <div class="card">
-<h2>📈 Reversal Opportunity Map</h2>
+<h2>🏆 Top 30 Ranked</h2>
+{df.head(30)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+</div>
+
+<div class="card">
+<h2>📈 Market Strength Map</h2>
 {plot_html}
 </div>
 
@@ -271,4 +325,4 @@ a {{ color:#38bdf8; text-decoration:none; font-weight:bold; }}
 with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
     f.write(html)
 
-print("✅ Reversal Dashboard Created:", OUTPUT_HTML)
+print("✅ Professional Dashboard Created:", OUTPUT_HTML)
