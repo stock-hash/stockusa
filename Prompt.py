@@ -310,7 +310,7 @@ a {{
 
 <div class="card">
 <h2>🏆 Top 30 Ranked</h2>
-{df.head(30)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
+{df.head(300)[["Finviz","Signal","Score","Momentum6M","RelStrength","Forecast"]].to_html(index=False, escape=False)}
 </div>
 
 <div class="card">
@@ -326,3 +326,4 @@ with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
     f.write(html)
 
 print("✅ Professional Dashboard Created:", OUTPUT_HTML)
+
