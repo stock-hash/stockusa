@@ -14,13 +14,13 @@ pd.options.mode.use_inf_as_na = True
 OUTPUT_FOLDER = "docs"
 OUTPUT_HTML = os.path.join(OUTPUT_FOLDER, "StockMarket_Reversal_Dashboard.html")
 
-LOOKBACK = "1y"
+LOOKBACK = "2y"
 MIN_LIQUIDITY = 20_000_000
 MIN_PRICE = 5
 EARNINGS_BUFFER_DAYS = 7
 
-CHUNK_SIZE = 25
-REQUEST_SLEEP = 1.5
+CHUNK_SIZE = 20
+REQUEST_SLEEP = 2
 MAX_RETRIES = 4
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -62,9 +62,9 @@ def sanitize_ticker(t):
 
 raw = load_universe()
 tickers = list(set(filter(None, [sanitize_ticker(t) for t in raw])))
-print("Universe:", len(tickers))
+print("Initial Universe:", len(tickers))
 
-# ================= DOWNLOAD =================
+# ================= SAFE DOWNLOAD =================
 def download_batch(batch):
     for attempt in range(MAX_RETRIES):
         try:
@@ -76,10 +76,12 @@ def download_batch(batch):
                 threads=False,
                 group_by="ticker"
             )
+
             if data is None or len(data) == 0:
                 return {}
 
             result = {}
+
             if isinstance(data.columns, pd.MultiIndex):
                 for t in batch:
                     if t in data.columns.levels[0]:
@@ -93,7 +95,7 @@ def download_batch(batch):
 
             return result
 
-        except:
+        except Exception:
             sleep_time = REQUEST_SLEEP * (2 ** attempt) + random.uniform(0, 1)
             time.sleep(sleep_time)
 
@@ -107,42 +109,34 @@ def sequential_download(tickers):
     for i, batch in enumerate(batches):
         batch_data = download_batch(batch)
         all_data.update(batch_data)
-        print(f"Downloaded {i+1}/{len(batches)} | Stocks: {len(all_data)}")
+        print(f"Downloaded {i+1}/{len(batches)} | Total stocks: {len(all_data)}")
         time.sleep(REQUEST_SLEEP)
 
     return all_data
 
 
 prices_data = sequential_download(tickers)
+print("Successfully downloaded:", len(prices_data))
 
 if len(prices_data) == 0:
     print("Download failed.")
     exit()
 
-# ================= RSI FUNCTION =================
-def compute_rsi(series, period=14):
-    delta = series.diff()
-    gain = delta.clip(lower=0)
-    loss = -delta.clip(upper=0)
-
-    avg_gain = gain.rolling(period).mean()
-    avg_loss = loss.rolling(period).mean()
-
-    rs = avg_gain / avg_loss
-    return 100 - (100 / (1 + rs))
-
+# ================= BENCHMARK =================
+spy = yf.download("SPY", period=LOOKBACK, auto_adjust=True, progress=False)
+benchmark_ret = spy["Close"].pct_change().dropna()
 
 # ================= REVERSAL ENGINE =================
 results = []
 today = datetime.datetime.now()
 
-for ticker, df in prices_data.items():
+for ticker, df_t in prices_data.items():
     try:
-        if len(df) < 100:
+        if len(df_t) < 252:
             continue
 
-        close = df["Close"]
-        volume = df["Volume"]
+        close = df_t["Close"]
+        volume = df_t["Volume"]
 
         if close.iloc[-1] < MIN_PRICE:
             continue
@@ -151,103 +145,122 @@ for ticker, df in prices_data.items():
         if avg_dollar_vol < MIN_LIQUIDITY:
             continue
 
-        # Earnings filter
+        # Earnings filter safe
+        days_to_earnings = None
         try:
-            info = yf.Ticker(ticker)
-            earnings = info.calendar.loc["Earnings Date"][0]
-            days_to_earnings = (earnings - today).days
-            if 0 <= days_to_earnings <= EARNINGS_BUFFER_DAYS:
-                continue
+            cal = yf.Ticker(ticker).calendar
+            if cal is not None and not cal.empty:
+                earnings_date = cal.iloc[0][0]
+                if isinstance(earnings_date, pd.Timestamp):
+                    days_to_earnings = (earnings_date - today).days
+                    if 0 <= days_to_earnings <= EARNINGS_BUFFER_DAYS:
+                        continue
         except:
-            days_to_earnings = None
+            pass
 
-        # Indicators
-        rsi = compute_rsi(close).iloc[-1]
-        ma10 = close.rolling(10).mean().iloc[-1]
+        returns = close.pct_change().dropna()
         ma20 = close.rolling(20).mean().iloc[-1]
-        std20 = close.rolling(20).std().iloc[-1]
+        ma50 = close.rolling(50).mean().iloc[-1]
+        ma200 = close.rolling(200).mean().iloc[-1]
 
-        lower_band = ma20 - 2 * std20
+        rsi = 100 - (100 / (1 + returns.rolling(14).mean().iloc[-1] / 
+                             returns.rolling(14).std().iloc[-1] if returns.rolling(14).std().iloc[-1] != 0 else 1))
 
-        five_day_return = close.pct_change(5).iloc[-1]
-        volume_spike = volume.iloc[-1] > volume.rolling(20).mean().iloc[-1]
+        mom3 = close.pct_change(63).iloc[-1]
+        mom6 = close.pct_change(126).iloc[-1]
 
-        # Reversal Conditions
-        oversold = rsi < 35 and close.iloc[-1] < lower_band
-        turning_up = five_day_return > 0 and close.iloc[-1] > ma10
+        rel = returns.mean() - benchmark_ret.mean()
+        vol = returns.std()
 
-        if oversold and turning_up:
+        # ===== REVERSAL CONDITIONS =====
+        oversold = rsi < 35
+        above_ma20 = close.iloc[-1] > ma20
+        improving_momentum = mom3 > mom6
 
-            score = (35 - rsi) + (five_day_return * 100)
+        if not (oversold and above_ma20 and improving_momentum):
+            continue
 
-            results.append({
-                "Ticker": ticker,
-                "RSI": round(rsi,2),
-                "5D Return %": round(five_day_return*100,2),
-                "Volume Spike": volume_spike,
-                "Liquidity": int(avg_dollar_vol),
-                "DaysToEarnings": days_to_earnings,
-                "Score": round(score,2)
-            })
+        # ===== REVERSAL SCORE =====
+        score = (
+            abs(mom6) * 0.3 +
+            (35 - rsi) * 0.3 +
+            rel * 0.2 -
+            vol * 0.2
+        )
 
-    except:
+        if pd.isna(score):
+            continue
+
+        results.append({
+            "Ticker": ticker,
+            "Signal": "REVERSAL",
+            "Score": round(float(score),4),
+            "RSI": round(float(rsi),2),
+            "Momentum3M": round(float(mom3*100),2),
+            "Momentum6M": round(float(mom6*100),2),
+            "RelStrength": round(float(rel*100),2),
+            "Volatility": round(float(vol*100),2),
+            "Liquidity": int(avg_dollar_vol),
+            "DaysToEarnings": days_to_earnings
+        })
+
+    except Exception:
         continue
-
 
 df = pd.DataFrame(results)
 
 if df.empty:
-    print("No reversal candidates found.")
+    print("No reversal stocks found.")
     exit()
 
 df = df.sort_values("Score", ascending=False).reset_index(drop=True)
 
-# ================= LINKS =================
-def make_links(t):
-    finviz = f'https://finviz.com/quote.ashx?t={t}'
-    forecast = f'https://stockanalysis.com/stocks/{t.lower()}/forecast/'
-    return f'<a href="{finviz}" target="_blank">{t}</a>', f'<a href="{forecast}" target="_blank">Forecast</a>'
+# ================= ADD LINKS =================
+df["Ticker"] = df["Ticker"].apply(
+    lambda x: f'<a href="https://finviz.com/quote.ashx?t={x}" target="_blank">{x}</a>'
+)
 
-df["Ticker"], df["Forecast"] = zip(*df["Ticker"].apply(make_links))
+df["Forecast"] = df["Ticker"].str.extract(r'>(.*?)<')[0].apply(
+    lambda x: f'<a href="https://stockanalysis.com/stocks/{x.lower()}/forecast/" target="_blank">Forecast</a>'
+)
 
-# ================= VISUAL =================
+# ================= DASHBOARD =================
 fig = px.scatter(
-    df.head(200),
-    x="RSI",
-    y="5D Return %",
+    df.head(300),
+    x="Momentum3M",
+    y="RelStrength",
     size="Liquidity",
-    hover_name="Ticker",
-    title="Reversal Opportunity Map"
+    hover_name=df["Ticker"].str.extract(r'>(.*?)<')[0],
+    title="Reversal Strength Map"
 )
 
 plot_html = fig.to_html(full_html=False)
 
-# ================= DASHBOARD =================
 html = f"""
 <html>
 <head>
-<title>Market Reversal Scanner</title>
+<title>Institutional Reversal Scanner</title>
 <style>
 body {{ background:#0b1220; color:white; font-family:Arial; padding:40px; }}
 .card {{ background:#111827; padding:25px; border-radius:12px; margin-top:40px; }}
 table {{ width:100%; border-collapse:collapse; }}
 th, td {{ padding:10px; border-bottom:1px solid #1f2937; text-align:center; }}
 th {{ background:#1f2937; }}
-a {{ color:#38bdf8; text-decoration:none; font-weight:600; }}
+a {{ color:#38bdf8; text-decoration:none; font-weight:bold; }}
 </style>
 </head>
 <body>
 
-<h1>🔄 Institutional Reversal Scanner</h1>
+<h1>📊 Institutional Reversal Market Scanner</h1>
 <p>{today.strftime("%Y-%m-%d %H:%M:%S")}</p>
 
 <div class="card">
-<h2>🔥 Top Reversal Candidates</h2>
-{df.head(40).to_html(index=False, escape=False)}
+<h2>🔥 Top Reversal Stocks</h2>
+{df.head(30).to_html(index=False, escape=False)}
 </div>
 
 <div class="card">
-<h2>📈 Reversal Map</h2>
+<h2>📈 Reversal Opportunity Map</h2>
 {plot_html}
 </div>
 
