@@ -50,7 +50,7 @@ DB_FILE = os.path.join(BASE_DIR, "market_master_v5.db")
 # ==============================================================================
 # *** SOURCE CONTROL TOGGLES ***
 # ==============================================================================
-ENABLE_INBOX = False   
+ENABLE_INBOX = True   
 ENABLE_TRASH = False
 ENABLE_WATCHLIST = True
 # ==============================================================================
@@ -1364,5 +1364,6 @@ if __name__ == "__main__":
     else:
         logger.info("Market is OPEN.")
     main()
+
 
 
