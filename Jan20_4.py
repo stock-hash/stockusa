@@ -61,8 +61,8 @@ SENDER_EMAIL = "stockusals@gmail.com"
 
 THREADS = 30
 REQUEST_TIMEOUT = 20
-INBOX_LOOKBACK_DAYS = 1
-TRASH_LOOKBACK_DAYS = 7
+INBOX_LOOKBACK_DAYS = 9
+TRASH_LOOKBACK_DAYS = 3
 TRASH_SCAN_LIMIT = 2000
 DAILY_LOOKBACK = 400
 INTRA_DAYS = 5
@@ -1364,6 +1364,7 @@ if __name__ == "__main__":
     else:
         logger.info("Market is OPEN.")
     main()
+
 
 
 
