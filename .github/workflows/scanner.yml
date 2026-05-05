@@ -1,0 +1,62 @@
+name: DOW30 Scanner
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Runs every 5 minutes on GitHub's free servers, 24/7.
+# Inside each run the script scans ALL 30 stocks TWICE (60 s apart),
+# giving you an effective scan frequency of ~2–3 minutes.
+#
+# Required GitHub Secrets  (Settings → Secrets and variables → Actions):
+#   RESEND_API_KEY   — get free at resend.com
+#   ALERT_EMAIL      — email address to receive alerts
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes — GitHub's minimum interval
+  workflow_dispatch:         # also lets you click "Run workflow" manually in GitHub UI
+
+permissions:
+  contents: write            # needed to commit the data JSON files back to the repo
+
+jobs:
+  scan:
+    name: Scan Dow 30
+    runs-on: ubuntu-latest
+    timeout-minutes: 8       # safety cap (2 scans + 60 s sleep ≈ 4 min normally)
+
+    steps:
+
+      # ── 1. Download the repo ────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1     # only need latest commit, not full history
+
+      # ── 2. Install Python ───────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip         # cache pip packages → faster subsequent runs
+
+      # ── 3. Install dependencies ─────────────────────────────────────────────
+      - name: Install dependencies
+        run: pip install -r requirements_github.txt
+
+      # ── 4. Run the scanner ──────────────────────────────────────────────────
+      - name: Run scanner
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ALERT_EMAIL:    ${{ secrets.ALERT_EMAIL }}
+          SCAN_LOOPS:     "2"     # 2 scans per run (change to 3 for more frequency)
+          LOOP_SLEEP:     "60"    # 60 seconds between scans
+        run: python scanner_action.py
+
+      # ── 5. Save results back to repo (so GitHub Pages gets new data) ────────
+      - name: Commit updated data files
+        run: |
+          git config user.name  "DOW30 Scanner Bot"
+          git config user.email "scanner@github-actions"
+          git add docs/data/latest.json docs/data/history.json
+          git diff --cached --quiet || git commit -m "scan: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
