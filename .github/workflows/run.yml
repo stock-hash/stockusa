@@ -39,9 +39,8 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run Stock Report Script
-        # run: python Jan20_4.py
-        run: scanner_action.py
-        # run: python Prompt.py
+        run: python Jan20_4.py
+               
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
@@ -54,8 +53,8 @@ jobs:
           
           # Force add the docs folder and your script file
           git add -f docs/
-          #git add Jan20_4.py
-          git add scanner_action.py
+          git add Jan20_4.py
+         
           # git add Prompt.py
           # Commit only if files actually changed
           git commit -m "Daily Dashboard Update (1PM EST): $(date +'%Y-%m-%d %H:%M')" || exit 0
