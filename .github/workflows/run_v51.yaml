@@ -70,7 +70,11 @@ jobs:
           echo "=== Scanner v5.1 starting at $(date) ==="
           python generate_report_v51.py
           echo "=== Scanner v5.1 completed at $(date) ==="
-
+      - name: Move reports to docs
+        run: |
+          mkdir -p docs
+          mv -f TopBottom_Universal.html docs/ 2>/dev/null || true
+          mv -f latest_scan.json docs/ 2>/dev/null || true
       - name: Deploy to GitHub Pages
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
