@@ -1,66 +1,101 @@
 {
-  "scan_time": "2026-06-01 03:20:36 PM ET",
+  "scan_time": "2026-06-01 03:28:50 PM ET",
   "regime": "NEUTRAL",
-  "spy_rsi": 53.22339420654912,
+  "spy_rsi": 49.30040098967665,
   "total_stocks": 120,
-  "filtered": 67,
-  "alerts": 8,
+  "filtered": 72,
+  "alerts": 13,
   "signals": [
+    {
+      "ticker": "INTC",
+      "signal": "BOTTOM",
+      "avg_c": 78,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 107.89
+    },
     {
       "ticker": "META",
       "signal": "BOTTOM",
-      "avg_c": 62,
-      "mtf_status": "5m+15m+30m",
-      "price": 605.5
+      "avg_c": 69,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 605.23
     },
     {
       "ticker": "TSLA",
       "signal": "BOTTOM",
-      "avg_c": 62,
+      "avg_c": 72,
       "mtf_status": "5m+15m+30m+60m",
-      "price": 418.78
+      "price": 418.22
     },
     {
-      "ticker": "NEE",
+      "ticker": "ADBE",
+      "signal": "TOP",
+      "avg_c": 72,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 275.24
+    },
+    {
+      "ticker": "CRM",
+      "signal": "TOP",
+      "avg_c": 75,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 211.25
+    },
+    {
+      "ticker": "BLK",
       "signal": "BOTTOM",
-      "avg_c": 61,
+      "avg_c": 68,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 1019.05
+    },
+    {
+      "ticker": "SNPS",
+      "signal": "TOP",
+      "avg_c": 55,
       "mtf_status": "5m+15m+30m",
-      "price": 83.94
+      "price": 492.59
     },
     {
       "ticker": "CME",
       "signal": "BOTTOM",
-      "avg_c": 72,
-      "mtf_status": "5m+15m+30m+60m",
-      "price": 259.54
-    },
-    {
-      "ticker": "IWM",
-      "signal": "TOP",
-      "avg_c": 50,
-      "mtf_status": "5m+15m+30m",
-      "price": 289.48
-    },
-    {
-      "ticker": "XLI",
-      "signal": "TOP",
       "avg_c": 65,
-      "mtf_status": "5m+15m+30m",
-      "price": 172.62
-    },
-    {
-      "ticker": "TNA",
-      "signal": "TOP",
-      "avg_c": 50,
-      "mtf_status": "5m+15m+30m",
-      "price": 68.08
-    },
-    {
-      "ticker": "SPXU",
-      "signal": "BOTTOM",
-      "avg_c": 78,
       "mtf_status": "5m+15m+30m+60m",
-      "price": 35.94
+      "price": 259.42
+    },
+    {
+      "ticker": "CTAS",
+      "signal": "TOP",
+      "avg_c": 53,
+      "mtf_status": "5m+15m+30m",
+      "price": 174.01
+    },
+    {
+      "ticker": "DIA",
+      "signal": "TOP",
+      "avg_c": 84,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 511.48
+    },
+    {
+      "ticker": "XLB",
+      "signal": "TOP",
+      "avg_c": 55,
+      "mtf_status": "5m+15m+30m",
+      "price": 50.93
+    },
+    {
+      "ticker": "XLRE",
+      "signal": "BOTTOM",
+      "avg_c": 83,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 43.38
+    },
+    {
+      "ticker": "GDX",
+      "signal": "BOTTOM",
+      "avg_c": 59,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 87.14
     }
   ]
 }
