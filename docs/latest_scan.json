@@ -1,31 +1,66 @@
 {
-  "scan_time": "2026-06-01 03:07:15 PM ET",
+  "scan_time": "2026-06-01 03:20:36 PM ET",
   "regime": "NEUTRAL",
-  "spy_rsi": 51.13048872957883,
+  "spy_rsi": 53.22339420654912,
   "total_stocks": 120,
-  "filtered": 63,
-  "alerts": 3,
+  "filtered": 67,
+  "alerts": 8,
   "signals": [
+    {
+      "ticker": "META",
+      "signal": "BOTTOM",
+      "avg_c": 62,
+      "mtf_status": "5m+15m+30m",
+      "price": 605.5
+    },
+    {
+      "ticker": "TSLA",
+      "signal": "BOTTOM",
+      "avg_c": 62,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 418.78
+    },
     {
       "ticker": "NEE",
       "signal": "BOTTOM",
-      "avg_c": 66,
-      "mtf_status": "5m+15m+30m+60m",
-      "price": 84.08
-    },
-    {
-      "ticker": "PANW",
-      "signal": "TOP",
-      "avg_c": 77,
-      "mtf_status": "5m+15m+30m+60m",
-      "price": 301.51
-    },
-    {
-      "ticker": "XLC",
-      "signal": "TOP",
-      "avg_c": 59,
+      "avg_c": 61,
       "mtf_status": "5m+15m+30m",
-      "price": 115.93
+      "price": 83.94
+    },
+    {
+      "ticker": "CME",
+      "signal": "BOTTOM",
+      "avg_c": 72,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 259.54
+    },
+    {
+      "ticker": "IWM",
+      "signal": "TOP",
+      "avg_c": 50,
+      "mtf_status": "5m+15m+30m",
+      "price": 289.48
+    },
+    {
+      "ticker": "XLI",
+      "signal": "TOP",
+      "avg_c": 65,
+      "mtf_status": "5m+15m+30m",
+      "price": 172.62
+    },
+    {
+      "ticker": "TNA",
+      "signal": "TOP",
+      "avg_c": 50,
+      "mtf_status": "5m+15m+30m",
+      "price": 68.08
+    },
+    {
+      "ticker": "SPXU",
+      "signal": "BOTTOM",
+      "avg_c": 78,
+      "mtf_status": "5m+15m+30m+60m",
+      "price": 35.94
     }
   ]
 }
