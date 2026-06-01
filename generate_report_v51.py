@@ -555,7 +555,7 @@ def main():
     # Step 4: Generate HTML report
     html = generate_html_report(alerts, regime, spy_rsi, scan_time,
                                 len(ALL_STOCKS), len(filtered))
-
+    os.makedirs("docs", exist_ok=True)
     with open("TopBottom_Universal.html", "w", encoding="utf-8") as f:
         f.write(html)
     print(f"  Report saved: TopBottom_Universal.html ({len(html)} bytes)")
@@ -577,7 +577,7 @@ def main():
             "price": a["price"],
         } for a in alerts],
     }
-    with open("latest_scan.json", "w") as f:
+    with open("docs/latest_scan.json", "w") as f:
         json.dump(snapshot, f, indent=2)
     print(f"  Snapshot saved: latest_scan.json")
     print(f"\n{'='*60}")
