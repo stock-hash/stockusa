@@ -46,7 +46,7 @@ jobs:
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
-        run: python generate_report_v51.py
+        run: python run_github.py
 
       - name: Deploy to GitHub Pages
         run: |
