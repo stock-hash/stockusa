@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Scanner v5 — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e17;--card:#131722;--card2:#1a1f2e;--border:#2a2e39;--text:#d1d4dc;--muted:#787b86;--green:#26a69a;--red:#ef5350;--blue:#2196f3;--gold:#f7a21b;--purple:#e040fb}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.topbar{background:linear-gradient(135deg,#131722,#1a1f2e);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.topbar h1{font-size:20px;font-weight:800;background:linear-gradient(90deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-right{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;display:inline-block}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.container{max-width:1400px;margin:0 auto;padding:16px 24px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;transition:all .3s}
+.stat:hover{border-color:var(--blue);transform:translateY(-2px)}
+.stat .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.stat .val{font-size:22px;font-weight:700}
+.sec{font-size:15px;font-weight:700;margin:20px 0 8px;display:flex;align-items:center;gap:8px}
+.sec::before{content:'';width:3px;height:16px;background:var(--blue);border-radius:2px;display:inline-block}
+.filter-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.fbtn{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:5px}
+.fbtn:hover{border-color:var(--blue);color:var(--text)}
+.fbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.fcnt{background:rgba(255,255,255,.15);padding:1px 5px;border-radius:8px;font-size:9px}
+.table-wrap{overflow-x:auto;border-radius:10px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:12px}
+th{background:var(--card2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 8px;text-align:left;white-space:nowrap}
+th.sort{cursor:pointer;user-select:none;transition:color .2s}
+th.sort:hover{color:var(--blue)}
+.sa{font-size:9px;color:var(--blue);margin-left:2px}
+td{padding:9px 8px;border-bottom:1px solid #1e222d;font-variant-numeric:tabular-nums}
+tr:hover td{background:rgba(33,150,243,.03)}
+.ticker{font-weight:700;color:var(--blue);cursor:pointer;text-decoration:none;font-size:13px}
+.ticker:hover{text-decoration:underline;color:#64b5f6}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700}
+.b-bottom{background:rgba(38,166,154,.15);color:var(--green)}
+.b-top{background:rgba(239,83,80,.15);color:var(--red)}
+.b-win{background:rgba(38,166,154,.2);color:var(--green)}
+.b-loss{background:rgba(239,83,80,.2);color:var(--red)}
+.b-flat{background:rgba(255,193,7,.15);color:#ffc107}
+.b-pending{background:rgba(120,123,134,.15);color:var(--muted)}
+.score-bar{display:inline-block;width:40px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;vertical-align:middle;margin-right:4px}
+.score-fill{height:100%;border-radius:3px}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+.opt-link{color:var(--green);font-weight:700;font-size:14px;text-decoration:none}
+.footer{text-align:center;color:#363a45;font-size:11px;padding:24px;border-top:1px solid #1e222d;margin-top:24px}
+a{color:var(--blue);text-decoration:none}
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)} td,th{padding:7px 5px;font-size:11px} .container{padding:12px}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div><h1>&#x26A1; Market Scanner v5</h1><div style="font-size:11px;color:var(--muted)" id="sub">Loading...</div></div>
+  <div class="topbar-right"><span>Last Scan: <b id="last-scan">&mdash;</b></span><span class="live-dot"></span><span id="countdown">0:60</span></div>
+</div>
+<div class="container">
+  <div class="stats" id="stats"></div>
+  <div class="sec">&#x1F4E1; Live Alerts &mdash; Today</div>
+  <div class="filter-bar" id="fbar"></div>
+  <div class="table-wrap">
+    <table><thead><tr id="thead"></tr></thead><tbody id="tbody"><tr><td colspan="12" class="empty">Loading...</td></tr></tbody></table>
+  </div>
+  <div class="sec" style="margin-top:32px">&#x1F4C5; Weekly Performance</div>
+  <div class="table-wrap">
+    <table><thead><tr><th>Ticker</th><th>Signal</th><th>Price</th><th>P&L %</th><th>Status</th><th>Score</th><th>Date</th></tr></thead><tbody id="wbody"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody></table>
+  </div>
+</div>
+<div class="footer">Market Scanner v5 &mdash; GitHub Pages Dashboard &mdash; Auto-scans every 5 min during market hours &mdash; Not financial advice</div>
+<script>
+var allAlerts = [];
+var currentFilter = 'ALL';
+var currentSort = 'alert_time';
+var sortAsc = false;
+var cd = 60;
+var statusData = null;
+
+function scoreBar(s) {
+  s = Number(s) || 0;
+  var c = s >= 80 ? 'var(--green)' : s >= 60 ? 'var(--gold)' : 'var(--red)';
+  return '<span class="score-bar"><span class="score-fill" style="width:'+s+'%;background:'+c+'"></span></span>'+s;
+}
+
+function sortTable(col) {
+  if (currentSort === col) sortAsc = !sortAsc;
+  else { currentSort = col; sortAsc = (col === 'ticker'); }
+  buildHeaders();
+  renderAlerts();
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  var btns = document.querySelectorAll('.fbtn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  if (btn) btn.classList.add('active');
+  renderAlerts();
+}
+
+function buildHeaders() {
+  var cols = [
+    ['ticker','Ticker'],['signal','Signal'],['alert_price','Alert $'],
+    ['current_price','Now $'],['pnl','P&L'],['pnl_pct','P&L %'],
+    ['status','Status'],['confidence','Score'],['setup_type','Setup'],
+    ['alert_time','Time'],['','&#x1F4C8;'],['','&#x2699;&#xFE0F;']
+  ];
+  var html = '';
+  for (var i = 0; i < cols.length; i++) {
+    var c = cols[i];
+    if (c[0]) {
+      var arrow = currentSort === c[0] ? (sortAsc ? ' &#x25B2;' : ' &#x25BC;') : '';
+      html += '<th class="sort" onclick="sortTable(\''+c[0]+'\')">'+c[1]+'<span class="sa">'+arrow+'</span></th>';
+    } else {
+      html += '<th>'+c[1]+'</th>';
+    }
+  }
+  document.getElementById('thead').innerHTML = html;
+}
+
+function buildFilters() {
+  var bC = 0, tC = 0, wC = 0, lC = 0, fC = 0;
+  for (var i = 0; i < allAlerts.length; i++) {
+    var a = allAlerts[i];
+    if (a.signal === 'BOTTOM') bC++; else tC++;
+    if (a.status === 'WIN') wC++;
+    else if (a.status === 'LOSS') lC++;
+    else if (a.status === 'FLAT') fC++;
+  }
+  var filters = [
+    ['ALL','ALL',allAlerts.length],['BOTTOM','&#x25B2; BOTTOM',bC],['TOP','&#x25BC; TOP',tC],
+    ['WIN','&#x2705; WIN',wC],['LOSS','&#x274C; LOSS',lC],['FLAT','&#x23F8; FLAT',fC]
+  ];
+  var html = '';
+  for (var i = 0; i < filters.length; i++) {
+    var f = filters[i];
+    html += '<button class="fbtn'+(currentFilter===f[0]?' active':'')+'" onclick="setFilter(\''+f[0]+'\',this)">'+f[1]+' <span class="fcnt">'+f[2]+'</span></button>';
+  }
+  document.getElementById('fbar').innerHTML = html;
+}
+
+function renderAlerts() {
+  var filtered = [];
+  for (var i = 0; i < allAlerts.length; i++) {
+    var a = allAlerts[i];
+    if (currentFilter === 'ALL') filtered.push(a);
+    else if (currentFilter === 'BOTTOM' || currentFilter === 'TOP') { if (a.signal === currentFilter) filtered.push(a); }
+    else if (a.status === currentFilter) filtered.push(a);
+  }
+  var col = currentSort;
+  filtered.sort(function(a, b) {
+    var va = a[col], vb = b[col];
+    if (typeof va === 'number' && typeof vb === 'number') return sortAsc ? va - vb : vb - va;
+    va = String(va || '').toLowerCase(); vb = String(vb || '').toLowerCase();
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+  var tbody = document.getElementById('tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" class="empty">No alerts match this filter</td></tr>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < filtered.length; i++) {
+    var a = filtered[i];
+    var pnl = Number(a.pnl || 0), pp = Number(a.pnl_pct || 0);
+    var isW = (a.signal === 'BOTTOM' && pnl > 0) || (a.signal === 'TOP' && pnl < 0);
+    var clr = Math.abs(pp) < 0.05 ? 'var(--muted)' : isW ? 'var(--green)' : 'var(--red)';
+    var sc = a.status === 'WIN' ? 'b-win' : a.status === 'LOSS' ? 'b-loss' : a.status === 'FLAT' ? 'b-flat' : 'b-pending';
+    html += '<tr>';
+    html += '<td><a class="ticker" href="chart.html?ticker=' + encodeURIComponent(a.ticker) + '" target="_blank">' + a.ticker + '</a></td>';
+    html += '<td><span class="badge ' + (a.signal === 'BOTTOM' ? 'b-bottom' : 'b-top') + '">' + a.signal + '</span></td>';
+    html += '<td>$' + Number(a.alert_price).toFixed(2) + '</td>';
+    html += '<td style="font-weight:600"><span class="live-dot" style="width:5px;height:5px;margin-right:3px"></span>' + (a.current_price > 0 ? '$' + Number(a.current_price).toFixed(2) : '&mdash;') + '</td>';
+    html += '<td style="font-weight:600;color:' + clr + '">' + (pnl > 0 ? '+' : '') + pnl.toFixed(2) + '</td>';
+    html += '<td style="font-weight:600;color:' + clr + '">' + (pp > 0 ? '+' : '') + pp.toFixed(2) + '%</td>';
+    html += '<td><span class="badge ' + sc + '">' + (a.status || 'PENDING') + '</span></td>';
+    html += '<td>' + scoreBar(a.confidence || 0) + '</td>';
+    html += '<td style="font-size:10px">' + (a.setup_type || '&mdash;') + '</td>';
+    html += '<td style="color:var(--muted);font-size:11px">' + (a.time_elapsed || a.alert_time || '&mdash;') + '</td>';
+    html += '<td><a href="chart.html?ticker=' + encodeURIComponent(a.ticker) + '" target="_blank" style="font-size:16px">&#x1F4C8;</a></td>';
+    html += '<td><a class="opt-link" href="options.html?ticker=' + encodeURIComponent(a.ticker) + '&signal=' + a.signal + '" target="_blank">&#x2699;&#xFE0F;</a></td>';
+    html += '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function updateStats() {
+  var wins = 0, losses = 0, bots = 0, tops = 0;
+  for (var i = 0; i < allAlerts.length; i++) {
+    var a = allAlerts[i];
+    if (a.status === 'WIN') wins++;
+    if (a.status === 'LOSS') losses++;
+    if (a.signal === 'BOTTOM') bots++; else tops++;
+  }
+  var wr = (wins + losses) > 0 ? Math.round(wins / (wins + losses) * 100) : 0;
+  var regime = statusData && statusData.regime ? statusData.regime : '&mdash;';
+  var regClr = regime === 'BULLISH' ? 'var(--green)' : regime === 'BEARISH' ? 'var(--red)' : 'var(--muted)';
+  var scanTxt = statusData && statusData.last_scan ? '<span style="color:var(--green)">Active</span>' : '<span style="color:var(--muted)">Waiting</span>';
+  document.getElementById('stats').innerHTML =
+    '<div class="stat"><div class="lbl">Alerts Today</div><div class="val" style="color:var(--blue)">' + allAlerts.length + '</div></div>' +
+    '<div class="stat"><div class="lbl">Win Rate</div><div class="val" style="color:var(--green)">' + wr + '%</div></div>' +
+    '<div class="stat"><div class="lbl">Record</div><div class="val">' + wins + 'W / ' + losses + 'L</div></div>' +
+    '<div class="stat"><div class="lbl">Signals</div><div class="val"><span style="color:var(--green)">' + bots + ' &#x25B2;</span> / <span style="color:var(--red)">' + tops + ' &#x25BC;</span></div></div>' +
+    '<div class="stat"><div class="lbl">Regime</div><div class="val" style="color:' + regClr + '">' + regime + '</div></div>' +
+    '<div class="stat"><div class="lbl">Scanner</div><div class="val" style="font-size:14px">' + scanTxt + '</div></div>';
+}
+
+function loadAll() {
+  fetch('./data/status.json?t=' + Date.now()).then(function(r) { return r.json(); }).then(function(s) {
+    statusData = s;
+    document.getElementById('sub').textContent = (s.total_stocks || 0) + ' stocks \u2022 ' + (s.data_source || 'yahoo') + ' \u2022 ' + new Date().toLocaleString('en-US', {timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit'}) + ' ET';
+    document.getElementById('last-scan').textContent = s.last_scan || 'Never';
+  }).catch(function() {});
+
+  fetch('./data/alerts_today.json?t=' + Date.now()).then(function(r) { return r.json(); }).then(function(alerts) {
+    allAlerts = alerts || [];
+    buildHeaders();
+    buildFilters();
+    updateStats();
+    renderAlerts();
+  }).catch(function() {
+    allAlerts = [];
+    buildHeaders();
+    buildFilters();
+    updateStats();
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="12" class="empty">No data yet &mdash; scanner will populate during market hours</td></tr>';
+  });
+
+  fetch('./data/alerts_week.json?t=' + Date.now()).then(function(r) { return r.json(); }).then(function(alerts) {
+    var wb = document.getElementById('wbody');
+    if (!alerts || alerts.length === 0) { wb.innerHTML = '<tr><td colspan="7" class="empty">No alerts this week</td></tr>'; return; }
+    var html = '';
+    for (var i = 0; i < Math.min(alerts.length, 50); i++) {
+      var a = alerts[i];
+      var pp = Number(a.pnl_pct || 0);
+      var sc = a.status === 'WIN' ? 'b-win' : a.status === 'LOSS' ? 'b-loss' : 'b-pending';
+      var clr = pp > 0 ? 'var(--green)' : pp < 0 ? 'var(--red)' : 'var(--muted)';
+      html += '<tr><td><a class="ticker" href="chart.html?ticker=' + encodeURIComponent(a.ticker) + '" target="_blank">' + a.ticker + '</a></td>';
+      html += '<td><span class="badge ' + (a.signal === 'BOTTOM' ? 'b-bottom' : 'b-top') + '">' + a.signal + '</span></td>';
+      html += '<td>$' + Number(a.alert_price).toFixed(2) + '</td>';
+      html += '<td style="color:' + clr + ';font-weight:600">' + (pp > 0 ? '+' : '') + pp.toFixed(2) + '%</td>';
+      html += '<td><span class="badge ' + sc + '">' + (a.status || 'PENDING') + '</span></td>';
+      html += '<td>' + scoreBar(a.confidence || 0) + '</td>';
+      html += '<td style="color:var(--muted)">' + (a.date || '') + '</td></tr>';
+    }
+    wb.innerHTML = html;
+  }).catch(function() {});
+}
+
+function tick() {
+  cd--;
+  if (cd <= 0) { cd = 60; loadAll(); }
+  document.getElementById('countdown').textContent = '0:' + (cd < 10 ? '0' : '') + cd;
+}
+
+buildHeaders();
+loadAll();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
