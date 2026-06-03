@@ -1,57 +1,52 @@
-name: Scanner v5.1 Report & Deploy
+name: Market Scanner v5
 
 on:
   schedule:
-    - cron: '*/5 13-20 * * 1-5'
+    - cron: "*/5 13-20 * * 1-5"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 env:
-  TZ: America/New_York
-  PYTHONUNBUFFERED: '1'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+  EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+  SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+  RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
 
 jobs:
-  scan-and-deploy:
+  scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 4
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout repo
+        uses: actions/checkout@v5
 
-      - name: Set up Python 3.13
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements_v51.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements_v51.txt
+        run: pip install -r requirements.txt
 
-      - name: Run Scanner v5.1
-        env:
-          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
-          RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
+      - name: Clear yfinance cache
+        run: rm -rf ~/.cache/py-yfinance ~/.cache/yfinance
+
+      - name: Run scanner
         run: python run_github.py
 
-      - name: Deploy to GitHub Pages
+      - name: Commit updated data
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -A
-          git diff --cached --quiet || git commit -m "scan $(date +'%H:%M ET')"
-          git push
+          git config user.name "Market Scanner Bot"
+          git config user.email "scanner@github.actions"
+          git add docs/data/*.json
+          if git diff --staged --quiet; then
+            echo "No data changes"
+          else
+            git commit -m "📊 Scan $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
