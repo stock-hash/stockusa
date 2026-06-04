@@ -1,0 +1,95 @@
+name: Market Scanner v5.3
+
+on:
+  schedule:
+    # Run every 15 minutes during market hours (Mon-Fri, 9:30 AM - 4:15 PM ET)
+    # GitHub Actions uses UTC: ET = UTC-4 (EDT) or UTC-5 (EST)
+    # 9:30 AM ET = 13:30 UTC, 4:15 PM ET = 20:15 UTC
+    - cron: '*/15 13-20 * * 1-5'
+  workflow_dispatch:  # Manual trigger button
+
+permissions:
+  contents: write
+
+env:
+  TZ: America/New_York
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install yfinance pandas numpy pytz python-dotenv
+
+      - name: Check market hours
+        id: market_check
+        run: |
+          python3 -c "
+          import pytz
+          from datetime import datetime, time
+          et = pytz.timezone('US/Eastern')
+          now = datetime.now(et)
+          mkt_open = now.replace(hour=9, minute=25, second=0)
+          mkt_close = now.replace(hour=16, minute=15, second=0)
+          is_weekday = now.weekday() < 5
+          in_hours = mkt_open <= now <= mkt_close and is_weekday
+          print(f'Current ET: {now.strftime("%I:%M %p ET")}')
+          print(f'Market open: {in_hours}')
+          if in_hours:
+              print('::set-output name=run::true')
+          else:
+              print('::set-output name=run::false')
+              print('Market is closed - skipping scan')
+          "
+
+      - name: Run market scanner
+        if: steps.market_check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+        run: |
+          echo "Starting Market Scanner v5.3..."
+          python run_github.py
+          echo "Scanner complete."
+
+      - name: Verify output
+        run: |
+          echo "=== Output files ==="
+          ls -la docs/ || echo "No docs directory"
+          if [ -f docs/TopBottom_Universal.html ]; then
+            echo "Dashboard: $(wc -c < docs/TopBottom_Universal.html) bytes"
+          fi
+          if [ -f docs/latest_scan.json ]; then
+            echo "JSON: $(wc -c < docs/latest_scan.json) bytes"
+            echo "Alerts: $(python3 -c 'import json; d=json.load(open("docs/latest_scan.json")); print(d.get("total_alerts",0))')"
+          fi
+
+      - name: Commit and push results
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add docs/
+          git diff --cached --quiet && echo "No changes to commit" || {
+            SCAN_TIME=$(date +"%Y-%m-%d %H:%M ET")
+            ALERTS=$(python3 -c 'import json; d=json.load(open("docs/latest_scan.json")); print(d.get("total_alerts",0))' 2>/dev/null || echo "0")
+            git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts"
+            git push
+            echo "Results pushed to GitHub Pages"
+          }
