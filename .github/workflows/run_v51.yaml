@@ -39,23 +39,26 @@ jobs:
       - name: Check market hours
         id: market_check
         run: |
-          python3 -c "
+          python3 << 'PYEOF'
           import pytz
-          from datetime import datetime, time
-          et = pytz.timezone('US/Eastern')
+          from datetime import datetime
+          et = pytz.timezone("US/Eastern")
           now = datetime.now(et)
           mkt_open = now.replace(hour=9, minute=25, second=0)
           mkt_close = now.replace(hour=16, minute=15, second=0)
           is_weekday = now.weekday() < 5
           in_hours = mkt_open <= now <= mkt_close and is_weekday
-          print(f'Current ET: {now.strftime("%I:%M %p ET")}')
-          print(f'Market open: {in_hours}')
-          if in_hours:
-              print('::set-output name=run::true')
-          else:
-              print('::set-output name=run::false')
-              print('Market is closed - skipping scan')
-          "
+          time_str = now.strftime("%I:%M %p ET")
+          print("Current ET: " + time_str)
+          print("Market open: " + str(in_hours))
+          import os
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              if in_hours:
+                  fh.write("run=true\n")
+              else:
+                  fh.write("run=false\n")
+                  print("Market is closed - skipping scan")
+          PYEOF
 
       - name: Run market scanner
         if: steps.market_check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
@@ -78,7 +81,7 @@ jobs:
           fi
           if [ -f docs/latest_scan.json ]; then
             echo "JSON: $(wc -c < docs/latest_scan.json) bytes"
-            echo "Alerts: $(python3 -c 'import json; d=json.load(open("docs/latest_scan.json")); print(d.get("total_alerts",0))')"
+            python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print('Alerts: ' + str(d.get('total_alerts',0)))"
           fi
 
       - name: Commit and push results
@@ -87,8 +90,8 @@ jobs:
           git config user.email "actions@github.com"
           git add docs/
           git diff --cached --quiet && echo "No changes to commit" || {
-            SCAN_TIME=$(date +"%Y-%m-%d %H:%M ET")
-            ALERTS=$(python3 -c 'import json; d=json.load(open("docs/latest_scan.json")); print(d.get("total_alerts",0))' 2>/dev/null || echo "0")
+            SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
+            ALERTS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('total_alerts',0))" 2>/dev/null || echo "0")
             git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts"
             git push
             echo "Results pushed to GitHub Pages"
