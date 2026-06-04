@@ -1,97 +1,174 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="refresh" content="300"><title>Market Scanner v5.1</title><style>
-body{background:#0a0a0a;color:#e0e0e0;font-family:"Segoe UI",sans-serif;margin:0;padding:0;}
-.hdr{background:linear-gradient(135deg,#0d1117,#161b22);padding:15px 25px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #30363d;}
-.hdr h1{color:#58a6ff;font-size:22px;margin:0;} .hdr .sub{color:#8b949e;font-size:12px;}
-.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;margin-left:8px;}
-.stats{display:flex;gap:15px;padding:15px 25px;flex-wrap:wrap;}
-.card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px 20px;min-width:120px;}
-.card-label{color:#8b949e;font-size:10px;text-transform:uppercase;letter-spacing:1px;}
-.card-val{font-size:26px;font-weight:bold;margin-top:2px;}
-.main{padding:0 25px 25px;} table{width:100%%;border-collapse:collapse;font-size:12px;}
-th{background:#161b22;color:#58a6ff;text-align:left;padding:10px 6px;border-bottom:2px solid #30363d;position:sticky;top:0;}
-td{padding:7px 6px;border-bottom:1px solid #21262d;} tr:hover{background:#1a1a3e!important;}
-.section{background:#161b22;border:1px solid #30363d;border-radius:10px;margin-top:20px;padding:15px 20px;}
-.section h2{color:#58a6ff;font-size:16px;margin:0 0 10px;} .timer{color:#58a6ff;font-size:13px;font-weight:bold;}
-.foot{color:#484f58;font-size:11px;text-align:center;padding:15px;}</style></head><body>
-<div class="hdr"><div><h1>Market Scanner v5.1</h1><span class="sub">12-Indicator / Multi-Timeframe / Sector Override</span></div>
-<div style="text-align:right;"><span class="badge" style="background:#1f6feb;color:#fff;">YAHOO</span><span class="badge" style="background:#238636;color:#fff;">LIVE</span>
-<div style="margin-top:5px;color:#8b949e;font-size:11px;">Last: 2026-06-03 05:28:57 PM ET</div>
-<div class="timer" id="timer">5:00</div></div></div>
-<div class="stats">
-<div class="card"><div class="card-label">Alerts Today</div><div class="card-val" style="color:#58a6ff;">5</div></div>
-<div class="card"><div class="card-label">Win Rate</div><div class="card-val" style="color:#ff9800;">20%</div><div style="color:#8b949e;font-size:10px;">Today</div></div>
-<div class="card"><div class="card-label">Market Regime</div><div class="card-val" style="color:#ff1744;">BEARISH</div><div style="color:#8b949e;font-size:10px;">SPY-based</div></div>
-<div class="card"><div class="card-label">SPY RSI</div><div class="card-val">28.1</div></div>
-<div class="card"><div class="card-label">Universe</div><div class="card-val">127</div></div>
-<div class="card"><div class="card-label">Filtered</div><div class="card-val">0</div></div>
-<div class="card"><div class="card-label">Scans Today</div><div class="card-val">1</div></div>
-<div class="card"><div class="card-label">Data Source</div><div class="card-val" style="font-size:16px;">Yahoo</div></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="900">
+<title>Market Scanner v5.3 - 2026-06-04</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e17;--card:#111827;--border:#1e293b;--text:#e2e8f0;--dim:#64748b;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--cyan:#06b6d4;--purple:#a855f7;--orange:#f97316;--yellow:#eab308}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-variant-numeric:tabular-nums;min-height:100vh}
+a{color:var(--cyan);text-decoration:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:#0d1320;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.topbar h1{font-size:18px;font-weight:700;color:var(--cyan)}
+.topbar small{font-size:11px;color:var(--dim)}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-bull{background:#22c55e22;color:var(--green)}
+.badge-bear{background:#ef444422;color:var(--red)}
+.badge-neutral{background:#eab30822;color:var(--yellow)}
+.meta{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--dim)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;padding:18px 24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.card .label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.card .value{font-size:26px;font-weight:700}
+.card .sub{font-size:12px;color:var(--dim);margin-top:4px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;flex-wrap:wrap;gap:10px}
+.filters{display:flex;gap:6px}
+.fbtn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:12px;font-weight:600;transition:all .2s}
+.fbtn:hover,.fbtn.active{background:var(--cyan);color:#000;border-color:var(--cyan)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#0d1320;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;position:sticky;top:0;cursor:pointer;user-select:none;text-align:left;border-bottom:1px solid var(--border)}
+thead th:hover{color:var(--cyan)}
+tbody tr{border-bottom:1px solid #1e293b44;transition:background .15s}
+tbody tr:hover{background:#1e293b55}
+td{padding:10px 12px;white-space:nowrap}
+.ticker{font-weight:700;color:var(--cyan)}
+.sig{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700}
+.sig-bottom{background:#22c55e22;color:var(--green)}
+.sig-top{background:#ef444422;color:var(--red)}
+.setup{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.setup-reversal{background:#3b82f622;color:var(--blue)}
+.setup-leadership{background:#a855f722;color:var(--purple)}
+.setup-hybrid{background:#f9731622;color:var(--orange)}
+.score-bar{display:flex;align-items:center;gap:6px}
+.score-bar .bar{width:50px;height:6px;background:#1e293b;border-radius:3px;overflow:hidden}
+.score-bar .bar .fill{height:100%;border-radius:3px}
+.empty-state{text-align:center;padding:60px;color:var(--dim)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.footer{text-align:center;padding:20px;color:var(--dim);font-size:11px;border-top:1px solid var(--border);margin-top:20px}
+@media(max-width:768px){.cards{grid-template-columns:1fr 1fr}td,th{padding:6px 8px;font-size:12px}.topbar{flex-direction:column;text-align:center}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>&#9889; Market Scanner v5.3</h1>
+    <small>12-Indicator - Multi-Timeframe - Sector Override - GitHub Actions</small>
+  </div>
+  <div class="meta">
+    <span class="badge badge-bear">BEARISH</span>
+    <span>Scanned: <b>2026-06-04 06:57:29 PM ET</b></span>
+    <span>260 stocks</span>
+  </div>
 </div>
-<div class="main"><div class="section"><h2>Live Alerts - Today</h2>
-<table><tr><th>Ticker</th><th>Signal</th><th>Price</th><th>Score</th><th>5/15/30/60</th><th>MTF</th><th>RSI</th><th>Stoch</th><th>W%%R</th><th>MFI</th><th>CMF</th><th>Vol</th><th>Result</th><th>Time</th></tr>
-<tr style="background:#2d0a0a;">
-<td style="font-weight:bold;font-size:15px;">JPM</td>
-<td><span style="background:#ff1744;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;">TOP</span></td>
-<td>$301.23</td>
-<td><div style="background:#333;border-radius:6px;height:18px;width:110px;"><div style="background:#4caf50;height:18px;width:82%;border-radius:6px;text-align:center;color:#fff;font-size:11px;line-height:18px;">82</div></div></td>
-<td style="font-size:11px;">91/80/58/58</td>
-<td><span style="background:#00e676;color:#000;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold;">5m+15m+30m+60m</span></td>
-<td>74.0</td><td>86.7</td><td>-13.3</td><td>75.3</td><td>0.127</td>
-<td>no</td>
-<td style="color:#ff1744;font-weight:bold;">LOSS +0.1%</td>
-<td style="font-size:11px;">02:03 PM</td></tr>
-<tr style="background:#2d0a0a;">
-<td style="font-weight:bold;font-size:15px;">KLAC</td>
-<td><span style="background:#ff1744;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;">TOP</span></td>
-<td>$2119.19</td>
-<td><div style="background:#333;border-radius:6px;height:18px;width:110px;"><div style="background:#4caf50;height:18px;width:76%;border-radius:6px;text-align:center;color:#fff;font-size:11px;line-height:18px;">76</div></div></td>
-<td style="font-size:11px;">71/60/77/55</td>
-<td><span style="background:#00e676;color:#000;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold;">5m+15m+30m+60m</span></td>
-<td>80.5</td><td>83.0</td><td>-17.0</td><td>78.0</td><td>0.306</td>
-<td>no</td>
-<td style="color:#00e676;font-weight:bold;">WIN -0.1%</td>
-<td style="font-size:11px;">02:05 PM</td></tr>
-<tr style="background:#2d0a0a;">
-<td style="font-weight:bold;font-size:15px;">URI</td>
-<td><span style="background:#ff1744;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;">TOP</span></td>
-<td>$1046.82</td>
-<td><div style="background:#333;border-radius:6px;height:18px;width:110px;"><div style="background:#4caf50;height:18px;width:66%;border-radius:6px;text-align:center;color:#fff;font-size:11px;line-height:18px;">66</div></div></td>
-<td style="font-size:11px;">81/62/55/0</td>
-<td><span style="background:#ffab00;color:#000;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold;">5m+15m+30m</span></td>
-<td>74.6</td><td>87.1</td><td>-12.9</td><td>72.2</td><td>0.000</td>
-<td>no</td>
-<td style="color:#ff1744;font-weight:bold;">LOSS +0.1%</td>
-<td style="font-size:11px;">02:05 PM</td></tr>
-<tr style="background:#0d2818;">
-<td style="font-weight:bold;font-size:15px;">CRM</td>
-<td><span style="background:#00c853;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;">BOTTOM</span></td>
-<td>$190.91</td>
-<td><div style="background:#333;border-radius:6px;height:18px;width:110px;"><div style="background:#4caf50;height:18px;width:61%;border-radius:6px;text-align:center;color:#fff;font-size:11px;line-height:18px;">61</div></div></td>
-<td style="font-size:11px;">40/48/63/53</td>
-<td><span style="background:#00e676;color:#000;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold;">5m+15m+30m+60m</span></td>
-<td>34.2</td><td>11.0</td><td>-89.0</td><td>34.5</td><td>-0.109</td>
-<td>YES</td>
-<td style="color:#ff1744;font-weight:bold;">LOSS -0.0%</td>
-<td style="font-size:11px;">02:04 PM</td></tr>
-<tr style="background:#0d2818;">
-<td style="font-weight:bold;font-size:15px;">PGR</td>
-<td><span style="background:#00c853;color:#fff;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:bold;">BOTTOM</span></td>
-<td>$194.01</td>
-<td><div style="background:#333;border-radius:6px;height:18px;width:110px;"><div style="background:#ff9800;height:18px;width:59%;border-radius:6px;text-align:center;color:#fff;font-size:11px;line-height:18px;">59</div></div></td>
-<td style="font-size:11px;">73/60/60/0</td>
-<td><span style="background:#ffab00;color:#000;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold;">5m+15m+30m</span></td>
-<td>36.1</td><td>15.3</td><td>-84.7</td><td>40.6</td><td>0.000</td>
-<td>no</td>
-<td style="color:#ff1744;font-weight:bold;">LOSS --</td>
-<td style="font-size:11px;">02:05 PM</td></tr>
-</table>
+
+<div class="cards">
+  <div class="card"><div class="label">Total Alerts</div><div class="value">31</div><div class="sub">&#9650; 0 Bottom &nbsp; &#9660; 31 Top</div></div>
+  <div class="card"><div class="label">Market Regime</div><div class="value">BEARISH</div><div class="sub">SPY RSI: 34.8</div></div>
+  <div class="card"><div class="label">Scan Time</div><div class="value" style="font-size:18px">2026-06-04 06:57:29 PM ET</div><div class="sub">Auto-refreshes every 15 min</div></div>
+  <div class="card"><div class="label">Platform</div><div class="value" style="font-size:18px">GitHub Actions</div><div class="sub">Zero disk I/O issues</div></div>
 </div>
-<div class="section"><h2>Weekly Performance - Last 7 Days</h2>
-<table><tr><th>Date</th><th>Alerts</th><th>Bottom</th><th>Top</th><th>Win Rate</th></tr>
-<tr><td>2026-06-03</td><td>5</td><td style="color:#00c853;">2</td><td style="color:#ff1744;">3</td><td>20%</td></tr>
-<tr><td>2026-06-02</td><td>7</td><td style="color:#00c853;">0</td><td style="color:#ff1744;">7</td><td>71%</td></tr>
-<tr><td>2026-06-01</td><td>0</td><td style="color:#00c853;">0</td><td style="color:#ff1744;">0</td><td>0%</td></tr>
-</table>
-</div></div>
-<div class="foot">Scanner v5.1 | MTF: 5m+15m+30m (STRICT) + 60m (BOOSTER) | GitHub Actions | Every 5 min</div>
-<script>let s=300;function tick(){s--;if(s<0)s=300;let m=Math.floor(s/60),sec=s%60;document.getElementById("timer").textContent=m+":"+(sec<10?"0":"")+sec;}setInterval(tick,1000);</script></body></html>
+
+<div class="toolbar">
+  <div class="filters">
+    <button class="fbtn active" onclick="filterAlerts('ALL')">ALL <b>31</b></button>
+    <button class="fbtn" onclick="filterAlerts('BOTTOM')">&#9650; BOTTOM <b>0</b></button>
+    <button class="fbtn" onclick="filterAlerts('TOP')">&#9660; TOP <b>31</b></button>
+  </div>
+  <span style="color:var(--dim);font-size:12px">Click column headers to sort</span>
+</div>
+
+<div style="padding:0 24px;overflow-x:auto">
+  <table>
+    <thead><tr>
+      <th onclick="sortTable('ticker')">Ticker</th>
+      <th onclick="sortTable('signal')">Signal</th>
+      <th onclick="sortTable('alert_price')">Alert $</th>
+      <th onclick="sortTable('confidence')">Score</th>
+      <th onclick="sortTable('setup_type')">Setup</th>
+      <th onclick="sortTable('mtf_status')">MTF</th>
+      <th>Regime</th>
+      <th>Sector</th>
+      <th onclick="sortTable('rsi')">RSI</th>
+      <th onclick="sortTable('trend_3d')">Trend 3d</th>
+      <th onclick="sortTable('volume_expansion')">Vol Exp</th>
+      <th>PCR</th>
+      <th>Signals</th>
+      <th>Time</th>
+    </tr></thead>
+    <tbody id="alertBody"></tbody>
+  </table>
+  <div class="empty-state" id="emptyState" style="display:none">
+    <div class="icon">&#128225;</div>
+    <p></p>
+  </div>
+</div>
+
+<div class="footer">
+  Generated by Market Scanner v5.3 on GitHub Actions &bull; 2026-06-04 06:57:29 PM ET &bull; 260 stocks scanned<br>
+  <a href="https://stock-hash.github.io/stockusa/">stock-hash.github.io/stockusa</a>
+</div>
+
+<script>
+var alerts = [{"ticker": "ARKF", "signal": "TOP", "confidence": 95, "c5": 100, "c15": 100, "c30": 87, "c60": 96, "alert_price": 40.32, "rsi": 37.2, "mfi": 35.0, "cmf": 0, "pcr": 0.06, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "LEADERSHIP", "leadership_score": 100, "trend_3d": -6.12, "trend_5d": -4.31, "volume_expansion": 0.87, "relative_strength": -5.92, "sector_override": 0, "signals": ["Trend3d-", "StrongTrend3d", "Trend5d-", "StrongTrend5d", "RS3d-", "RS5d-", "RSI_Trend", "MACD_Momentum", "BelowVWAP", "SellFlow", "OBV_Down", "MFI_Healthy"], "mtf_status": "5m+15m+30m+60m", "time": "2026-06-04 06:52:03 PM ET"}, {"ticker": "AVGO", "signal": "TOP", "confidence": 92, "c5": 100, "c15": 85, "c30": 0, "c60": 0, "alert_price": 419.03, "rsi": 51.2, "mfi": 48.5, "cmf": -0.09, "pcr": 0.57, "regime": "BEARISH", "sector_strength": "WEAK", "setup_type": "LEADERSHIP", "leadership_score": 100, "trend_3d": -8.93, "trend_5d": -1.8, "volume_expansion": 1.71, "relative_strength": -7.6, "sector_override": 1, "signals": ["Trend3d-", "StrongTrend3d", "Trend5d-", "VolExp=1.7x", "HighVolExp", "RS3d-", "RS5d-", "RSI_Trend", "BelowVWAP", "SellFlow", "OBV_Down", "CMF_Negative", "MFI_Healthy", "LEADER_IN_WEAK_SECTOR"], "mtf_status": "5m+15m", "time": "2026-06-04 06:40:36 PM ET"}, {"ticker": "CL", "signal": "TOP", "confidence": 88, "c5": 80, "c15": 96, "c30": 0, "c60": 0, "alert_price": 85.1, "rsi": 62.4, "mfi": 74.5, "cmf": 0.129, "pcr": 2.19, "regime": "BEARISH", "sector_strength": "WEAK", "setup_type": "LEADERSHIP", "leadership_score": 68, "trend_3d": -3.77, "trend_5d": -7.16, "volume_expansion": 1.03, "relative_strength": -3.78, "sector_override": 1, "signals": ["Trend3d-", "StrongTrend3d", "Trend5d-", "StrongTrend5d", "RS3d-", "RS5d-", "BelowVWAP", "LEADER_IN_WEAK_SECTOR"], "mtf_status": "5m+15m", "time": "2026-06-04 06:43:38 PM ET"}, {"ticker": "CRM", "signal": "TOP", "confidence": 87, "c5": 100, "c15": 89, "c30": 72, "c60": 0, "alert_price": 188.79, "rsi": 36.3, "mfi": 33.9, "cmf": -0.111, "pcr": 0.53, "regime": "BEARISH", "sector_strength": "WEAK", "setup_type": "LEADERSHIP", "leadership_score": 85, "trend_3d": -9.95, "trend_5d": 7.14, "volume_expansion": 0.85, "relative_strength": -8.62, "sector_override": 1, "signals": ["Trend3d-", "StrongTrend3d", "RS3d-", "RSI_Trend", "MACD_Momentum", "BelowVWAP", "SellFlow", "OBV_Down", "CMF_Negative", "MFI_Healthy", "LEADER_IN_WEAK_SECTOR"], "mtf_status": "5m+15m+30m", "time": "2026-06-04 06:40:59 PM ET"}, {"ticker": "KMB", "signal": "TOP", "confidence": 85, "c5": 80, "c15": 80, "c30": 96, "c60": 0, "alert_price": 94.47, "rsi": 77.7, "mfi": 80.1, "cmf": 0.223, "pcr": 5.0, "regime": "BEARISH", "sector_strength": "WEAK", "setup_type": "LEADERSHIP", "leadership_score": 68, "trend_3d": -3.55, "trend_5d": -5.66, "volume_expansion": 1.17, "relative_strength": -3.56, "sector_override": 1, "signals": ["Trend3d-", "StrongTrend3d", "Trend5d-", "StrongTrend5d", "RS3d-", "RS5d-", "BelowVWAP", "LEADER_IN_WEAK_SECTOR"], "mtf_status": "5m+15m+30m", "time": "2026-06-04 06:45:40 PM ET"}, {"ticker": "SDOW", "signal": "TOP", "confidence": 84, "c5": 87, "c15": 82, "c30": 0, "c60": 0, "alert_price": 25.43, "rsi": 48.4, "mfi": 51.6, "cmf": 0.181, "pcr": 0.13, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "LEADERSHIP", "leadership_score": 81, "trend_3d": -3.16, "trend_5d": -5.46, "volume_expansion": 1.0, "relative_strength": -2.97, "sector_override": 0, "signals": ["Trend3d-", "StrongTrend3d", "Trend5d-", "StrongTrend5d", "RS3d-", "RS5d-", "RSI_Trend", "BelowVWAP", "MFI_Healthy"], "mtf_status": "5m+15m", "time": "2026-06-04 06:56:07 PM ET"}, {"ticker": "LABU", "signal": "TOP", "confidence": 80, "c5": 54, "c15": 100, "c30": 76, "c60": 93, "alert_price": 179.01, "rsi": 43.6, "mfi": 31.1, "cmf": -0.297, "pcr": 0.6, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 100, "trend_3d": -1.35, "trend_5d": -6.49, "volume_expansion": 1.46, "relative_strength": -1.16, "sector_override": 0, "signals": ["BearDiv", "MACD-", "SellVol=61%", "VolSpk"], "mtf_status": "5m+15m+30m+60m", "time": "2026-06-04 06:54:47 PM ET"}, {"ticker": "CIBR", "signal": "TOP", "confidence": 78, "c5": 64, "c15": 93, "c30": 0, "c60": 0, "alert_price": 90.68, "rsi": 47.4, "mfi": 27.2, "cmf": -0.082, "pcr": 1.05, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 80, "trend_3d": -3.66, "trend_5d": 8.39, "volume_expansion": 1.12, "relative_strength": -3.47, "sector_override": 0, "signals": ["BearDiv", "VWAP-", "BBReject", "SellVol=73%", "VolSpk"], "mtf_status": "5m+15m", "time": "2026-06-04 06:50:51 PM ET"}, {"ticker": "EWY", "signal": "TOP", "confidence": 75, "c5": 100, "c15": 48, "c30": 78, "c60": 0, "alert_price": 204.13, "rsi": 37.0, "mfi": 26.1, "cmf": -0.017, "pcr": 5.0, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "LEADERSHIP", "leadership_score": 94, "trend_3d": -5.87, "trend_5d": -1.18, "volume_expansion": 0.97, "relative_strength": -5.68, "sector_override": 0, "signals": ["Trend3d-", "StrongTrend3d", "Trend5d-", "RS3d-", "RS5d-", "RSI_Trend", "MACD_Momentum", "BelowVWAP", "SellFlow", "OBV_Down"], "mtf_status": "5m+15m+30m", "time": "2026-06-04 06:53:21 PM ET"}, {"ticker": "XHB", "signal": "TOP", "confidence": 75, "c5": 100, "c15": 50, "c30": 0, "c60": 0, "alert_price": 104.72, "rsi": 73.0, "mfi": 47.9, "cmf": -0.049, "pcr": 0.75, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "REVERSAL", "leadership_score": 21, "trend_3d": 1.44, "trend_5d": 1.9, "volume_expansion": 0.72, "relative_strength": 1.64, "sector_override": 0, "signals": ["BearDiv", "MACD-", "StochX", "RSI=73.0", "BBReject", "WR=-19", "SellVol=72%", "LH", "VolSpk", "OBV-", "CMF-", "ShootStar"], "mtf_status": "5m+15m", "time": "2026-06-04 06:57:17 PM ET"}, {"ticker": "BA", "signal": "TOP", "confidence": 74, "c5": 75, "c15": 74, "c30": 0, "c60": 0, "alert_price": 217.43, "rsi": 41.9, "mfi": 32.8, "cmf": -0.051, "pcr": 0.29, "regime": "BEARISH", "sector_strength": "STRONG", "setup_type": "LEADERSHIP", "leadership_score": 100, "trend_3d": -3.07, "trend_5d": -4.96, "volume_expansion": 1.1, "relative_strength": -5.25, "sector_override": 0, "signals": ["Trend3d-", "StrongTrend3d", "Trend5d-", "StrongTrend5d", "RS3d-", "RS5d-", "RSI_Trend", "MACD_Momentum", "BelowVWAP", "SellFlow", "OBV_Down", "CMF_Negative", "MFI_Healthy"], "mtf_status": "5m+15m", "time": "2026-06-04 06:39:15 PM ET"}, {"ticker": "INTU", "signal": "TOP", "confidence": 73, "c5": 100, "c15": 47, "c30": 0, "c60": 0, "alert_price": 301.88, "rsi": 32.6, "mfi": 36.1, "cmf": -0.161, "pcr": 0.64, "regime": "BEARISH", "sector_strength": "WEAK", "setup_type": "LEADERSHIP", "leadership_score": 100, "trend_3d": -14.64, "trend_5d": -3.52, "volume_expansion": 0.7, "relative_strength": -13.31, "sector_override": 1, "signals": ["Trend3d-", "StrongTrend3d", "Trend5d-", "StrongTrend5d", "RS3d-", "RS5d-", "MACD_Momentum", "BelowVWAP", "SellFlow", "OBV_Down", "CMF_Negative", "MFI_Healthy", "LEADER_IN_WEAK_SECTOR"], "mtf_status": "5m+15m", "time": "2026-06-04 06:42:10 PM ET"}, {"ticker": "DRIV", "signal": "TOP", "confidence": 72, "c5": 48, "c15": 97, "c30": 0, "c60": 0, "alert_price": 41.9, "rsi": 38.2, "mfi": 39.9, "cmf": 0, "pcr": 0.0, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 49, "trend_3d": 0.82, "trend_5d": -0.38, "volume_expansion": 1.13, "relative_strength": 1.01, "sector_override": 0, "signals": ["BearDiv", "VWAP-", "SellVol=72%"], "mtf_status": "5m+15m", "time": "2026-06-04 06:56:54 PM ET"}, {"ticker": "NKE", "signal": "TOP", "confidence": 69, "c5": 66, "c15": 73, "c30": 0, "c60": 0, "alert_price": 43.6, "rsi": 85.3, "mfi": 89.8, "cmf": 0.035, "pcr": 0.74, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 68, "trend_3d": -5.03, "trend_5d": -7.09, "volume_expansion": 0.94, "relative_strength": -4.24, "sector_override": 0, "signals": ["StochX", "RSI=85.3", "WR=-17", "VolSpk", "MFI=90", "ShootStar"], "mtf_status": "5m+15m", "time": "2026-06-04 06:38:44 PM ET"}, {"ticker": "DECK", "signal": "TOP", "confidence": 69, "c5": 61, "c15": 73, "c30": 64, "c60": 78, "alert_price": 108.94, "rsi": 71.1, "mfi": 87.1, "cmf": 0.422, "pcr": 0.46, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 68, "trend_3d": -1.68, "trend_5d": -4.68, "volume_expansion": 0.65, "relative_strength": -0.89, "sector_override": 0, "signals": ["StochX", "RSI=71.1", "BBReject", "WR=-5", "MFI=87"], "mtf_status": "5m+15m+30m+60m", "time": "2026-06-04 06:46:40 PM ET"}, {"ticker": "BOTZ", "signal": "TOP", "confidence": 69, "c5": 85, "c15": 54, "c30": 0, "c60": 0, "alert_price": 40.06, "rsi": 32.7, "mfi": 39.6, "cmf": -0.057, "pcr": 0.24, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "LEADERSHIP", "leadership_score": 79, "trend_3d": -1.28, "trend_5d": -0.5, "volume_expansion": 0.82, "relative_strength": -1.09, "sector_override": 0, "signals": ["Trend3d-", "RS3d-", "RS5d-", "MACD_Momentum", "BelowVWAP", "SellFlow", "OBV_Down", "CMF_Negative", "MFI_Healthy"], "mtf_status": "5m+15m", "time": "2026-06-04 06:50:15 PM ET"}, {"ticker": "ARKK", "signal": "TOP", "confidence": 69, "c5": 54, "c15": 98, "c30": 55, "c60": 70, "alert_price": 80.01, "rsi": 30.8, "mfi": 17.5, "cmf": -0.233, "pcr": 0.52, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 86, "trend_3d": -1.46, "trend_5d": -1.16, "volume_expansion": 0.92, "relative_strength": -1.27, "sector_override": 0, "signals": ["BearDiv", "VWAP-", "SellVol=90%", "VolSpk"], "mtf_status": "5m+15m+30m+60m", "time": "2026-06-04 06:51:35 PM ET"}, {"ticker": "IWM", "signal": "TOP", "confidence": 64, "c5": 48, "c15": 75, "c30": 71, "c60": 64, "alert_price": 291.99, "rsi": 37.4, "mfi": 21.2, "cmf": -0.116, "pcr": 0.75, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "REVERSAL", "leadership_score": 42, "trend_3d": 1.05, "trend_5d": -0.01, "volume_expansion": 0.95, "relative_strength": 1.24, "sector_override": 0, "signals": ["BearDiv", "BBReject", "SellVol=83%", "VolSpk"], "mtf_status": "5m+15m+30m+60m", "time": "2026-06-04 06:48:22 PM ET"}, {"ticker": "REMX", "signal": "TOP", "confidence": 63, "c5": 54, "c15": 73, "c30": 0, "c60": 0, "alert_price": 97.27, "rsi": 58.0, "mfi": 81.6, "cmf": 0.669, "pcr": 5.0, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 68, "trend_3d": -2.46, "trend_5d": -4.43, "volume_expansion": 0.83, "relative_strength": -2.27, "sector_override": 0, "signals": ["BearDiv", "Stoch=95", "WR=-5", "MFI=82"], "mtf_status": "5m+15m", "time": "2026-06-04 06:51:09 PM ET"}, {"ticker": "TECL", "signal": "TOP", "confidence": 62, "c5": 77, "c15": 48, "c30": 0, "c60": 0, "alert_price": 252.75, "rsi": 33.2, "mfi": 18.2, "cmf": -0.527, "pcr": 1.32, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "LEADERSHIP", "leadership_score": 72, "trend_3d": -4.04, "trend_5d": 9.88, "volume_expansion": 1.02, "relative_strength": -3.85, "sector_override": 0, "signals": ["Trend3d-", "StrongTrend3d", "RS3d-", "MACD_Momentum", "BelowVWAP", "SellFlow", "OBV_Down", "CMF_Negative"], "mtf_status": "5m+15m", "time": "2026-06-04 06:55:27 PM ET"}, {"ticker": "XLV", "signal": "TOP", "confidence": 61, "c5": 72, "c15": 58, "c30": 46, "c60": 69, "alert_price": 152.05, "rsi": 75.6, "mfi": 85.3, "cmf": 0.221, "pcr": 0.25, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "REVERSAL", "leadership_score": 0, "trend_3d": 2.87, "trend_5d": 0.8, "volume_expansion": 1.13, "relative_strength": 3.06, "sector_override": 0, "signals": ["StochX", "RSI=75.6", "BBReject", "WR=-18", "MFI=85", "ShootStar"], "mtf_status": "5m+15m+30m+60m", "time": "2026-06-04 06:49:08 PM ET"}, {"ticker": "DUK", "signal": "TOP", "confidence": 58, "c5": 71, "c15": 46, "c30": 0, "c60": 0, "alert_price": 121.83, "rsi": 90.6, "mfi": 57.2, "cmf": -0.032, "pcr": 0.12, "regime": "BEARISH", "sector_strength": "STRONG", "setup_type": "REVERSAL", "leadership_score": 43, "trend_3d": 1.61, "trend_5d": -1.57, "volume_expansion": 1.11, "relative_strength": -0.34, "sector_override": 0, "signals": ["MACD-", "StochX", "RSI=90.6", "BBReject", "SellVol=59%", "VolSpk", "OBV-", "CMF-", "ShootStar"], "mtf_status": "5m+15m", "time": "2026-06-04 06:43:19 PM ET"}, {"ticker": "GOOGL", "signal": "TOP", "confidence": 57, "c5": 64, "c15": 61, "c30": 46, "c60": 57, "alert_price": 372.33, "rsi": 45.5, "mfi": 65.5, "cmf": 0.034, "pcr": 0.35, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "LEADERSHIP", "leadership_score": 60, "trend_3d": -1.11, "trend_5d": -4.6, "volume_expansion": 1.45, "relative_strength": 1.05, "sector_override": 0, "signals": ["Trend3d-", "Trend5d-", "StrongTrend5d", "VolExp=1.4x", "RS5d-", "RSI_Trend"], "mtf_status": "5m+15m+30m+60m", "time": "2026-06-04 06:39:37 PM ET"}, {"ticker": "PH", "signal": "TOP", "confidence": 57, "c5": 71, "c15": 46, "c30": 56, "c60": 57, "alert_price": 872.23, "rsi": 75.6, "mfi": 55.2, "cmf": 0.007, "pcr": 0.27, "regime": "BEARISH", "sector_strength": "STRONG", "setup_type": "REVERSAL", "leadership_score": 21, "trend_3d": 5.94, "trend_5d": 2.28, "volume_expansion": 1.07, "relative_strength": 3.76, "sector_override": 0, "signals": ["BearDiv", "MACD-", "StochX", "RSI=75.6", "BBReject", "SellVol=63%", "VolSpk", "OBV-"], "mtf_status": "5m+15m+30m+60m", "time": "2026-06-04 06:44:23 PM ET"}, {"ticker": "SPY", "signal": "TOP", "confidence": 57, "c5": 48, "c15": 59, "c30": 64, "c60": 0, "alert_price": 757.05, "rsi": 34.8, "mfi": 24.6, "cmf": -0.121, "pcr": 0.91, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "REVERSAL", "leadership_score": 34, "trend_3d": -0.19, "trend_5d": 0.33, "volume_expansion": 0.98, "relative_strength": 0.0, "sector_override": 0, "signals": ["BearDiv", "BBReject", "SellVol=68%", "VolSpk"], "mtf_status": "5m+15m+30m", "time": "2026-06-04 06:47:50 PM ET"}, {"ticker": "GOOG", "signal": "TOP", "confidence": 55, "c5": 48, "c15": 61, "c30": 57, "c60": 57, "alert_price": 369.37, "rsi": 48.4, "mfi": 66.3, "cmf": 0.054, "pcr": 0.43, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 60, "trend_3d": -0.89, "trend_5d": -4.36, "volume_expansion": 1.44, "relative_strength": 1.27, "sector_override": 0, "signals": ["StochX", "BBReject", "WR=-3", "ShootStar"], "mtf_status": "5m+15m+30m+60m", "time": "2026-06-04 06:39:54 PM ET"}, {"ticker": "SLB", "signal": "TOP", "confidence": 54, "c5": 61, "c15": 47, "c30": 0, "c60": 0, "alert_price": 58.01, "rsi": 59.1, "mfi": 80.6, "cmf": -0.003, "pcr": 0.42, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "REVERSAL", "leadership_score": 0, "trend_3d": 6.51, "trend_5d": 5.79, "volume_expansion": 0.74, "relative_strength": 3.98, "sector_override": 0, "signals": ["BearDiv", "StochX", "BBReject", "MFI=81"], "mtf_status": "5m+15m", "time": "2026-06-04 06:43:57 PM ET"}, {"ticker": "XLK", "signal": "TOP", "confidence": 54, "c5": 54, "c15": 54, "c30": 0, "c60": 0, "alert_price": 193.14, "rsi": 31.1, "mfi": 19.0, "cmf": -0.42, "pcr": 1.77, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 64, "trend_3d": -1.32, "trend_5d": 3.38, "volume_expansion": 0.92, "relative_strength": -1.13, "sector_override": 0, "signals": ["BearDiv", "VWAP-", "SellVol=91%", "VolSpk"], "mtf_status": "5m+15m", "time": "2026-06-04 06:48:41 PM ET"}, {"ticker": "QQQ", "signal": "TOP", "confidence": 51, "c5": 54, "c15": 48, "c30": 0, "c60": 0, "alert_price": 740.5, "rsi": 28.5, "mfi": 28.0, "cmf": -0.416, "pcr": 0.91, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "REVERSAL", "leadership_score": 42, "trend_3d": -0.29, "trend_5d": 0.68, "volume_expansion": 1.02, "relative_strength": -0.1, "sector_override": 0, "signals": ["BearDiv", "VWAP-", "SellVol=90%", "VolSpk"], "mtf_status": "5m+15m", "time": "2026-06-04 06:48:04 PM ET"}, {"ticker": "TQQQ", "signal": "TOP", "confidence": 51, "c5": 54, "c15": 48, "c30": 0, "c60": 0, "alert_price": 85.21, "rsi": 28.6, "mfi": 31.1, "cmf": -0.324, "pcr": 0.65, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "HYBRID", "leadership_score": 69, "trend_3d": -0.95, "trend_5d": 1.84, "volume_expansion": 0.92, "relative_strength": -0.76, "sector_override": 0, "signals": ["BearDiv", "VWAP-", "SellVol=89%", "VolSpk"], "mtf_status": "5m+15m", "time": "2026-06-04 06:54:05 PM ET"}, {"ticker": "XLRE", "signal": "TOP", "confidence": 50, "c5": 50, "c15": 50, "c30": 0, "c60": 0, "alert_price": 44.4, "rsi": 96.9, "mfi": 95.7, "cmf": 0.426, "pcr": 0.49, "regime": "BEARISH", "sector_strength": "NEUTRAL", "setup_type": "REVERSAL", "leadership_score": 0, "trend_3d": 2.61, "trend_5d": -0.02, "volume_expansion": 1.17, "relative_strength": 2.8, "sector_override": 0, "signals": ["StochX", "RSI=96.9", "WR=-6", "MFI=96"], "mtf_status": "5m+15m", "time": "2026-06-04 06:49:34 PM ET"}];
+var currentFilter = 'ALL';
+var sortCol = 'confidence';
+var sortDir = -1;
+
+function sigBadge(s){return s==='BOTTOM'?'<span class="sig sig-bottom">&#9650; BOTTOM</span>':'<span class="sig sig-top">&#9660; TOP</span>';}
+function setupBadge(s){if(!s)return'-';var c=s.indexOf('LEADER')>=0?'setup-leadership':s.indexOf('HYBRID')>=0?'setup-hybrid':'setup-reversal';return'<span class="setup '+c+'">'+s+'</span>';}
+function scoreBar(v){v=parseInt(v)||0;var c=v>=80?'var(--green)':v>=60?'var(--cyan)':v>=45?'var(--yellow)':'var(--red)';return'<div class="score-bar">'+v+'<div class="bar"><div class="fill" style="width:'+v+'%;background:'+c+'"></div></div></div>';}
+function fmtPct(v){if(!v||v===0)return'<span style="color:var(--dim)">0.00%</span>';return v>0?'<span style="color:var(--green)">+'+v.toFixed(2)+'%</span>':'<span style="color:var(--red)">'+v.toFixed(2)+'%</span>';}
+function extractTime(at){if(!at)return'-';try{var m=at.match(/(\d{1,2}:\d{2}:\d{2}\s*[AP]M)/i);return m?m[1]+' ET':at;}catch(e){return at;}}
+
+function renderAlerts(){
+  var data=alerts.slice();
+  if(currentFilter!=='ALL')data=data.filter(function(a){return a.signal===currentFilter;});
+  if(sortCol)data.sort(function(a,b){var va=a[sortCol],vb=b[sortCol];if(typeof va==='string')return sortDir*va.localeCompare(vb);return sortDir*((va||0)-(vb||0));});
+  var body=document.getElementById('alertBody');
+  var empty=document.getElementById('emptyState');
+  if(!data.length){body.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+  var html='';
+  for(var i=0;i<data.length;i++){
+    var a=data[i];
+    var sigs=(a.signals||[]).join(', ');
+    html+='<tr>'+
+      '<td class="ticker">'+a.ticker+'</td>'+
+      '<td>'+sigBadge(a.signal)+'</td>'+
+      '<td>$'+(a.alert_price||0).toFixed(2)+'</td>'+
+      '<td>'+scoreBar(a.confidence)+'</td>'+
+      '<td>'+setupBadge(a.setup_type)+'</td>'+
+      '<td style="color:var(--dim);font-size:12px">'+(a.mtf_status||'-')+'</td>'+
+      '<td style="font-size:12px">'+(a.regime||'-')+'</td>'+
+      '<td style="font-size:12px">'+(a.sector_strength||'-')+'</td>'+
+      '<td>'+(a.rsi||0).toFixed(1)+'</td>'+
+      '<td>'+fmtPct(a.trend_3d)+'</td>'+
+      '<td>'+(a.volume_expansion||1).toFixed(1)+'x</td>'+
+      '<td>'+(a.pcr||1).toFixed(2)+'</td>'+
+      '<td style="color:var(--dim);font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis">'+sigs+'</td>'+
+      '<td style="color:var(--dim);font-size:12px">'+extractTime(a.time)+'</td>'+
+    '</tr>';
+  }
+  body.innerHTML=html;
+}
+
+function filterAlerts(type){
+  currentFilter=type;
+  var btns=document.querySelectorAll('.fbtn');
+  for(var i=0;i<btns.length;i++)btns[i].classList.remove('active');
+  event.target.closest('.fbtn').classList.add('active');
+  renderAlerts();
+}
+
+function sortTable(col){
+  if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=-1;}
+  renderAlerts();
+}
+
+renderAlerts();
+</script>
+</body>
+</html>
