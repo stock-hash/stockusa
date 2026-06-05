@@ -18,12 +18,16 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    concurrency:
+      group: scanner-push
+      cancel-in-progress: false
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -93,6 +97,7 @@ jobs:
             SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
             ALERTS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('total_alerts',0))" 2>/dev/null || echo "0")
             git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts"
+            git pull --rebase origin main
             git push
             echo "Results pushed to GitHub Pages"
           }
