@@ -51,6 +51,45 @@ except ImportError as e:
     SCANNER_IMPORTED = False
     ALL_STOCKS = []
 
+# v5.3: Import peewee memory patch to fix _tz_kv errors
+_HAS_PATCH = False
+try:
+    from market_scanner_v5 import safe_yf_download as _scanner_dl
+    from market_scanner_v5 import _patch_yf_tz_cache, _reinit_tz_mem_cache
+    _patch_yf_tz_cache()
+    _HAS_PATCH = True
+    logger.info("v5.3 peewee memory patch applied")
+except Exception as e:
+    logger.info("v5.3 patch not available: %s", e)
+
+def patched_yf_download(*args, **kwargs):
+    if _HAS_PATCH:
+        _reinit_tz_mem_cache()
+        return _scanner_dl(*args, **kwargs)
+    return yf.download(*args, **kwargs)
+
+def safe_int(val):
+    try:
+        if val is None:
+            return 0
+        fv = float(val)
+        if fv != fv:  # NaN check
+            return 0
+        return int(fv)
+    except (ValueError, TypeError, OverflowError):
+        return 0
+
+def safe_float(val, default=0.0):
+    try:
+        if val is None:
+            return default
+        fv = float(val)
+        if fv != fv:  # NaN check
+            return default
+        return fv
+    except (ValueError, TypeError):
+        return default
+
 
 # ================================================================
 # TECHNICAL INDICATORS (for chart data)
@@ -216,7 +255,7 @@ def run_single_scan():
 def fetch_chart_data(ticker):
     """Fetch 5-day intraday OHLCV + indicators for a ticker."""
     try:
-        data = yf.download(ticker, period="5d", interval="5m", progress=False, auto_adjust=True)
+        data = patched_yf_download(ticker, period="5d", interval="5m", progress=False, auto_adjust=True, threads=False)
         if data is None or data.empty:
             return None
         if isinstance(data.columns, pd.MultiIndex):
@@ -249,6 +288,8 @@ def fetch_chart_data(ticker):
 def fetch_options_data(ticker, signal="BOTTOM"):
     """Fetch options chain + compute strategies."""
     try:
+        if _HAS_PATCH:
+            _reinit_tz_mem_cache()
         t = yf.Ticker(ticker)
         hist = t.history(period="5d")
         if hist.empty:
@@ -277,8 +318,8 @@ def fetch_options_data(ticker, signal="BOTTOM"):
                 all_ivs.extend(df["impliedVolatility"].dropna().tolist())
         avg_iv = round(float(np.mean(all_ivs)) * 100, 1) if all_ivs else 0
         # PCR
-        cv = cdf["volume"].sum() if "volume" in cdf.columns else 0
-        pv = pdf["volume"].sum() if "volume" in pdf.columns else 0
+        cv = safe_float(cdf["volume"].sum()) if "volume" in cdf.columns else 0
+        pv = safe_float(pdf["volume"].sum()) if "volume" in pdf.columns else 0
         pcr = round(float(pv / cv), 2) if cv and cv > 0 and not pd.isna(cv) else 1.0
         # Greeks helper
         def ncdf(x):
@@ -308,14 +349,14 @@ def fetch_options_data(ticker, signal="BOTTOM"):
             rows = []
             for _, row in df.iterrows():
                 strike = float(row["strike"])
-                iv = float(row.get("impliedVolatility", 0.3) or 0.3)
+                iv = safe_float(row.get("impliedVolatility", 0.3), 0.3)
                 g = bsg(spot, strike, T, r, iv, ic)
                 rows.append({
                     "strike": round(strike, 2),
-                    "bid": round(float(row.get("bid", 0) or 0), 2),
-                    "ask": round(float(row.get("ask", 0) or 0), 2),
-                    "volume": int(row.get("volume", 0) or 0),
-                    "oi": int(row.get("openInterest", 0) or 0),
+                    "bid": round(safe_float(row.get("bid", 0)), 2),
+                    "ask": round(safe_float(row.get("ask", 0)), 2),
+                    "volume": safe_int(row.get("volume", 0)),
+                    "oi": safe_int(row.get("openInterest", 0)),
                     "iv": round(iv * 100, 1),
                     "delta": g["delta"], "gamma": g["gamma"],
                     "theta": g["theta"], "vega": g["vega"],
@@ -328,7 +369,7 @@ def fetch_options_data(ticker, signal="BOTTOM"):
         unusual = []
         for ol, ot in [(calls, "CALL"), (puts, "PUT")]:
             for o in ol:
-                if o["oi"] > 0 and o["volume"] > 0 and o["volume"] / o["oi"] > 2:
+                if safe_int(o.get("oi",0)) > 0 and safe_int(o.get("volume",0)) > 0 and safe_int(o.get("volume",0)) / max(safe_int(o.get("oi",0)),1) > 2:
                     unusual.append({"strike": o["strike"], "type": ot, "volume": o["volume"],
                                     "oi": o["oi"], "ratio": round(o["volume"]/o["oi"], 1)})
         unusual.sort(key=lambda x: x["ratio"], reverse=True)
