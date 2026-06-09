@@ -18,6 +18,10 @@ import numpy as np
 import smtplib, logging, time, sys, os, random, warnings
 import sqlite3
 import shutil
+import json
+import urllib.request
+import urllib.error
+from urllib.parse import urlencode
 
 # ═══════════════════════════════════════════════════════════════
 # v5.3 FIX — MONKEY-PATCH YFINANCE TZ-CACHE → IN-MEMORY SQLITE
@@ -393,6 +397,12 @@ sent_alerts = set()
 daily_alerts = []
 market_regime_cache = {"regime": "NEUTRAL", "spy_rsi": 50, "timestamp": None}
 sector_strength_cache = {}
+scan_history = []
+MAX_SCAN_HISTORY = 4
+RQG_MIN_SCORE = 65          # Final alert gate: only A+/VALID reversals become alerts
+RQG_A_PLUS_SCORE = 80
+RQG_WATCH_SCORE = 50
+RQG_ENFORCE_GATE = True     # Set False to observe RQG without blocking alerts
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -437,6 +447,691 @@ def get_time_quality():
     else:
         return 0.9, "CLOSING"
 
+
+
+# ═══════════════════════════════════════════════════════
+# DATA QUALITY + REVERSAL QUALITY GATE + SCAN SUMMARY ENGINE (v5.5)
+# ═══════════════════════════════════════════════════════
+
+STALE_LIMIT_MINUTES = {
+    "1m": 5,
+    "2m": 8,
+    "5m": 12,
+    "15m": 25,
+    "30m": 45,
+    "60m": 90,
+    "1h": 90,
+    "1d": 7 * 24 * 60,  # daily bars: allow prior trading day/weekend gap
+}
+
+
+def is_regular_market_hours(now=None):
+    """Return True only during normal US market hours on non-holiday weekdays."""
+    now = now or get_eastern_now()
+    if now.weekday() >= 5 or now.date() in US_MARKET_HOLIDAYS:
+        return False
+    open_dt = now.replace(hour=MARKET_OPEN_HOUR, minute=MARKET_OPEN_MINUTE, second=0, microsecond=0)
+    close_dt = now.replace(hour=MARKET_CLOSE_HOUR, minute=MARKET_CLOSE_MINUTE, second=0, microsecond=0)
+    return open_dt <= now <= close_dt
+
+
+def _flatten_yf_columns(df):
+    """Normalize single-ticker yfinance output columns."""
+    if df is not None and not df.empty and isinstance(df.columns, pd.MultiIndex):
+        df = df.copy()
+        df.columns = df.columns.get_level_values(0)
+    return df
+
+
+def _latest_timestamp_et(df):
+    """Return latest bar timestamp converted to ET, or None.
+
+    Daily yfinance bars can have timezone-naive date indexes. We use the index directly
+    and normalize daily midnight timestamps to 09:30 ET for readable freshness logs.
+    """
+    try:
+        if df is None or df.empty or len(df.index) == 0:
+            return None
+        ts = pd.Timestamp(df.index[-1])
+        if ts.tzinfo is None:
+            ts = ET.localize(ts.to_pydatetime())
+        else:
+            ts = ts.tz_convert(ET)
+        if ts.hour == 0 and ts.minute == 0 and ts.second == 0:
+            ts = ts.replace(hour=9, minute=30, second=0, microsecond=0)
+        return ts.to_pydatetime()
+    except Exception:
+        return None
+
+
+def get_data_freshness(df, interval="5m"):
+    """Return detailed freshness metadata for logging and decision making."""
+    now = get_eastern_now()
+    latest = _latest_timestamp_et(df)
+    limit = STALE_LIMIT_MINUTES.get(interval, 30)
+    if latest is None:
+        return {
+            "fresh": False, "age_min": 999999, "latest_et": "N/A",
+            "reason": "NO_VALID_TIMESTAMP", "limit_min": limit,
+        }
+    age_min = max((now - latest).total_seconds() / 60.0, 0)
+    fresh = True if not is_regular_market_hours(now) else age_min <= limit
+    reason = "FRESH" if fresh else "STALE_DURING_MARKET_HOURS"
+    return {
+        "fresh": fresh,
+        "age_min": round(age_min, 1),
+        "latest_et": latest.strftime("%Y-%m-%d %I:%M:%S %p ET"),
+        "reason": reason,
+        "limit_min": limit,
+    }
+
+
+def _yahoo_range_for_period(period):
+    return {
+        "1d": "1d", "2d": "2d", "5d": "5d", "7d": "7d",
+        "1mo": "1mo", "3mo": "3mo", "6mo": "6mo", "1y": "1y",
+    }.get(period, period)
+
+
+def yahoo_chart_download(ticker, period="5d", interval="5m", timeout=20):
+    """Backup downloader using Yahoo's chart endpoint directly, bypassing yfinance cache."""
+    try:
+        params = urlencode({
+            "range": _yahoo_range_for_period(period),
+            "interval": interval,
+            "includePrePost": "false",
+            "events": "div,splits",
+        })
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?{params}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 market-scanner-v5"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        result = payload.get("chart", {}).get("result") or []
+        if not result:
+            err = payload.get("chart", {}).get("error")
+            logger.warning("  BACKUP-DL %s: Yahoo chart returned no result: %s", ticker, err)
+            return None
+        r = result[0]
+        timestamps = r.get("timestamp") or []
+        quote = (r.get("indicators", {}).get("quote") or [{}])[0]
+        if not timestamps or not quote:
+            logger.warning("  BACKUP-DL %s: missing timestamps/quote", ticker)
+            return None
+        idx = pd.to_datetime(timestamps, unit="s", utc=True).tz_convert(ET)
+        df = pd.DataFrame({
+            "Open": quote.get("open"),
+            "High": quote.get("high"),
+            "Low": quote.get("low"),
+            "Close": quote.get("close"),
+            "Volume": quote.get("volume"),
+        }, index=idx)
+        df = df.dropna(subset=["Close"])
+        return df if not df.empty else None
+    except Exception as e:
+        logger.warning("  BACKUP-DL %s: Yahoo chart fallback failed: %s", ticker, e)
+        return None
+
+
+def download_with_freshness(ticker, period="5d", interval="5m", label="DATA", allow_fallback=True):
+    """
+    Download data, validate latest-bar freshness, and fallback if stale/empty.
+
+    Full INFO details are kept for REGIME and SECTOR layers. Normal stock downloads stay quiet
+    unless stale, fallback, failure, or DEBUG logging is enabled. Daily 1d data is accepted when
+    non-empty to avoid unnecessary fallback calls during trend checks.
+    """
+    meta = {"ticker": ticker, "interval": interval, "period": period, "source": "yfinance", "fallback_used": False}
+    verbose = label.startswith("REGIME") or label.startswith("SECTOR") or label.startswith("RQG") or logger.isEnabledFor(logging.DEBUG)
+    if verbose:
+        logger.info("  %s %s: request period=%s interval=%s primary=yfinance", label, ticker, period, interval)
+
+    df = safe_yf_download(ticker, period=period, interval=interval,
+                          progress=False, auto_adjust=True, threads=False)
+    df = _flatten_yf_columns(df)
+    q = get_data_freshness(df, interval)
+    meta.update(q)
+    rows = 0 if df is None else len(df)
+
+    # Daily data is used for 3d/5d trend; it should not be treated as intraday stale.
+    if interval == "1d" and df is not None and not df.empty:
+        meta["fresh"] = True
+        if meta.get("reason") == "NO_VALID_TIMESTAMP":
+            meta["reason"] = "DAILY_ACCEPTED_NONEMPTY"
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("  %s %s: daily accepted rows=%s latest=%s source=yfinance", label, ticker, rows, meta.get("latest_et"))
+        return df, meta
+
+    if verbose:
+        logger.info("  %s %s: primary rows=%s latest=%s age=%sm limit=%sm status=%s",
+                    label, ticker, rows, q["latest_et"], q["age_min"], q["limit_min"], q["reason"])
+
+    if df is not None and not df.empty and q["fresh"]:
+        return df, meta
+
+    if allow_fallback:
+        logger.warning("  %s %s: primary not usable (%s). Trying backup YahooChart direct...", label, ticker, q["reason"])
+        bdf = yahoo_chart_download(ticker, period=period, interval=interval)
+        bq = get_data_freshness(bdf, interval)
+        brows = 0 if bdf is None else len(bdf)
+        logger.info("  %s %s: backup rows=%s latest=%s age=%sm limit=%sm status=%s",
+                    label, ticker, brows, bq["latest_et"], bq["age_min"], bq["limit_min"], bq["reason"])
+        if bdf is not None and not bdf.empty and (bq["fresh"] or interval == "1d"):
+            meta.update(bq)
+            meta["source"] = "YahooChartDirect"
+            meta["fallback_used"] = True
+            meta["fresh"] = True
+            return bdf, meta
+
+    meta["source"] = meta.get("source", "yfinance")
+    logger.error("  %s %s: NO FRESH DATA available. latest=%s age=%sm. Scanner will use safe neutral/skip behavior.",
+                 label, ticker, meta.get("latest_et"), meta.get("age_min"))
+    return None, meta
+
+
+def calculate_atr(high, low, close, period=14):
+    try:
+        prev_close = close.shift(1)
+        tr = pd.concat([
+            (high - low),
+            (high - prev_close).abs(),
+            (low - prev_close).abs(),
+        ], axis=1).max(axis=1)
+        return tr.rolling(period).mean()
+    except Exception:
+        return pd.Series(index=close.index, dtype=float)
+
+
+def _fmt_pct(v, default="N/A"):
+    try:
+        return "%+.2f%%" % float(v)
+    except Exception:
+        return default
+
+
+def _fmt_price(v, default="N/A"):
+    try:
+        return "$%.2f" % float(v)
+    except Exception:
+        return default
+
+
+def _safe_float(v, default=0.0):
+    try:
+        if v is None or pd.isna(v):
+            return default
+        return float(v)
+    except Exception:
+        return default
+
+
+def _regular_bullish_divergence(close, rsi, lookback=30):
+    """Stricter local bullish divergence for RQG only."""
+    try:
+        if len(close) < lookback or len(rsi) < lookback:
+            return False
+        c = close.iloc[-lookback:]
+        r = rsi.iloc[-lookback:]
+        half = lookback // 2
+        first_low_idx = c.iloc[:half].idxmin()
+        second_low_idx = c.iloc[half:].idxmin()
+        return c.loc[second_low_idx] < c.loc[first_low_idx] and r.loc[second_low_idx] > r.loc[first_low_idx]
+    except Exception:
+        return False
+
+
+def _regular_bearish_divergence(close, rsi, lookback=30):
+    """Stricter local bearish divergence for RQG only."""
+    try:
+        if len(close) < lookback or len(rsi) < lookback:
+            return False
+        c = close.iloc[-lookback:]
+        r = rsi.iloc[-lookback:]
+        half = lookback // 2
+        first_high_idx = c.iloc[:half].idxmax()
+        second_high_idx = c.iloc[half:].idxmax()
+        return c.loc[second_high_idx] > c.loc[first_high_idx] and r.loc[second_high_idx] < r.loc[first_high_idx]
+    except Exception:
+        return False
+
+
+def evaluate_reversal_quality_gate(ticker, signal_direction, market_regime, sector_strength,
+                                   r5=None, r15=None, r30=None, r60=None):
+    """
+    Reversal Quality Gate (RQG) — final intraday reversal confirmation.
+
+    This does not replace existing v5 scoring. It runs AFTER 5m+15m+30m strict confirmation
+    and attempts to block weak false reversals by scoring: location, exhaustion/divergence,
+    volume, reclaim/rejection, market/sector context, and risk/reward.
+    """
+    result = {
+        "score": 0,
+        "label": "REJECT",
+        "passed": False,
+        "hard_reject": False,
+        "reasons": [],
+        "details": {},
+    }
+    try:
+        data, meta = download_with_freshness(ticker, period="5d", interval="5m", label="RQG", allow_fallback=True)
+        if data is None or data.empty or len(data) < 60:
+            result["reasons"].append("RQG_NO_FRESH_5M_DATA")
+            logger.warning("  RQG %s %s: REJECT score=0 reason=no_fresh_5m_data meta=%s", ticker, signal_direction, meta)
+            return result
+
+        o = data["Open"].dropna()
+        h = data["High"].dropna()
+        l = data["Low"].dropna()
+        c = data["Close"].dropna()
+        v = data["Volume"].dropna()
+        common = c.index.intersection(h.index).intersection(l.index).intersection(o.index).intersection(v.index)
+        o, h, l, c, v = o.loc[common], h.loc[common], l.loc[common], c.loc[common], v.loc[common]
+        if len(c) < 60:
+            result["reasons"].append("RQG_INSUFFICIENT_ROWS")
+            return result
+
+        rsi14 = calculate_rsi(c, 14)
+        rsi2 = calculate_rsi(c, 2)
+        macd_line, macd_sig, macd_hist = calculate_macd(c)
+        vwap = calculate_vwap(h, l, c, v)
+        bbu, bbm, bbl = calculate_bollinger(c)
+        atr = calculate_atr(h, l, c, 14)
+        ema8 = c.ewm(span=8, adjust=False).mean()
+        ema20 = c.ewm(span=20, adjust=False).mean()
+
+        last = float(c.iloc[-1])
+        prev_high = float(h.iloc[-2])
+        prev_low = float(l.iloc[-2])
+        last_high = float(h.iloc[-1])
+        last_low = float(l.iloc[-1])
+        last_open = float(o.iloc[-1])
+        last_vwap = _safe_float(vwap.iloc[-1])
+        last_bbu = _safe_float(bbu.iloc[-1])
+        last_bbl = _safe_float(bbl.iloc[-1])
+        last_atr = max(_safe_float(atr.iloc[-1]), last * 0.001)
+        last_rsi2 = _safe_float(rsi2.iloc[-1], 50)
+        last_rsi14 = _safe_float(rsi14.iloc[-1], 50)
+        mh = _safe_float(macd_hist.iloc[-1])
+        mh_prev = _safe_float(macd_hist.iloc[-2])
+        vol20 = _safe_float(v.rolling(20).mean().iloc[-1], 0)
+        vol_ratio = float(v.iloc[-1]) / vol20 if vol20 > 0 else 1.0
+        vwap_std = _safe_float((c - vwap).rolling(50).std().iloc[-1], last_atr)
+        vwap_z = (last - last_vwap) / vwap_std if vwap_std > 0 else 0.0
+        ema20_slope = (ema20.iloc[-1] - ema20.iloc[-8]) / ema20.iloc[-8] * 100 if len(ema20) > 8 and ema20.iloc[-8] != 0 else 0.0
+        vwap_slope = (vwap.iloc[-1] - vwap.iloc[-8]) / vwap.iloc[-8] * 100 if len(vwap) > 8 and vwap.iloc[-8] != 0 else 0.0
+        recent_lows_down = bool(l.iloc[-1] < l.iloc[-3] < l.iloc[-6]) if len(l) >= 6 else False
+        recent_highs_up = bool(h.iloc[-1] > h.iloc[-3] > h.iloc[-6]) if len(h) >= 6 else False
+
+        score = 0
+        reasons = []
+        buckets = {"location": 0, "divergence": 0, "volume": 0, "reclaim": 0, "context": 0, "risk_reward": 0}
+
+        if signal_direction == "BOTTOM":
+            # 1) Extreme location — max 20
+            if vwap_z <= -2.0:
+                buckets["location"] += 12; reasons.append("DeepBelowVWAP2σ")
+            elif vwap_z <= -1.25:
+                buckets["location"] += 8; reasons.append("BelowVWAPStretch")
+            if last_bbl > 0 and last <= last_bbl * 1.005:
+                buckets["location"] += 8; reasons.append("LowerBandLocation")
+            elif last < last_vwap:
+                buckets["location"] += 4; reasons.append("BelowVWAP")
+
+            # 2) Momentum divergence/exhaustion — max 20
+            bull_div = bool((r5 or {}).get("bdiv")) or _regular_bullish_divergence(c, rsi14)
+            if bull_div:
+                buckets["divergence"] += 10; reasons.append("BullishDivergence")
+            if last_rsi2 <= 5:
+                buckets["divergence"] += 6; reasons.append("RSI2Exhausted")
+            elif last_rsi2 <= 12:
+                buckets["divergence"] += 3; reasons.append("RSI2Low")
+            if mh > mh_prev:
+                buckets["divergence"] += 4; reasons.append("MACDHistImproving")
+
+            # 3) Volume/exhaustion — max 15
+            green = last > last_open
+            if vol_ratio >= 1.8 and green:
+                buckets["volume"] += 8; reasons.append("CapitulationGreenVolume")
+            elif vol_ratio >= 1.4:
+                buckets["volume"] += 5; reasons.append("VolumeExpansion")
+            if bool((r5 or {}).get("vd", 0) > 0.55):
+                buckets["volume"] += 5; reasons.append("BuyVolumeImproving")
+            if last > prev_low and last_low <= min(l.iloc[-10:]):
+                buckets["volume"] += 2; reasons.append("SpringAttempt")
+
+            # 4) Reclaim/structure confirmation — max 20
+            if last > prev_high:
+                buckets["reclaim"] += 8; reasons.append("CloseAbovePriorHigh")
+            if last > ema8.iloc[-1]:
+                buckets["reclaim"] += 4; reasons.append("ReclaimEMA8")
+            if last_bbl > 0 and last > last_bbl and c.iloc[-2] <= bbl.iloc[-2] * 1.005:
+                buckets["reclaim"] += 4; reasons.append("BackInsideLowerBand")
+            if last_vwap > 0 and last > last_vwap:
+                buckets["reclaim"] += 4; reasons.append("ReclaimedVWAP")
+
+            # 5) Sector/market context — max 15
+            if sector_strength == "STRONG":
+                buckets["context"] += 7; reasons.append("SectorStrong")
+            elif sector_strength == "NEUTRAL":
+                buckets["context"] += 4; reasons.append("SectorNeutral")
+            elif sector_strength == "WEAK" and bool((r5 or {}).get("sector_override", 0)):
+                buckets["context"] += 5; reasons.append("WeakSectorButStockOverride")
+            if market_regime != "BEARISH":
+                buckets["context"] += 5; reasons.append("MarketNotBearish")
+            elif last > ema8.iloc[-1] and mh > mh_prev:
+                buckets["context"] += 3; reasons.append("BearMarketButMicroReversal")
+            if (r5 or {}).get("relative_strength", 0) > 0:
+                buckets["context"] += 3; reasons.append("PositiveRelativeStrength")
+
+            # 6) Risk/reward to VWAP/mean — max 10
+            stop = min(l.iloc[-12:]) - 0.10 * last_atr
+            target = max(last_vwap, bbm.iloc[-1])
+            risk = max(last - stop, 0.01)
+            reward = max(target - last, 0.0)
+            rr = reward / risk if risk > 0 else 0
+            if rr >= 2.0:
+                buckets["risk_reward"] += 10; reasons.append("RR>=2")
+            elif rr >= 1.5:
+                buckets["risk_reward"] += 7; reasons.append("RR>=1.5")
+            elif rr >= 1.0:
+                buckets["risk_reward"] += 4; reasons.append("RR>=1")
+
+            hard_reject = False
+            hard_reasons = []
+            if sector_strength == "WEAK" and market_regime == "BEARISH" and vwap_slope < -0.15 and recent_lows_down and last < ema8.iloc[-1]:
+                hard_reject = True; hard_reasons.append("StrongDowntrendDanger")
+            if vol_ratio > 1.5 and last < last_open and last < prev_low:
+                hard_reject = True; hard_reasons.append("SellingStillExpanding")
+
+        else:  # TOP
+            # 1) Extreme location — max 20
+            if vwap_z >= 2.0:
+                buckets["location"] += 12; reasons.append("DeepAboveVWAP2σ")
+            elif vwap_z >= 1.25:
+                buckets["location"] += 8; reasons.append("AboveVWAPStretch")
+            if last_bbu > 0 and last >= last_bbu * 0.995:
+                buckets["location"] += 8; reasons.append("UpperBandLocation")
+            elif last > last_vwap:
+                buckets["location"] += 4; reasons.append("AboveVWAP")
+
+            # 2) Momentum divergence/exhaustion — max 20
+            bear_div = bool((r5 or {}).get("brdiv")) or _regular_bearish_divergence(c, rsi14)
+            if bear_div:
+                buckets["divergence"] += 10; reasons.append("BearishDivergence")
+            if last_rsi2 >= 95:
+                buckets["divergence"] += 6; reasons.append("RSI2ExhaustedHigh")
+            elif last_rsi2 >= 88:
+                buckets["divergence"] += 3; reasons.append("RSI2High")
+            if mh < mh_prev:
+                buckets["divergence"] += 4; reasons.append("MACDHistWeakening")
+
+            # 3) Volume/exhaustion — max 15
+            red = last < last_open
+            if vol_ratio >= 1.8 and red:
+                buckets["volume"] += 8; reasons.append("BlowoffRedVolume")
+            elif vol_ratio >= 1.4:
+                buckets["volume"] += 5; reasons.append("VolumeExpansion")
+            if bool((r5 or {}).get("vd", 0) < 0.45):
+                buckets["volume"] += 5; reasons.append("SellVolumeImproving")
+            if last < prev_high and last_high >= max(h.iloc[-10:]):
+                buckets["volume"] += 2; reasons.append("UpthrustAttempt")
+
+            # 4) Rejection/structure confirmation — max 20
+            if last < prev_low:
+                buckets["reclaim"] += 8; reasons.append("CloseBelowPriorLow")
+            if last < ema8.iloc[-1]:
+                buckets["reclaim"] += 4; reasons.append("LostEMA8")
+            if last_bbu > 0 and last < last_bbu and c.iloc[-2] >= bbu.iloc[-2] * 0.995:
+                buckets["reclaim"] += 4; reasons.append("BackInsideUpperBand")
+            if last_vwap > 0 and last < last_vwap:
+                buckets["reclaim"] += 4; reasons.append("LostVWAP")
+
+            # 5) Sector/market context — max 15
+            if sector_strength == "WEAK":
+                buckets["context"] += 7; reasons.append("SectorWeak")
+            elif sector_strength == "NEUTRAL":
+                buckets["context"] += 4; reasons.append("SectorNeutral")
+            if market_regime != "BULLISH":
+                buckets["context"] += 5; reasons.append("MarketNotBullish")
+            elif last < ema8.iloc[-1] and mh < mh_prev:
+                buckets["context"] += 3; reasons.append("BullMarketButMicroTop")
+            if (r5 or {}).get("relative_strength", 0) < 0:
+                buckets["context"] += 3; reasons.append("NegativeRelativeStrength")
+
+            # 6) Risk/reward to VWAP/mean — max 10
+            stop = max(h.iloc[-12:]) + 0.10 * last_atr
+            target = min(last_vwap, bbm.iloc[-1])
+            risk = max(stop - last, 0.01)
+            reward = max(last - target, 0.0)
+            rr = reward / risk if risk > 0 else 0
+            if rr >= 2.0:
+                buckets["risk_reward"] += 10; reasons.append("RR>=2")
+            elif rr >= 1.5:
+                buckets["risk_reward"] += 7; reasons.append("RR>=1.5")
+            elif rr >= 1.0:
+                buckets["risk_reward"] += 4; reasons.append("RR>=1")
+
+            hard_reject = False
+            hard_reasons = []
+            if sector_strength == "STRONG" and market_regime == "BULLISH" and vwap_slope > 0.15 and recent_highs_up and last > ema8.iloc[-1]:
+                hard_reject = True; hard_reasons.append("StrongUptrendDanger")
+            if vol_ratio > 1.5 and last > last_open and last > prev_high:
+                hard_reject = True; hard_reasons.append("BuyingStillExpanding")
+
+        # Cap bucket scores
+        buckets["location"] = min(buckets["location"], 20)
+        buckets["divergence"] = min(buckets["divergence"], 20)
+        buckets["volume"] = min(buckets["volume"], 15)
+        buckets["reclaim"] = min(buckets["reclaim"], 20)
+        buckets["context"] = min(buckets["context"], 15)
+        buckets["risk_reward"] = min(buckets["risk_reward"], 10)
+        score = int(sum(buckets.values()))
+
+        if hard_reject:
+            label = "REJECT_TREND_DANGER"
+            passed = False
+            reasons.extend(hard_reasons)
+        elif score >= RQG_A_PLUS_SCORE:
+            label = "A_PLUS_REVERSAL"
+            passed = True
+        elif score >= RQG_MIN_SCORE:
+            label = "VALID_REVERSAL"
+            passed = True
+        elif score >= RQG_WATCH_SCORE:
+            label = "WATCH_ONLY"
+            passed = False
+        else:
+            label = "REJECT_LOW_QUALITY"
+            passed = False
+
+        result.update({
+            "score": score,
+            "label": label,
+            "passed": passed,
+            "hard_reject": hard_reject,
+            "reasons": reasons,
+            "buckets": buckets,
+            "details": {
+                "price": round(last, 2),
+                "vwap": round(last_vwap, 2),
+                "vwap_z": round(float(vwap_z), 2),
+                "rsi2": round(float(last_rsi2), 1),
+                "rsi14": round(float(last_rsi14), 1),
+                "macd_hist": round(float(mh), 4),
+                "macd_hist_prev": round(float(mh_prev), 4),
+                "vol_ratio": round(float(vol_ratio), 2),
+                "rr": round(float(rr), 2),
+                "vwap_slope_8bars_pct": round(float(vwap_slope), 3),
+                "ema20_slope_8bars_pct": round(float(ema20_slope), 3),
+                "source": meta.get("source"),
+                "latest": meta.get("latest_et"),
+                "age_min": meta.get("age_min"),
+            }
+        })
+
+        logger.info(
+            "  RQG %s %s: %s score=%d buckets=%s price=%.2f vwap=%.2f z=%.2f rsi2=%.1f vol=%.2fx rr=%.2f reasons=%s",
+            ticker, signal_direction, label, score, buckets, last, last_vwap, vwap_z,
+            last_rsi2, vol_ratio, rr, ",".join(reasons[:12])
+        )
+        return result
+    except Exception as e:
+        logger.exception("  RQG %s %s failed: %s", ticker, signal_direction, e)
+        result["reasons"].append("RQG_EXCEPTION")
+        return result
+
+
+def snapshot_sector_state(checked_sectors=None):
+    """Capture sector state for summary/comparison without changing trading logic."""
+    sectors = checked_sectors or list(sector_strength_cache.keys())
+    snap = {}
+    for sec in sorted(sectors):
+        c = sector_strength_cache.get(sec, {})
+        if not c:
+            continue
+        snap[sec] = {
+            "strength": c.get("strength", "UNKNOWN"),
+            "reason": c.get("reason", "N/A"),
+            "source": c.get("source", "unknown"),
+            "latest_et": c.get("latest_et", "N/A"),
+            "age_min": c.get("age_min", "N/A"),
+            "diff": c.get("diff", 0.0),
+            "sector_return": c.get("sector_return", 0.0),
+            "spy_return": c.get("spy_return", 0.0),
+            "session_return": c.get("session_return", 0.0),
+            "session_spy_return": c.get("session_spy_return", 0.0),
+            "close": c.get("close", None),
+            "spy_close": c.get("spy_close", None),
+            "fallback_used": c.get("fallback_used", False),
+        }
+    return snap
+
+
+def snapshot_confirmation_state():
+    """Summarize current 5m confirmation tracker by sector/stage."""
+    rows = []
+    for ticker, v in confirmation_tracker.items():
+        rows.append({
+            "ticker": ticker,
+            "sector": v.get("sector", get_stock_sector(ticker)),
+            "signal": v.get("type", "?"),
+            "count": v.get("count", 0),
+            "stage": v.get("stage", "5M_TRACKING"),
+            "c5": v.get("c5", 0),
+            "last_price": v.get("last_price", None),
+        })
+    return rows
+
+
+def log_scan_completion_summary(scan_no, scan_time, regime, spy_rsi, time_quality_name,
+                                filtered_count, total_count, confirmed_alerts, checked_sectors):
+    """Log a full end-of-scan state summary and compare against last 1-4 scans."""
+    global scan_history
+    sector_snap = snapshot_sector_state(checked_sectors)
+    tracker_rows = snapshot_confirmation_state()
+    confirmed_alerts = confirmed_alerts or []
+    record = {
+        "scan_no": scan_no,
+        "time": scan_time,
+        "regime": regime,
+        "spy_rsi": spy_rsi,
+        "time_quality": time_quality_name,
+        "filtered_count": filtered_count,
+        "total_count": total_count,
+        "confirmed_count": len(confirmed_alerts),
+        "sectors": sector_snap,
+        "tracker": tracker_rows,
+        "alerts": confirmed_alerts,
+    }
+    prev = scan_history[-1] if scan_history else None
+    scan_history.append(record)
+    scan_history = scan_history[-MAX_SCAN_HISTORY:]
+
+    logger.info("")
+    logger.info("==================== END-OF-SCAN QUALITY SUMMARY #%d ====================", scan_no)
+    logger.info("  Scan time: %s | Regime=%s | SPY_RSI=%.1f | TimeQuality=%s | Passed=%d/%d | NewAlerts=%d | RQG_Gate=%s/%d",
+                scan_time.strftime("%I:%M:%S %p ET"), regime, spy_rsi, time_quality_name,
+                filtered_count, total_count, len(confirmed_alerts), "ON" if RQG_ENFORCE_GATE else "OBSERVE", RQG_MIN_SCORE)
+
+    logger.info("  SECTOR-BY-SECTOR STATE NOW vs PREVIOUS SCAN + WHOLE-DAY VIEW:")
+    if sector_snap:
+        for sec, s in sorted(sector_snap.items(), key=lambda kv: float(kv[1].get("diff") or 0), reverse=True):
+            prev_s = prev.get("sectors", {}).get(sec, {}) if prev else {}
+            prev_close = prev_s.get("close")
+            close = s.get("close")
+            close_chg = None
+            diff_chg = None
+            try:
+                if prev_close and close:
+                    close_chg = (float(close) - float(prev_close)) / float(prev_close) * 100
+                if prev_s and prev_s.get("diff") is not None:
+                    diff_chg = float(s.get("diff") or 0) - float(prev_s.get("diff") or 0)
+            except Exception:
+                pass
+            prev_strength = prev_s.get("strength", "N/A") if prev else "N/A"
+            logger.info(
+                "    %-5s %-7s reason=%s | recent_rel=%s Δrel_vs_prev=%s | day=%s spy_day=%s | close=%s Δclose_prev=%s | prev=%s | source=%s age=%sm latest=%s",
+                sec, s.get("strength", "UNKNOWN"), s.get("reason", "N/A"),
+                _fmt_pct(s.get("diff")), _fmt_pct(diff_chg), _fmt_pct(s.get("session_return")),
+                _fmt_pct(s.get("session_spy_return")), _fmt_price(close), _fmt_pct(close_chg),
+                prev_strength, s.get("source", "unknown"), s.get("age_min", "N/A"), s.get("latest_et", "N/A")
+            )
+    else:
+        logger.info("    No sector snapshot available this scan.")
+
+    if sector_snap:
+        ranked = sorted(sector_snap.items(), key=lambda kv: float(kv[1].get("diff") or 0), reverse=True)
+        day_ranked = sorted(sector_snap.items(), key=lambda kv: float(kv[1].get("session_return") or 0), reverse=True)
+        leaders = ", ".join(["%s(%s %s)" % (sec, s.get("strength"), _fmt_pct(s.get("diff"))) for sec, s in ranked[:3]])
+        laggards = ", ".join(["%s(%s %s)" % (sec, s.get("strength"), _fmt_pct(s.get("diff"))) for sec, s in ranked[-3:]])
+        day_leaders = ", ".join(["%s(%s)" % (sec, _fmt_pct(s.get("session_return"))) for sec, s in day_ranked[:3]])
+        day_laggards = ", ".join(["%s(%s)" % (sec, _fmt_pct(s.get("session_return"))) for sec, s in day_ranked[-3:]])
+        logger.info("  Sector leaders by recent relative strength: %s", leaders)
+        logger.info("  Sector laggards by recent relative strength: %s", laggards)
+        logger.info("  Whole-day sector leaders: %s", day_leaders)
+        logger.info("  Whole-day sector laggards: %s", day_laggards)
+
+    if tracker_rows:
+        by_stage = {}
+        by_sector = {}
+        for r in tracker_rows:
+            by_stage[r["stage"]] = by_stage.get(r["stage"], 0) + 1
+            by_sector[r["sector"]] = by_sector.get(r["sector"], 0) + 1
+        logger.info("  Pending/Tracking candidates: %d | by_stage=%s | by_sector=%s",
+                    len(tracker_rows), by_stage, by_sector)
+        top_waiting = sorted(tracker_rows, key=lambda x: (x.get("count", 0), x.get("c5", 0)), reverse=True)[:15]
+        for r in top_waiting:
+            logger.info("    WAIT %-6s %-5s sector=%-5s 5m_count=%d/%d c5=%s stage=%s last_price=%s",
+                        r["ticker"], r["signal"], r["sector"], r["count"], MIN_5MIN_CONFIRMATIONS,
+                        r.get("c5", 0), r.get("stage"), _fmt_price(r.get("last_price")))
+    else:
+        logger.info("  Pending/Tracking candidates: 0")
+
+    if confirmed_alerts:
+        logger.info("  Confirmed RQG-passed alerts this scan:")
+        for a in confirmed_alerts:
+            logger.info("    ALERT %-6s %-6s price=%s avg_c=%s rqg=%s/%s mtf=%s sector=%s setup=%s reasons=%s",
+                        a.get("ticker"), a.get("signal"), _fmt_price(a.get("cl")), a.get("avg_c"),
+                        a.get("rqg_score", "N/A"), a.get("rqg_label", "N/A"), a.get("mtf_status"),
+                        a.get("ss"), a.get("setup_type"), ";".join(a.get("rqg_reasons", [])[:6]))
+    else:
+        logger.info("  Confirmed RQG-passed alerts this scan: 0")
+
+    logger.info("  Last %d scan comparison:", len(scan_history))
+    for h in scan_history:
+        hs = h.get("sectors", {})
+        if hs:
+            ranked = sorted(hs.items(), key=lambda kv: float(kv[1].get("diff") or 0), reverse=True)
+            day_ranked = sorted(hs.items(), key=lambda kv: float(kv[1].get("session_return") or 0), reverse=True)
+            best = ", ".join(["%s:%s" % (sec, _fmt_pct(s.get("diff"))) for sec, s in ranked[:2]])
+            worst = ", ".join(["%s:%s" % (sec, _fmt_pct(s.get("diff"))) for sec, s in ranked[-2:]])
+            day_best = ", ".join(["%s:%s" % (sec, _fmt_pct(s.get("session_return"))) for sec, s in day_ranked[:2]])
+        else:
+            best, worst, day_best = "N/A", "N/A", "N/A"
+        logger.info("    Scan#%d %s | regime=%s RSI=%.1f | passed=%d | alerts=%d | pending=%d | rel_leaders=%s | rel_laggards=%s | day_leaders=%s",
+                    h["scan_no"], h["time"].strftime("%I:%M:%S %p"), h["regime"], h["spy_rsi"],
+                    h["filtered_count"], h["confirmed_count"], len(h.get("tracker", [])), best, worst, day_best)
+    logger.info("================== END SUMMARY — next scan pending ==================")
+    logger.info("")
 
 # ═══════════════════════════════════════════════════════
 # TECHNICAL INDICATORS (original v4 — preserved)
@@ -646,14 +1341,15 @@ def get_market_regime():
     now = get_eastern_now()
     if market_regime_cache["timestamp"] and \
        (now - market_regime_cache["timestamp"]).total_seconds() < 240:
+        logger.info("  LAYER 1 — Regime cache hit: %s (SPY RSI=%.1f, cache_age=%.0fs)",
+                    market_regime_cache["regime"], market_regime_cache["spy_rsi"],
+                    (now - market_regime_cache["timestamp"]).total_seconds())
         return market_regime_cache["regime"], market_regime_cache["spy_rsi"]
     try:
-        spy = safe_yf_download("SPY", period="5d", interval="5m",
-                          progress=False, auto_adjust=True, threads=False)
+        spy, meta = download_with_freshness("SPY", period="5d", interval="5m", label="REGIME", allow_fallback=True)
         if spy is None or spy.empty or len(spy) < 30:
+            logger.warning("  LAYER 1 — Regime: NEUTRAL because SPY data unavailable/insufficient. meta=%s", meta)
             return "NEUTRAL", 50.0
-        if isinstance(spy.columns, pd.MultiIndex):
-            spy.columns = spy.columns.get_level_values(0)
         close = spy["Close"]
         rsi = calculate_rsi(close)
         _, _, mh = calculate_macd(close)
@@ -667,15 +1363,13 @@ def get_market_regime():
         br = (1 if sr < 45 else 0) + (1 if sr < 35 else 0) + \
              (1 if sm < 0 else 0) + (1 if sp < sa else 0)
         regime = "BULLISH" if bs >= 3 else ("BEARISH" if br >= 3 else "NEUTRAL")
-        market_regime_cache.update({
-            "regime": regime, "spy_rsi": sr, "timestamp": now
-        })
-        logger.info("  LAYER 1 — Regime: %s  (SPY RSI=%.1f)", regime, sr)
+        market_regime_cache.update({"regime": regime, "spy_rsi": sr, "timestamp": now})
+        logger.info("  LAYER 1 — Regime: %s | SPY_RSI=%.1f MACD_HIST=%.4f Close=%.2f MA20=%.2f bull_score=%d bear_score=%d source=%s latest=%s age=%sm fresh=%s",
+                    regime, sr, sm, sp, sa, bs, br, meta.get("source"), meta.get("latest_et"), meta.get("age_min"), meta.get("fresh"))
         return regime, sr
     except Exception as e:
         logger.warning("  Regime check failed: %s", e)
         return "NEUTRAL", 50.0
-
 
 # ═══════════════════════════════════════════════════════
 # LAYER 2 — SECTOR STRENGTH  (original v4 — preserved)
@@ -687,26 +1381,66 @@ def check_sector_strength(sector_etf):
     if sector_etf in sector_strength_cache:
         c = sector_strength_cache[sector_etf]
         if c["timestamp"] and (now - c["timestamp"]).total_seconds() < 240:
+            logger.info("  LAYER 2 — %s: %s | cache_hit age=%.0fs source=%s latest=%s data_age=%sm diff=%s%% reason=%s",
+                        sector_etf, c["strength"], (now - c["timestamp"]).total_seconds(),
+                        c.get("source", "unknown"), c.get("latest_et", "N/A"), c.get("age_min", "N/A"),
+                        c.get("diff", "N/A"), c.get("reason", "N/A"))
             return c["strength"]
     try:
-        d = safe_yf_download([sector_etf, "SPY"], period="2d", interval="5m",
-                        progress=False, auto_adjust=True, threads=False,
-                        group_by="ticker")
-        if d is None or d.empty or not isinstance(d.columns, pd.MultiIndex):
-            return "NEUTRAL"
-        sc = d[sector_etf]["Close"].dropna()
-        spc = d["SPY"]["Close"].dropna()
+        sec, sec_meta = download_with_freshness(sector_etf, period="2d", interval="5m", label="SECTOR", allow_fallback=True)
+        spy, spy_meta = download_with_freshness("SPY", period="2d", interval="5m", label="SECTOR-BENCH", allow_fallback=True)
+        if sec is None or spy is None or sec.empty or spy.empty:
+            logger.error("  LAYER 2 — %s: UNKNOWN | reason=no_fresh_sector_or_spy_data sector_meta=%s spy_meta=%s", sector_etf, sec_meta, spy_meta)
+            sector_strength_cache[sector_etf] = {"strength": "UNKNOWN", "timestamp": now, "source": "none", "latest_et": "N/A", "age_min": "N/A", "diff": "N/A", "reason": "No fresh sector/SPY data", "close": None, "fallback_used": False}
+            return "UNKNOWN"
+        sc = sec["Close"].dropna()
+        spc = spy["Close"].dropna()
+        common = sc.index.intersection(spc.index)
+        if len(common) >= 10:
+            sc = sc.loc[common]
+            spc = spc.loc[common]
         if len(sc) < 10 or len(spc) < 10:
-            return "NEUTRAL"
+            logger.warning("  LAYER 2 — %s: UNKNOWN | insufficient rows sector_rows=%d spy_rows=%d", sector_etf, len(sc), len(spc))
+            return "UNKNOWN"
         n = min(len(sc), len(spc), 30)
         sr = (sc.iloc[-1] - sc.iloc[-n]) / sc.iloc[-n] * 100
         spr = (spc.iloc[-1] - spc.iloc[-n]) / spc.iloc[-n] * 100
         diff = sr - spr
         strength = "STRONG" if diff > 0.15 else ("WEAK" if diff < -0.15 else "NEUTRAL")
-        sector_strength_cache[sector_etf] = {"strength": strength, "timestamp": now}
+
+        # Whole-day/session view: compare current price to first regular bar available today.
+        today = get_eastern_now().date()
+        try:
+            sc_today = sc[sc.index.tz_convert(ET).date == today] if hasattr(sc.index, 'tz') and sc.index.tz is not None else sc[sc.index.date == today]
+        except Exception:
+            sc_today = sc.iloc[-min(len(sc), 78):]
+        try:
+            sp_today = spc[spc.index.tz_convert(ET).date == today] if hasattr(spc.index, 'tz') and spc.index.tz is not None else spc[spc.index.date == today]
+        except Exception:
+            sp_today = spc.iloc[-min(len(spc), 78):]
+        session_ret = (sc.iloc[-1] - sc_today.iloc[0]) / sc_today.iloc[0] * 100 if len(sc_today) > 1 and sc_today.iloc[0] != 0 else 0.0
+        session_spy_ret = (spc.iloc[-1] - sp_today.iloc[0]) / sp_today.iloc[0] * 100 if len(sp_today) > 1 and sp_today.iloc[0] != 0 else 0.0
+        reason = "%s because recent 30-bar relative strength vs SPY is %+.3f%%; sector recent=%+.3f%%, SPY recent=%+.3f%%; whole-day sector=%+.3f%% vs SPY=%+.3f%%" % (
+            strength, diff, sr, spr, session_ret, session_spy_ret
+        )
+        sector_strength_cache[sector_etf] = {
+            "strength": strength, "timestamp": now, "source": sec_meta.get("source"),
+            "latest_et": sec_meta.get("latest_et"), "age_min": sec_meta.get("age_min"),
+            "diff": round(float(diff), 3), "sector_return": round(float(sr), 3),
+            "spy_return": round(float(spr), 3), "session_return": round(float(session_ret), 3),
+            "session_spy_return": round(float(session_spy_ret), 3), "close": float(sc.iloc[-1]),
+            "spy_close": float(spc.iloc[-1]), "fallback_used": sec_meta.get("fallback_used", False),
+            "reason": reason,
+        }
+        logger.info("  LAYER 2 — %s: %s | source=%s fallback=%s interval=5m latest=%s age=%sm rows=%d lookback_bars=%d sector_ret=%+.3f%% spy_ret=%+.3f%% rel_diff=%+.3f%% day_sector=%+.3f%% day_spy=%+.3f%% threshold=+/-0.150%% close=%.2f spy_close=%.2f",
+                    sector_etf, strength, sec_meta.get("source"), sec_meta.get("fallback_used"),
+                    sec_meta.get("latest_et"), sec_meta.get("age_min"), len(sc), n,
+                    sr, spr, diff, session_ret, session_spy_ret, float(sc.iloc[-1]), float(spc.iloc[-1]))
+        logger.info("  LAYER 2 — %s reason: %s", sector_etf, reason)
         return strength
     except Exception:
-        return "NEUTRAL"
+        logger.exception("  LAYER 2 — %s: sector strength failed", sector_etf)
+        return "UNKNOWN"
 
 
 def get_stock_sector(ticker):
@@ -718,19 +1452,22 @@ def get_stock_sector(ticker):
 # ═══════════════════════════════════════════════════════
 
 def safe_download(ticker, period, interval, max_retries=3):
+    """Download single ticker with freshness validation and fallback, but avoid noisy success logs."""
     for attempt in range(1, max_retries + 1):
         try:
             time.sleep(1.0 + random.uniform(0.5, 1.5))
-            d = safe_yf_download(ticker, period=period, interval=interval,
-                            progress=False, auto_adjust=True, threads=False)
+            d, meta = download_with_freshness(ticker, period=period, interval=interval, label="DL", allow_fallback=True)
             if d is not None and not d.empty:
-                if isinstance(d.columns, pd.MultiIndex):
-                    d.columns = d.columns.get_level_values(0)
+                if meta.get("fallback_used") or logger.isEnabledFor(logging.DEBUG):
+                    logger.info("  DL %s: usable source=%s latest=%s age=%sm rows=%d interval=%s",
+                                ticker, meta.get("source"), meta.get("latest_et"), meta.get("age_min"), len(d), interval)
                 return d
+            logger.warning("  DL %s #%d unusable: meta=%s", ticker, attempt, meta)
         except Exception as e:
             logger.warning("DL %s #%d fail: %s", ticker, attempt, e)
         if attempt < max_retries:
             time.sleep(attempt * 3 + random.uniform(1, 3))
+    logger.error("  DL %s: failed after %d attempts", ticker, max_retries)
     return None
 
 
@@ -1340,6 +2077,7 @@ def check_multi_timeframe(ticker, market_regime, sector_str):
         return None
 
     st = r5["signal"]
+    sec = get_stock_sector(ticker)
 
     if ticker in confirmation_tracker and confirmation_tracker[ticker]["type"] == st:
         confirmation_tracker[ticker]["count"] += 1
@@ -1349,6 +2087,15 @@ def check_multi_timeframe(ticker, market_regime, sector_str):
             "type": st, "count": 1, "last": datetime.now(), "c5": r5["confidence"]
         }
 
+    # Metadata only for end-of-scan logs; trading logic is unchanged.
+    confirmation_tracker[ticker].update({
+        "sector": sec,
+        "last_price": r5.get("cl", 0),
+        "last_confidence": r5.get("confidence", 0),
+        "last_update": get_eastern_now().strftime("%Y-%m-%d %I:%M:%S %p ET"),
+        "stage": "WAIT_5M_CONFIRM",
+    })
+
     if confirmation_tracker[ticker]["count"] < MIN_5MIN_CONFIRMATIONS:
         logger.info("  %s: %s 5m (%d/%d) c=%d",
                      ticker, st,
@@ -1357,21 +2104,26 @@ def check_multi_timeframe(ticker, market_regime, sector_str):
         return None
 
     # ── STEP 2: 15-MINUTE (STRICT — must agree) ──
+    confirmation_tracker[ticker]["stage"] = "WAIT_15M_CONFIRM"
     logger.info("  %s: %s 5m CONFIRMED (%dx) -> 15m...",
                 ticker, st, MIN_5MIN_CONFIRMATIONS)
     r15 = analyze_stock_v5(ticker, "15m", market_regime, sector_str)
     if r15 is None or r15["signal"] != st:
+        confirmation_tracker[ticker]["stage"] = "15M_NO_MATCH_LAST_SCAN"
         logger.info("  %s: 15m NO MATCH -> REJECTED", ticker)
         return None
 
     # ── STEP 3: 30-MINUTE (STRICT — must agree) [NEW in v5.1] ──
+    confirmation_tracker[ticker]["stage"] = "WAIT_30M_CONFIRM"
     logger.info("  %s: %s 15m CONFIRMED -> 30m (STRICT)...", ticker, st)
     r30 = analyze_stock_v5(ticker, "30m", market_regime, sector_str)
     if r30 is None or r30["signal"] != st:
+        confirmation_tracker[ticker]["stage"] = "30M_NO_MATCH_LAST_SCAN"
         logger.info("  %s: 30m NO MATCH -> REJECTED", ticker)
         return None
 
     c30_val = r30["confidence"]
+    confirmation_tracker[ticker]["stage"] = "30M_CONFIRMED_WAIT_60M_BOOSTER"
     logger.info("  %s: %s 30m CONFIRMED (c=%d) -> 60m (booster)...",
                 ticker, st, c30_val)
 
@@ -1398,7 +2150,14 @@ def check_multi_timeframe(ticker, market_regime, sector_str):
         c60_val = 0
         logger.info("  o %s: 60m data unavailable -> neutral", ticker)
 
-    logger.info("  *** %s: %s ALL CONFIRMED (v5.1 MTF=%s) ***", ticker, st, mtf_status)
+    logger.info("  *** %s: %s ALL CONFIRMED (v5.1 MTF=%s) -> RQG final quality gate...", ticker, st, mtf_status)
+
+    # ── STEP 5: Reversal Quality Gate (v5.5) ──
+    rqg = evaluate_reversal_quality_gate(ticker, st, market_regime, sector_str, r5, r15, r30, r60)
+    if RQG_ENFORCE_GATE and not rqg.get("passed", False):
+        logger.info("  RQG BLOCKED %s %s: label=%s score=%s reasons=%s",
+                    ticker, st, rqg.get("label"), rqg.get("score"), ",".join(rqg.get("reasons", [])[:10]))
+        return None
 
     # ── Duplicate alert prevention ──
     ak = "%s_%s_%s" % (ticker, st, datetime.now().strftime("%Y%m%d_%H"))
@@ -1420,6 +2179,11 @@ def check_multi_timeframe(ticker, market_regime, sector_str):
         avg_c = round((r5["confidence"] + r15["confidence"] + c30_val) / 3) + mtf_bonus
     avg_c = max(0, min(avg_c, 100))
 
+    signals_with_rqg = list(r5["signals"])
+    signals_with_rqg.append("RQG=%s/%s" % (rqg.get("score"), rqg.get("label")))
+    for reason in rqg.get("reasons", [])[:4]:
+        signals_with_rqg.append("RQG_%s" % reason)
+
     return {
         "ticker": ticker, "signal": st,
         "c5": r5["confidence"], "c15": r15["confidence"],
@@ -1432,7 +2196,7 @@ def check_multi_timeframe(ticker, market_regime, sector_str):
         "mfi": r5["mfi"], "cmf": r5["cmf"], "pcr": pcr,
         "regime": r5["regime"], "rn": r5["regime_note"],
         "ss": r5["sector_strength"], "sn": r5["sector_note"],
-        "tn": r5["time_note"], "signals": r5["signals"],
+        "tn": r5["time_note"], "signals": signals_with_rqg,
         "time": now_et,
         # ── v5 fields ──
         "mtf_status": mtf_status,
@@ -1445,6 +2209,12 @@ def check_multi_timeframe(ticker, market_regime, sector_str):
         "trend_3d": r5.get("trend_3d", 0.0),
         "trend_5d": r5.get("trend_5d", 0.0),
         "volume_expansion": r5.get("volume_expansion", 1.0),
+        # ── v5.5 RQG fields ──
+        "rqg_score": rqg.get("score", 0),
+        "rqg_label": rqg.get("label", "REJECT"),
+        "rqg_reasons": rqg.get("reasons", []),
+        "rqg_buckets": rqg.get("buckets", {}),
+        "rqg_details": rqg.get("details", {}),
     }
 
 
@@ -2308,9 +3078,9 @@ def main():
         return
 
     logger.info("=" * 65)
-    logger.info("MARKET SCANNER v5 — PHASE 1+2+3+4+5+6 COMPLETE")
+    logger.info("MARKET SCANNER v5.5 — PHASE 1+2+3+4+5+6 + RQG COMPLETE")
     logger.info("Original v4 foundation + Relaxed 60m + Sector Override + Leadership")
-    logger.info("New: Leadership Engine, Relative Strength, Trend Analysis, Backtest")
+    logger.info("New: Leadership Engine, Relative Strength, Trend Analysis, Backtest, Freshness, RQG")
     logger.info("Time: %s   Stocks: %d",
                 get_eastern_now().strftime("%Y-%m-%d %I:%M %p ET"), len(ALL_STOCKS))
     logger.info("=" * 65)
@@ -2376,16 +3146,16 @@ def main():
             logger.info("  Filtered: %s", ", ".join(filtered[:20]))
 
         confirmed = []
+        checked_sectors = set()
         if filtered:
             # ── PASS 2: Full v5 analysis ──
             logger.info("  PASS 2: v5 analysis on %d stocks...", len(filtered))
 
-            checked_sectors = set()
             for t in filtered:
                 sec = get_stock_sector(t)
                 if sec not in checked_sectors and sec != "SPY":
                     s = check_sector_strength(sec)
-                    logger.info("  LAYER 2 — %s: %s", sec, s)
+                    logger.info("  LAYER 2 — %s status captured: %s", sec, s)
                     checked_sectors.add(sec)
                     time.sleep(1)
 
@@ -2409,6 +3179,11 @@ def main():
             )
         else:
             logger.info("  No confirmed signals this scan.")
+
+        log_scan_completion_summary(
+            sc, now, mr, sr, tn,
+            len(filtered), len(ALL_STOCKS), confirmed, checked_sectors
+        )
 
         ns = now + timedelta(seconds=SCAN_INTERVAL_SECONDS)
         if ns.hour >= MARKET_CLOSE_HOUR:
