@@ -556,11 +556,18 @@ def load_history():
     return []
 
 def save_history(history):
+    """Persist rolling 30-day alert history for GitHub Pages. De-dupes repeated workflow runs."""
     cutoff = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-    history = [h for h in history if h.get("date", "") >= cutoff]
+    dedup = {}
+    for h in history or []:
+        if h.get("date", "") < cutoff:
+            continue
+        key = (h.get("date",""), h.get("ticker",""), h.get("signal",""), h.get("time") or h.get("alert_time",""), h.get("alert_price", h.get("price","")))
+        dedup[key] = h
+    history = sorted(dedup.values(), key=lambda x: (x.get("date",""), x.get("time") or x.get("alert_time", "")))
     p = os.path.join(script_dir, "docs", "scan_history.json")
     os.makedirs(os.path.dirname(p), exist_ok=True)
-    with open(p, "w") as f:
+    with open(p, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=1)
     return history
 
@@ -569,33 +576,138 @@ def save_history(history):
 # HTML GENERATOR
 # ================================================================
 
+
+def _html_escape(x):
+    return escape(str(x))
+
+def _pct(v):
+    try:
+        return f"{float(v):+.2f}%"
+    except Exception:
+        return "N/A"
+
+def _group_counts(rows, key):
+    out = {}
+    for r in rows or []:
+        k = r.get(key, "UNKNOWN") or "UNKNOWN"
+        out[k] = out.get(k, 0) + 1
+    return out
+
+def _is_email_window(now=None):
+    """Return MIDDAY/EOD/None. GitHub Actions can run frequently; this prevents noisy sends."""
+    now = now or (get_eastern_now() if SCANNER_IMPORTED else datetime.now())
+    mins = now.hour * 60 + now.minute
+    if 13*60 <= mins <= 14*60 + 15:
+        return "MIDDAY"
+    if 16*60 + 25 <= mins <= 17*60 + 15:
+        return "EOD"
+    return None
+
+def _load_email_state():
+    p = os.path.join(script_dir, "docs", "email_state.json")
+    try:
+        return json.load(open(p, "r", encoding="utf-8")) if os.path.exists(p) else {}
+    except Exception:
+        return {}
+
+def _save_email_state(state):
+    p = os.path.join(script_dir, "docs", "email_state.json")
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2)
+
+def should_send_report_email(force=False):
+    if force or os.getenv("FORCE_EMAIL", "").lower() in ("1", "true", "yes"):
+        return "FORCED"
+    if os.getenv("SEND_EMAIL_REPORT", "true").lower() in ("0", "false", "no"):
+        return None
+    now = get_eastern_now() if SCANNER_IMPORTED else datetime.now()
+    window = _is_email_window(now)
+    if not window:
+        return None
+    key = now.strftime("%Y-%m-%d") + "_" + window
+    state = _load_email_state()
+    if state.get("last_sent_key") == key:
+        logger.info("Email report already sent for %s", key)
+        return None
+    state["last_sent_key"] = key
+    state["last_sent_time"] = now.strftime("%Y-%m-%d %I:%M:%S %p ET")
+    _save_email_state(state)
+    return window
+
+def save_quality_summary_json(scan_summary, summary_history):
+    docs_dir = os.path.join(script_dir, "docs")
+    os.makedirs(docs_dir, exist_ok=True)
+    payload = dict(scan_summary or {})
+    payload["summary_history"] = summary_history[-30:] if summary_history else []
+    with open(os.path.join(docs_dir, "scan_quality_summary.json"), "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+
+def build_report_email_html(alerts, history, scan_summary, summary_history):
+    """Compact email version of the GitHub dashboard."""
+    def rows(items, cols, limit=50):
+        if not items:
+            return "<tr><td colspan='%d' style='padding:14px;color:#666'>No rows</td></tr>" % len(cols)
+        h = ""
+        for r in items[:limit]:
+            h += "<tr>" + "".join("<td style='padding:7px;border-top:1px solid #ddd'>%s</td>" % _html_escape(fn(r)) for _, fn in cols) + "</tr>"
+        return h
+    sectors = scan_summary.get("sectors", [])
+    candidates = scan_summary.get("candidates", [])
+    blocked = scan_summary.get("blocked_alerts", [])
+    title = f"Market Scanner {scan_summary.get('scan_time','')} — {scan_summary.get('regime','')}"
+    return f"""
+    <html><body style='font-family:Arial,sans-serif;color:#111'>
+    <h2>{_html_escape(title)}</h2>
+    <p><b>Regime:</b> {_html_escape(scan_summary.get('regime',''))} | <b>SPY RSI:</b> {_html_escape(scan_summary.get('spy_rsi',''))} | <b>Filtered:</b> {_html_escape(scan_summary.get('filtered',''))} | <b>Alerts:</b> {_html_escape(scan_summary.get('alerts',''))} | <b>Blocked:</b> {_html_escape(scan_summary.get('blocked',''))} | <b>Pending:</b> {len(candidates)}</p>
+    <h3>Sector Leaders / Laggards</h3>
+    <p><b>Leaders:</b> {_html_escape(', '.join([x.get('sector','')+' '+_pct(x.get('diff')) for x in scan_summary.get('leaders_recent', [])]))}<br>
+    <b>Laggards:</b> {_html_escape(', '.join([x.get('sector','')+' '+_pct(x.get('diff')) for x in scan_summary.get('laggards_recent', [])]))}</p>
+    <h3>Confirmed Alerts</h3><table cellspacing='0' cellpadding='0' style='border-collapse:collapse;width:100%'><tr><th>Ticker</th><th>Signal</th><th>Price</th><th>RQG</th><th>Sector</th></tr>{rows(alerts, [('Ticker',lambda r:r.get('ticker','')),('Signal',lambda r:r.get('signal','')),('Price',lambda r:r.get('alert_price','')),('RQG',lambda r:str(r.get('rqg_score',''))+' '+r.get('rqg_label','')),('Sector',lambda r:r.get('sector',''))], 100)}</table>
+    <h3>Sector State</h3><table cellspacing='0' cellpadding='0' style='border-collapse:collapse;width:100%'><tr><th>Sector</th><th>State</th><th>Recent Rel</th><th>Day</th><th>Reason</th></tr>{rows(sectors, [('Sector',lambda r:r.get('sector','')),('State',lambda r:r.get('strength','')),('Recent Rel',lambda r:_pct(r.get('diff'))),('Day',lambda r:_pct(r.get('session_return'))),('Reason',lambda r:r.get('reason',''))], 20)}</table>
+    <h3>Waiting / Tracking Candidates</h3><p>By stage: {_html_escape(_group_counts(candidates,'stage'))}<br>By sector: {_html_escape(_group_counts(candidates,'sector'))}</p>
+    <h3>Last Runs</h3><table cellspacing='0' cellpadding='0' style='border-collapse:collapse;width:100%'><tr><th>Time</th><th>Regime</th><th>RSI</th><th>Filtered</th><th>Alerts</th><th>Blocked</th></tr>{rows(list(reversed(summary_history[-8:])), [('Time',lambda r:r.get('scan_time','')),('Regime',lambda r:r.get('regime','')),('RSI',lambda r:r.get('spy_rsi','')),('Filtered',lambda r:r.get('filtered','')),('Alerts',lambda r:r.get('alerts','')),('Blocked',lambda r:r.get('blocked',''))], 8)}</table>
+    <p style='color:#666;font-size:12px'>Generated by GitHub Actions. Not financial advice.</p>
+    </body></html>"""
+
 def generate_html(alerts, regime, spy_rsi, history, charts, options_data, scan_summary=None, summary_history=None):
     now = get_eastern_now() if SCANNER_IMPORTED else datetime.utcnow()
     scan_time = now.strftime("%Y-%m-%d %I:%M:%S %p ET")
     scan_date = now.strftime("%Y-%m-%d")
     scan_summary = scan_summary or {}; summary_history = summary_history or []
     alerts_sorted = sorted(alerts, key=lambda a:(a.get("rqg_score",0),a.get("confidence",0)), reverse=True)
-    hist_wins=sum(1 for h in history if h.get("result")=="WIN"); hist_losses=sum(1 for h in history if h.get("result")=="LOSS")
+    cutoff = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    history_30 = [h for h in history if h.get("date", "") >= cutoff]
+    hist_wins=sum(1 for h in history_30 if h.get("result")=="WIN"); hist_losses=sum(1 for h in history_30 if h.get("result")=="LOSS")
     hist_wr=round(hist_wins/max(hist_wins+hist_losses,1)*100,1)
-    data_json=json.dumps({"alerts":alerts_sorted,"history":history[-300:],"charts":charts,"options":options_data,"summary":scan_summary,"summaryHistory":summary_history[-8:]}).replace("</","<\\/")
-    return f"""<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta http-equiv='refresh' content='900'><title>TopBottom v5.5 RQG {scan_date}</title><script src='https://cdn.plot.ly/plotly-2.27.0.min.js'></script><style>
-body{{margin:0;background:#070b12;color:#e5edf7;font-family:Segoe UI,Arial,sans-serif;font-variant-numeric:tabular-nums}}.top{{position:sticky;top:0;background:#09111f;border-bottom:1px solid #243044;padding:14px 22px;z-index:10}}h1{{margin:0;color:#06b6d4;font-size:20px}}.sub{{color:#8ba0b8;font-size:12px}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;padding:18px 22px}}.card{{background:#111827;border:1px solid #243044;border-radius:14px;padding:16px}}.label{{color:#8ba0b8;font-size:11px;text-transform:uppercase}}.value{{font-size:28px;font-weight:800}}.tabs{{display:flex;gap:2px;padding:0 22px;background:#09111f;border-bottom:1px solid #243044;flex-wrap:wrap}}.tab{{padding:13px 18px;color:#8ba0b8;cursor:pointer;font-weight:700;border-bottom:3px solid transparent}}.tab.active{{color:#06b6d4;border-bottom-color:#06b6d4}}.page{{display:none;padding:20px 22px}}.page.active{{display:block}}table{{width:100%;border-collapse:collapse;background:#111827;border:1px solid #243044;font-size:13px}}th{{background:#0b1220;color:#8ba0b8;text-align:left;padding:10px;text-transform:uppercase;font-size:11px}}td{{padding:10px;border-top:1px solid #263247;vertical-align:top}}.pill{{padding:3px 9px;border-radius:99px;font-weight:800;font-size:11px}}.bull{{background:#22c55e22;color:#22c55e}}.bear{{background:#ef444422;color:#ef4444}}.neutral{{background:#eab30822;color:#eab308}}.ticker{{color:#06b6d4;font-weight:900}}.pos{{color:#22c55e}}.neg{{color:#ef4444}}.box{{background:#0d1320;border:1px solid #243044;border-radius:12px;padding:14px;margin:10px 0}}.chips span{{display:inline-block;margin:2px;padding:3px 7px;border-radius:8px;background:#1e293b;color:#cbd5e1;font-size:11px}}.chartbox{{height:520px;background:#111827;border:1px solid #243044;border-radius:12px;margin-top:12px}}select{{background:#0b1220;color:#e5edf7;border:1px solid #243044;border-radius:8px;padding:8px}}
-</style></head><body><div class='top'><h1>TopBottom Universal v5.5 — GitHub Reversal Quality Gate</h1><div class='sub'>Generated {scan_time} • Regime {regime} • SPY RSI {spy_rsi:.1f} • Output docs/TopBottom_Universal.html</div></div>
-<div class='grid'><div class='card'><div class='label'>RQG Passed</div><div class='value'>{len(alerts_sorted)}</div></div><div class='card'><div class='label'>RQG Blocked</div><div class='value'>{scan_summary.get('blocked',0)}</div></div><div class='card'><div class='label'>Filtered</div><div class='value'>{scan_summary.get('filtered',0)}</div></div><div class='card'><div class='label'>History Win Rate</div><div class='value'>{hist_wr}%</div><div class='sub'>W {hist_wins} / L {hist_losses}</div></div><div class='card'><div class='label'>RQG Gate</div><div class='value'>{'ON' if scan_summary.get('rqg_gate',True) else 'OBS'}</div><div class='sub'>Threshold {scan_summary.get('rqg_threshold',65)}</div></div></div>
-<div class='tabs'><div class='tab active' onclick="show('summary')">Summary</div><div class='tab' onclick="show('alerts')">RQG Alerts</div><div class='tab' onclick="show('sectors')">Sectors</div><div class='tab' onclick="show('blocked')">Blocked/Waiting</div><div class='tab' onclick="show('charts')">Charts</div><div class='tab' onclick="show('options')">Options</div><div class='tab' onclick="show('history')">History</div></div>
-<div id='summary' class='page active'></div><div id='alerts' class='page'></div><div id='sectors' class='page'></div><div id='blocked' class='page'></div><div id='charts' class='page'><select id='chartSel' onchange='drawChart()'></select><div id='chart' class='chartbox'></div></div><div id='options' class='page'><select id='optSel' onchange='renderOptions()'></select><div id='optBox'></div></div><div id='history' class='page'></div>
-<script>const DATA={data_json};function show(id){{document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');event.target.classList.add('active');if(id==='charts')drawChart();if(id==='options')renderOptions();}}function pct(v){{let n=Number(v);return isFinite(n)?(n>=0?'+':'')+n.toFixed(2)+'%':'N/A'}}function money(v){{let n=Number(v);return isFinite(n)&&n!==0?'$'+n.toFixed(2):'N/A'}}function pill(v){{return '<span class="pill '+(v==='STRONG'||v==='BOTTOM'?'bull':v==='WEAK'||v==='TOP'?'bear':'neutral')+'">'+v+'</span>'}}function tbl(cols,rows){{if(!rows||!rows.length)return '<div class="box">No rows.</div>';let h='<table><thead><tr>'+cols.map(c=>'<th>'+c[0]+'</th>').join('')+'</tr></thead><tbody>';for(const r of rows)h+='<tr>'+cols.map(c=>'<td>'+c[1](r)+'</td>').join('')+'</tr>';return h+'</tbody></table>'}}
-function renderSummary(){{let s=DATA.summary,h=DATA.summaryHistory||[];document.getElementById('summary').innerHTML=`<div class='box'><b>Current scan:</b> ${{s.scan_time}} | Regime <b>${{s.regime}}</b> | RSI <b>${{s.spy_rsi}}</b> | Filtered <b>${{s.filtered}}</b> | Alerts <b>${{s.alerts}}</b> | Blocked <b>${{s.blocked}}</b></div><div class='box'><b>Recent leaders:</b> ${{(s.leaders_recent||[]).map(x=>x.sector+' '+pct(x.diff)).join(', ')||'N/A'}}<br><b>Recent laggards:</b> ${{(s.laggards_recent||[]).map(x=>x.sector+' '+pct(x.diff)).join(', ')||'N/A'}}</div><h2>Last GitHub Run Comparison</h2>`+tbl([['Run',r=>r.scan_time],['Regime',r=>r.regime],['RSI',r=>r.spy_rsi],['Filtered',r=>r.filtered],['Alerts',r=>r.alerts],['Blocked',r=>r.blocked],['Top sectors',r=>(r.leaders_recent||[]).slice(0,2).map(x=>x.sector+' '+pct(x.diff)).join(', ')]],h.slice().reverse())}}
-function renderAlerts(){{document.getElementById('alerts').innerHTML=tbl([['Ticker',r=>'<span class=ticker>'+r.ticker+'</span>'],['Signal',r=>pill(r.signal)],['Price',r=>money(r.alert_price)],['Conf',r=>r.confidence],['RQG',r=>'<b>'+r.rqg_score+'</b> '+r.rqg_label],['MTF',r=>r.mtf_status],['Sector',r=>r.sector+' '+r.sector_strength],['Reasons',r=>'<div class=chips>'+((r.rqg_reasons||[]).slice(0,8).map(x=>'<span>'+x+'</span>').join(''))+'</div>']],DATA.alerts)}}
-function renderSectors(){{document.getElementById('sectors').innerHTML=tbl([['Sector',r=>'<span class=ticker>'+r.sector+'</span>'],['Strength',r=>pill(r.strength)],['Recent Rel',r=>pct(r.diff)],['Sector Recent',r=>pct(r.sector_return)],['SPY Recent',r=>pct(r.spy_return)],['Whole Day',r=>pct(r.session_return)],['SPY Day',r=>pct(r.session_spy_return)],['Close',r=>money(r.close)],['Data',r=>(r.source||'')+' age '+(r.age_min||'N/A')+'m'],['Reason',r=>r.reason||'']],DATA.summary.sectors)}}
-function renderBlocked(){{document.getElementById('blocked').innerHTML='<h2>Blocked by RQG</h2>'+tbl([['Ticker',r=>'<span class=ticker>'+r.ticker+'</span>'],['Signal',r=>r.signal],['Sector',r=>r.sector],['Price',r=>money(r.price)],['RQG',r=>r.rqg_score+' '+r.rqg_label],['Reasons',r=>(r.rqg_reasons||[]).join(', ')]],DATA.summary.blocked_alerts)+'<h2>Waiting / Not Fully Confirmed</h2>'+tbl([['Ticker',r=>'<span class=ticker>'+r.ticker+'</span>'],['Signal',r=>r.signal],['Sector',r=>r.sector],['Stage',r=>r.stage],['Price',r=>money(r.price)],['C5',r=>r.c5],['C15',r=>r.c15||'']],DATA.summary.candidates)}}
-function setupCharts(){{let keys=Object.keys(DATA.charts||{{}}),s=document.getElementById('chartSel');s.innerHTML=keys.map(k=>'<option>'+k+'</option>').join('');if(keys.length)drawChart()}}function drawChart(){{let t=document.getElementById('chartSel').value,d=DATA.charts[t];if(!d)return;Plotly.newPlot('chart',[{{x:d.timestamps,open:d.open,high:d.high,low:d.low,close:d.close,type:'candlestick',name:t}},{{x:d.timestamps,y:d.vwap,type:'scatter',name:'VWAP'}},{{x:d.timestamps,y:d.ema9,type:'scatter',name:'EMA9'}},{{x:d.timestamps,y:d.bb_upper,type:'scatter',name:'BBU'}},{{x:d.timestamps,y:d.bb_lower,type:'scatter',name:'BBL'}}],{{paper_bgcolor:'#111827',plot_bgcolor:'#0b1220',font:{{color:'#e5edf7'}},xaxis:{{rangeslider:{{visible:false}}}},height:520}},{{responsive:true}})}}
-function setupOptions(){{let keys=Object.keys(DATA.options||{{}}),s=document.getElementById('optSel');s.innerHTML=keys.map(k=>'<option>'+k+'</option>').join('');renderOptions()}}function renderOptions(){{let t=document.getElementById('optSel').value,o=DATA.options[t];document.getElementById('optBox').innerHTML=o?'<div class=box><b>'+t+'</b> Spot '+money(o.spot)+' Exp '+(o.expiration||'')+' PCR '+(o.pcr||'')+'</div>'+tbl([['Strategy',r=>r.name],['Cost',r=>money(r.cost)],['BE',r=>money(r.breakeven)],['Max Profit',r=>r.max_profit]],o.strategies||[]):'<div class=box>No options.</div>'}}function renderHistory(){{document.getElementById('history').innerHTML=tbl([['Date',r=>r.date],['Ticker',r=>'<span class=ticker>'+r.ticker+'</span>'],['Signal',r=>r.signal],['Price',r=>money(r.alert_price)],['Conf',r=>r.confidence],['RQG',r=>(r.rqg_score||'')+' '+(r.rqg_label||'')],['MTF',r=>r.mtf_status],['Result',r=>r.result||'PENDING']],(DATA.history||[]).slice().reverse())}}renderSummary();renderAlerts();renderSectors();renderBlocked();setupCharts();setupOptions();renderHistory();</script></body></html>"""
-
-
-# ================================================================
-# MAIN
-# ================================================================
+    scan_summary.setdefault("pending_total", len(scan_summary.get("candidates", [])))
+    scan_summary.setdefault("pending_by_stage", _group_counts(scan_summary.get("candidates", []), "stage"))
+    scan_summary.setdefault("pending_by_sector", _group_counts(scan_summary.get("candidates", []), "sector"))
+    data_json=json.dumps({"alerts":alerts_sorted,"history":history_30,"charts":charts,"options":options_data,"summary":scan_summary,"summaryHistory":summary_history[-30:]}).replace("</","<\\/")
+    html = """<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta http-equiv='refresh' content='900'><title>TopBottom v5.6 GitHub Quality Summary __DATE__</title><script src='https://cdn.plot.ly/plotly-2.27.0.min.js'></script><style>
+:root{--bg:#070b12;--panel:#111827;--panel2:#0b1220;--line:#243044;--text:#e5edf7;--muted:#8ba0b8;--cyan:#06b6d4;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--blue:#60a5fa}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif;font-variant-numeric:tabular-nums}.top{position:sticky;top:0;background:#09111f;border-bottom:1px solid var(--line);padding:14px 22px;z-index:10}h1{margin:0;color:var(--cyan);font-size:20px}.sub{color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;padding:18px 22px}.card,.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px}.label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}.value{font-size:28px;font-weight:800}.tabs{display:flex;gap:2px;padding:0 22px;background:#09111f;border-bottom:1px solid var(--line);flex-wrap:wrap}.tab{padding:13px 18px;color:var(--muted);cursor:pointer;font-weight:700;border-bottom:3px solid transparent}.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}.page{display:none;padding:20px 22px}.page.active{display:block}table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);font-size:13px}th{background:var(--panel2);color:var(--muted);text-align:left;padding:10px;text-transform:uppercase;font-size:11px;position:sticky;top:118px}td{padding:10px;border-top:1px solid #263247;vertical-align:top}.pill{padding:3px 9px;border-radius:99px;font-weight:800;font-size:11px;display:inline-block}.bull{background:#22c55e22;color:var(--green)}.bear{background:#ef444422;color:var(--red)}.neutral{background:#eab30822;color:var(--yellow)}.ticker{color:var(--cyan);font-weight:900}.pos{color:var(--green)}.neg{color:var(--red)}.chips span{display:inline-block;margin:2px;padding:3px 7px;border-radius:8px;background:#1e293b;color:#cbd5e1;font-size:11px}.chartbox{height:560px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-top:12px}select,input{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}.reason{max-width:620px;white-space:normal}.small{font-size:12px;color:var(--muted)}
+</style></head><body><div class='top'><h1>TopBottom Universal v5.6 — GitHub Quality Gate Dashboard</h1><div class='sub'>Generated __SCAN_TIME__ • Regime __REGIME__ • SPY RSI __SPY_RSI__ • Output docs/TopBottom_Universal.html</div></div>
+<div class='grid'><div class='card'><div class='label'>RQG Passed</div><div class='value'>__ALERT_COUNT__</div></div><div class='card'><div class='label'>RQG Blocked</div><div class='value'>__BLOCKED__</div></div><div class='card'><div class='label'>Filtered / Universe</div><div class='value'>__FILTERED__</div><div class='sub'>of __SCANNED__ scanned</div></div><div class='card'><div class='label'>Pending / Tracking</div><div class='value'>__PENDING__</div></div><div class='card'><div class='label'>30-Day Win Rate</div><div class='value'>__WR__%</div><div class='sub'>W __WINS__ / L __LOSSES__ • __HISTCOUNT__ records</div></div><div class='card'><div class='label'>RQG Gate</div><div class='value'>__GATE__</div><div class='sub'>Threshold __THRESH__</div></div></div>
+<div class='tabs'><div class='tab active' onclick="show('summary',this)">Summary</div><div class='tab' onclick="show('alerts',this)">RQG Alerts</div><div class='tab' onclick="show('sectors',this)">Sectors</div><div class='tab' onclick="show('blocked',this)">Blocked/Waiting</div><div class='tab' onclick="show('charts',this)">Charts</div><div class='tab' onclick="show('options',this)">Options</div><div class='tab' onclick="show('history',this)">30-Day History</div><div class='tab' onclick="show('logs',this)">Readable Log</div></div>
+<div id='summary' class='page active'></div><div id='alerts' class='page'></div><div id='sectors' class='page'></div><div id='blocked' class='page'></div><div id='charts' class='page'><select id='chartSel' onchange='drawChart()'></select><div id='chart' class='chartbox'></div></div><div id='options' class='page'><select id='optSel' onchange='renderOptions()'></select><div id='optBox'></div></div><div id='history' class='page'></div><div id='logs' class='page'></div>
+<script>const DATA=__DATA__;function esc(x){return String(x??'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}function show(id,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');if(el)el.classList.add('active');if(id==='charts')drawChart();if(id==='options')renderOptions()}function pct(v){let n=Number(v);return isFinite(n)?(n>=0?'+':'')+n.toFixed(2)+'%':'N/A'}function money(v){let n=Number(v);return isFinite(n)&&n!==0?'$'+n.toFixed(2):'N/A'}function cls(v){return v==='STRONG'||v==='BOTTOM'||v==='WIN'?'bull':v==='WEAK'||v==='TOP'||v==='LOSS'?'bear':'neutral'}function pill(v){return '<span class="pill '+cls(v)+'">'+esc(v)+'</span>'}function tbl(cols,rows){if(!rows||!rows.length)return '<div class="box">No rows.</div>';let h='<table><thead><tr>'+cols.map(c=>'<th>'+c[0]+'</th>').join('')+'</tr></thead><tbody>';for(const r of rows)h+='<tr>'+cols.map(c=>'<td>'+c[1](r)+'</td>').join('')+'</tr>';return h+'</tbody></table>'}function chips(obj){if(!obj)return '';if(Array.isArray(obj))return '<div class=chips>'+obj.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div>';return '<div class=chips>'+Object.entries(obj).map(([k,v])=>'<span>'+esc(k)+': <b>'+esc(v)+'</b></span>').join('')+'</div>'}
+function renderSummary(){let s=DATA.summary,h=DATA.summaryHistory||[];let wholeLeaders=(s.sectors||[]).slice().sort((a,b)=>Number(b.session_return||0)-Number(a.session_return||0)).slice(0,3);let wholeLag=(s.sectors||[]).slice().sort((a,b)=>Number(a.session_return||0)-Number(b.session_return||0)).slice(0,3);document.getElementById('summary').innerHTML=`<div class='box'><b>Current scan:</b> ${esc(s.scan_time)} | Regime <b>${esc(s.regime)}</b> | RSI <b>${esc(s.spy_rsi)}</b> | TimeQuality <b>${esc(s.time_quality)}</b> | Passed <b>${esc(s.filtered)}/${esc(s.stocks_scanned)}</b> | Alerts <b>${esc(s.alerts)}</b> | Blocked <b>${esc(s.blocked)}</b> | RQG <b>${s.rqg_gate?'ON':'OBS'}/${esc(s.rqg_threshold)}</b></div><div class='two'><div class='box'><h3>Recent Relative Strength</h3><b>Leaders:</b> ${(s.leaders_recent||[]).map(x=>esc(x.sector)+' '+pill(x.strength)+' '+pct(x.diff)).join(', ')||'N/A'}<br><b>Laggards:</b> ${(s.laggards_recent||[]).map(x=>esc(x.sector)+' '+pill(x.strength)+' '+pct(x.diff)).join(', ')||'N/A'}</div><div class='box'><h3>Whole-Day View</h3><b>Leaders:</b> ${wholeLeaders.map(x=>esc(x.sector)+' '+pct(x.session_return)).join(', ')||'N/A'}<br><b>Laggards:</b> ${wholeLag.map(x=>esc(x.sector)+' '+pct(x.session_return)).join(', ')||'N/A'}</div></div><div class='two'><div class='box'><h3>Pending by Stage</h3>${chips(s.pending_by_stage)}</div><div class='box'><h3>Pending by Sector</h3>${chips(s.pending_by_sector)}</div></div><h2>Last GitHub Run Comparison</h2>`+tbl([['Run',r=>esc(r.scan_time)],['Regime',r=>pill(r.regime)],['RSI',r=>esc(r.spy_rsi)],['Filtered',r=>esc(r.filtered)],['Alerts',r=>esc(r.alerts)],['Blocked',r=>esc(r.blocked)],['Pending',r=>esc((r.candidates||[]).length||r.pending_total||0)],['Top sectors',r=>(r.leaders_recent||[]).slice(0,2).map(x=>esc(x.sector)+' '+pct(x.diff)).join(', ')],['Laggards',r=>(r.laggards_recent||[]).slice(-2).map(x=>esc(x.sector)+' '+pct(x.diff)).join(', ')]],h.slice().reverse())}
+function renderAlerts(){document.getElementById('alerts').innerHTML=tbl([['Ticker',r=>'<span class=ticker>'+esc(r.ticker)+'</span>'],['Signal',r=>pill(r.signal)],['Price',r=>money(r.alert_price)],['Conf',r=>esc(r.confidence)],['RQG',r=>'<b>'+esc(r.rqg_score)+'</b> '+esc(r.rqg_label)],['MTF',r=>esc(r.mtf_status)],['Sector',r=>esc(r.sector)+' '+pill(r.sector_strength)],['Reason Tags',r=>chips((r.rqg_reasons||[]).slice(0,10))]],DATA.alerts)}
+function renderSectors(){document.getElementById('sectors').innerHTML=tbl([['Sector',r=>'<span class=ticker>'+esc(r.sector)+'</span>'],['State',r=>pill(r.strength)],['Recent Rel',r=>pct(r.diff)],['Sector Recent',r=>pct(r.sector_return)],['SPY Recent',r=>pct(r.spy_return)],['Whole Day',r=>pct(r.session_return)],['SPY Day',r=>pct(r.session_spy_return)],['Close',r=>money(r.close)],['Data',r=>esc(r.source||'')+' age '+esc(r.age_min||'N/A')+'m<br><span class=small>'+esc(r.latest||'')+'</span>'],['Reason',r=>'<div class=reason>'+esc(r.reason||'')+'</div>']],DATA.summary.sectors)}
+function renderBlocked(){document.getElementById('blocked').innerHTML='<h2>Blocked by RQG</h2>'+tbl([['Ticker',r=>'<span class=ticker>'+esc(r.ticker)+'</span>'],['Signal',r=>pill(r.signal)],['Sector',r=>esc(r.sector)],['Price',r=>money(r.price)],['RQG',r=>esc(r.rqg_score)+' '+esc(r.rqg_label)],['Reasons',r=>chips(r.rqg_reasons||[])]],DATA.summary.blocked_alerts)+'<h2>Waiting / Tracking Candidates</h2>'+tbl([['Ticker',r=>'<span class=ticker>'+esc(r.ticker)+'</span>'],['Signal',r=>pill(r.signal)],['Sector',r=>esc(r.sector)],['Stage',r=>esc(r.stage)],['C5',r=>esc(r.c5)],['C15',r=>esc(r.c15||'')],['Price',r=>money(r.price)]],DATA.summary.candidates)}
+function renderHistory(){let h=(DATA.history||[]).slice().reverse();document.getElementById('history').innerHTML='<div class=box><b>30-day rolling history:</b> '+h.length+' records. This data is loaded from docs/scan_history.json and preserved across GitHub runs when the workflow commits docs updates.</div>'+tbl([['Date',r=>esc(r.date)],['Time',r=>esc(r.time||r.alert_time||'')],['Ticker',r=>'<span class=ticker>'+esc(r.ticker)+'</span>'],['Signal',r=>pill(r.signal)],['Alert $',r=>money(r.alert_price)],['Current $',r=>money(r.current_price)],['Result',r=>pill(r.result||'PENDING')],['P&L %',r=>pct(r.change_pct||r.pnl_pct)],['RQG',r=>esc(r.rqg_score||'')],['Setup',r=>esc(r.setup_type||'')]],h)}
+function renderLogs(){let s=DATA.summary;document.getElementById('logs').innerHTML='<h2>Readable End-of-Scan Log</h2><div class=box><pre style="white-space:pre-wrap;line-height:1.45">'+esc(JSON.stringify({scan_time:s.scan_time,regime:s.regime,spy_rsi:s.spy_rsi,time_quality:s.time_quality,passed:String(s.filtered)+'/'+String(s.stocks_scanned),alerts:s.alerts,blocked:s.blocked,pending_total:s.pending_total,pending_by_stage:s.pending_by_stage,pending_by_sector:s.pending_by_sector,sector_state:s.sectors,last_runs:DATA.summaryHistory},null,2))+'</pre></div>'}
+function initSelectors(){let c=Object.keys(DATA.charts||{}), cs=document.getElementById('chartSel');cs.innerHTML=c.map(x=>'<option>'+esc(x)+'</option>').join('');let o=Object.keys(DATA.options||{}), os=document.getElementById('optSel');os.innerHTML=o.map(x=>'<option>'+esc(x)+'</option>').join('')}function drawChart(){let t=document.getElementById('chartSel').value,d=DATA.charts[t];if(!d){document.getElementById('chart').innerHTML='No chart data';return}let traces=[{x:d.timestamps,open:d.open,high:d.high,low:d.low,close:d.close,type:'candlestick',name:t},{x:d.timestamps,y:d.vwap,type:'scatter',name:'VWAP'},{x:d.timestamps,y:d.ema9,type:'scatter',name:'EMA9'},{x:d.timestamps,y:d.ema21,type:'scatter',name:'EMA21'}];Plotly.newPlot('chart',traces,{paper_bgcolor:'#111827',plot_bgcolor:'#111827',font:{color:'#e5edf7'},title:t+' intraday chart',xaxis:{rangeslider:{visible:false}}},{responsive:true})}function renderOptions(){let t=document.getElementById('optSel').value,o=DATA.options[t];if(!o){document.getElementById('optBox').innerHTML='<div class=box>No options data</div>';return}document.getElementById('optBox').innerHTML='<div class=box><b>'+esc(t)+'</b> Spot '+money(o.spot)+' Exp '+esc(o.expiration)+' DTE '+esc(o.dte)+' IV '+esc(o.avg_iv)+'% PCR '+esc(o.pcr)+'</div><h3>Suggested Strategies</h3>'+tbl([['Name',r=>esc(r.name)],['Cost',r=>esc(r.cost)],['Max Profit',r=>esc(r.max_profit)],['Breakeven',r=>esc(r.breakeven)],['Legs',r=>(r.legs||[]).map(l=>esc(l.action+' '+l.type+' '+l.strike+' @ '+l.price)).join('<br>')]],o.strategies||[])+'<h3>Unusual Options</h3>'+tbl([['Type',r=>esc(r.type)],['Strike',r=>esc(r.strike)],['Vol',r=>esc(r.volume)],['OI',r=>esc(r.oi)],['Ratio',r=>esc(r.ratio)]],o.unusual||[])}
+renderSummary();renderAlerts();renderSectors();renderBlocked();renderHistory();renderLogs();initSelectors();</script></body></html>"""
+    repl = {
+        "__DATE__": scan_date, "__SCAN_TIME__": scan_time, "__REGIME__": str(regime), "__SPY_RSI__": f"{spy_rsi:.1f}",
+        "__ALERT_COUNT__": str(len(alerts_sorted)), "__BLOCKED__": str(scan_summary.get('blocked',0)), "__FILTERED__": str(scan_summary.get('filtered',0)),
+        "__SCANNED__": str(scan_summary.get('stocks_scanned',0)), "__PENDING__": str(scan_summary.get('pending_total',0)), "__WR__": str(hist_wr),
+        "__WINS__": str(hist_wins), "__LOSSES__": str(hist_losses), "__HISTCOUNT__": str(len(history_30)),
+        "__GATE__": ('ON' if scan_summary.get('rqg_gate',True) else 'OBS'), "__THRESH__": str(scan_summary.get('rqg_threshold',65)), "__DATA__": data_json
+    }
+    for k,v in repl.items(): html = html.replace(k,v)
+    return html
 
 def main():
     logger.info("=" * 65)
@@ -620,15 +732,20 @@ def main():
     history = save_history(history)
     summary_history.append(scan_summary)
     summary_history = save_summary_history(summary_history)
+    save_quality_summary_json(scan_summary, summary_history)
     html = generate_html(alerts, regime, spy_rsi, history, charts, options, scan_summary, summary_history)
     docs_dir = os.path.join(script_dir, "docs"); os.makedirs(docs_dir, exist_ok=True)
     output_path = os.path.join(docs_dir, "TopBottom_Universal.html")
     with open(output_path, "w", encoding="utf-8") as f: f.write(html)
     with open(os.path.join(docs_dir, "latest_scan.json"), "w", encoding="utf-8") as f:
         json.dump({"scan_time": scan_summary.get("scan_time"), "regime": regime, "spy_rsi": spy_rsi, "total_alerts": len(alerts), "blocked": scan_summary.get("blocked",0), "stocks_scanned": len(ALL_STOCKS) if ALL_STOCKS else 260, "alerts": alerts, "summary": scan_summary}, f, indent=2)
-    if alerts:
-        try: send_email("v5.5 GitHub RQG - " + str(len(alerts)) + " signals", html)
-        except Exception: pass
+    email_window = should_send_report_email(force=False)
+    if email_window:
+        try:
+            email_html = build_report_email_html(alerts, history, scan_summary, summary_history)
+            send_email(f"{email_window} Market Scanner GitHub Report - {scan_summary.get('scan_time','')} - {len(alerts)} alerts", email_html)
+        except Exception as e:
+            logger.error("Scheduled report email failed: %s", e)
     logger.info("Dashboard: %s (%d bytes)", output_path, len(html))
     logger.info("GitHub Actions RQG scan complete!")
     return 0
