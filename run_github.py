@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ================================================================
-MARKET SCANNER v5.3 - GITHUB ACTIONS RUNNER (FULL FEATURES)
+MARKET SCANNER v5.5 - GITHUB ACTIONS RUNNER WITH REVERSAL QUALITY GATE
 ================================================================
 Generates a self-contained HTML dashboard for GitHub Pages with:
   - Live alerts with scores, setup types, MTF status
@@ -61,6 +61,18 @@ try:
     logger.info("v5.3 peewee memory patch applied")
 except Exception as e:
     logger.info("v5.3 patch not available: %s", e)
+
+# v5.5: use RQG from market_scanner_v5 if present; otherwise use fallback in this file.
+_HAS_RQG = False
+try:
+    from market_scanner_v5 import evaluate_reversal_quality_gate as _scanner_rqg
+    from market_scanner_v5 import RQG_MIN_SCORE as _SCANNER_RQG_MIN_SCORE
+    _HAS_RQG = True
+    logger.info("v5.5 RQG imported from market_scanner_v5")
+except Exception as e:
+    _scanner_rqg = None
+    _SCANNER_RQG_MIN_SCORE = 65
+    logger.info("v5.5 RQG not imported; using GitHub fallback: %s", e)
 
 def patched_yf_download(*args, **kwargs):
     if _HAS_PATCH:
@@ -158,94 +170,192 @@ def send_email(subject, html_body):
         logger.error("Email failed: %s", e)
 
 
+
+# ================================================================
+# v5.5 GITHUB RQG + SUMMARY HELPERS
+# ================================================================
+GITHUB_RQG_MIN_SCORE = int(os.getenv("RQG_MIN_SCORE", str(_SCANNER_RQG_MIN_SCORE)))
+GITHUB_RQG_A_PLUS_SCORE = 80
+GITHUB_RQG_ENFORCE_GATE = os.getenv("RQG_ENFORCE_GATE", "true").lower() not in ("0", "false", "no")
+MAX_GITHUB_SUMMARY_HISTORY = 8
+
+def _latest_et_from_df(df):
+    try:
+        if df is None or df.empty or len(df.index) == 0: return "N/A", 999999
+        ts = pd.Timestamp(df.index[-1])
+        try:
+            import pytz
+            et = pytz.timezone("US/Eastern")
+            ts = et.localize(ts.to_pydatetime()) if ts.tzinfo is None else ts.tz_convert(et)
+            now = get_eastern_now() if SCANNER_IMPORTED else datetime.now(et)
+        except Exception:
+            now = datetime.now()
+        return ts.strftime("%Y-%m-%d %I:%M:%S %p ET"), round(max((now-ts.to_pydatetime()).total_seconds()/60,0),1)
+    except Exception:
+        return "N/A", 999999
+
+def fetch_fresh_ohlcv(ticker, period="5d", interval="5m"):
+    try:
+        df = patched_yf_download(ticker, period=period, interval=interval, progress=False, auto_adjust=True, threads=False)
+        if df is None or df.empty:
+            return None, {"fresh":False,"latest":"N/A","age_min":999999,"rows":0,"source":"yfinance"}
+        if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
+        latest, age = _latest_et_from_df(df)
+        limit = {"1m":5,"2m":8,"5m":12,"15m":25,"30m":45,"60m":90,"1h":90,"1d":10080}.get(interval,30)
+        return df, {"fresh": (True if interval=="1d" else age<=limit), "latest":latest, "age_min":age, "limit_min":limit, "rows":len(df), "source":"yfinance"}
+    except Exception as e:
+        return None, {"fresh":False,"latest":"N/A","age_min":999999,"rows":0,"source":"yfinance","error":str(e)}
+
+def calc_atr(high, low, close, period=14):
+    try:
+        pc = close.shift(1)
+        tr = pd.concat([(high-low),(high-pc).abs(),(low-pc).abs()],axis=1).max(axis=1)
+        return tr.rolling(period).mean()
+    except Exception:
+        return pd.Series(index=close.index, dtype=float)
+
+def evaluate_github_rqg(ticker, signal, regime, sector_strength, r5=None, r15=None, r30=None, r60=None):
+    if _HAS_RQG and _scanner_rqg is not None:
+        try: return _scanner_rqg(ticker, signal, regime, sector_strength, r5, r15, r30, r60)
+        except Exception as e: logger.warning("Imported RQG failed %s: %s", ticker, e)
+    out={"score":0,"label":"REJECT","passed":False,"reasons":[],"buckets":{},"details":{}}
+    df, meta = fetch_fresh_ohlcv(ticker,"5d","5m")
+    if df is None or df.empty or len(df)<60 or not meta.get("fresh"):
+        out.update({"label":"REJECT_NO_FRESH_DATA","reasons":["NO_FRESH_5M_DATA"],"details":{"data_meta":meta}}); return out
+    try:
+        o,h,l,c,v = df["Open"].dropna(),df["High"].dropna(),df["Low"].dropna(),df["Close"].dropna(),df["Volume"].dropna()
+        common=c.index.intersection(h.index).intersection(l.index).intersection(o.index).intersection(v.index)
+        o,h,l,c,v=o.loc[common],h.loc[common],l.loc[common],c.loc[common],v.loc[common]
+        rsi14=calc_rsi(c,14); rsi2=calc_rsi(c,2); _,_,mh=calc_macd(c); bbu,bbm,bbl=calc_bollinger(c); vwap=calc_vwap(h,l,c,v); atr=calc_atr(h,l,c); ema8=calc_ema(c,8)
+        last=float(c.iloc[-1]); op=float(o.iloc[-1]); vv=float(vwap.iloc[-1]) if not pd.isna(vwap.iloc[-1]) else last
+        std=float((c-vwap).rolling(50).std().iloc[-1]) if len(c)>50 and not pd.isna((c-vwap).rolling(50).std().iloc[-1]) else max(last*.003,.01)
+        z=(last-vv)/std; vr=float(v.iloc[-1])/max(float(v.rolling(20).mean().iloc[-1]) if not pd.isna(v.rolling(20).mean().iloc[-1]) else float(v.iloc[-1]),1)
+        r2=float(rsi2.iloc[-1]) if not pd.isna(rsi2.iloc[-1]) else 50; r14=float(rsi14.iloc[-1]) if not pd.isna(rsi14.iloc[-1]) else 50
+        mh0=float(mh.iloc[-1]) if not pd.isna(mh.iloc[-1]) else 0; mh1=float(mh.iloc[-2]) if not pd.isna(mh.iloc[-2]) else 0
+        buckets={"location":0,"momentum":0,"volume":0,"structure":0,"context":0,"rr":0}; reasons=[]; hard=False
+        if signal=="BOTTOM":
+            if z<=-2: buckets["location"]+=12; reasons.append("DeepBelowVWAP2σ")
+            elif z<=-1.25: buckets["location"]+=8; reasons.append("BelowVWAPStretch")
+            if not pd.isna(bbl.iloc[-1]) and last<=float(bbl.iloc[-1])*1.005: buckets["location"]+=8; reasons.append("LowerBand")
+            if r2<=5: buckets["momentum"]+=6; reasons.append("RSI2Exhausted")
+            elif r2<=12: buckets["momentum"]+=3; reasons.append("RSI2Low")
+            if mh0>mh1: buckets["momentum"]+=6; reasons.append("MACDImproving")
+            if (r5 or {}).get("bdiv"): buckets["momentum"]+=8; reasons.append("BullDiv")
+            if vr>=1.5 and last>op: buckets["volume"]+=8; reasons.append("GreenVolumeReversal")
+            elif vr>=1.3: buckets["volume"]+=5; reasons.append("VolumeExpansion")
+            if (r5 or {}).get("vd",0)>.55: buckets["volume"]+=5; reasons.append("BuyVol")
+            if last>float(h.iloc[-2]): buckets["structure"]+=8; reasons.append("CloseAbovePriorHigh")
+            if last>float(ema8.iloc[-1]): buckets["structure"]+=4; reasons.append("ReclaimEMA8")
+            if last>vv: buckets["structure"]+=5; reasons.append("ReclaimVWAP")
+            if sector_strength=="STRONG": buckets["context"]+=7; reasons.append("SectorStrong")
+            elif sector_strength=="NEUTRAL": buckets["context"]+=4; reasons.append("SectorNeutral")
+            elif (r5 or {}).get("sector_override",0): buckets["context"]+=5; reasons.append("SectorOverride")
+            if regime!="BEARISH": buckets["context"]+=5; reasons.append("MarketNotBearish")
+            stop=float(l.iloc[-12:].min())-.1*max(float(atr.iloc[-1]) if not pd.isna(atr.iloc[-1]) else last*.003,.01); target=max(vv,float(bbm.iloc[-1]) if not pd.isna(bbm.iloc[-1]) else vv); rr=max(target-last,0)/max(last-stop,.01)
+            if sector_strength=="WEAK" and regime=="BEARISH" and last<float(ema8.iloc[-1]): hard=True; reasons.append("TrendDanger")
+        else:
+            if z>=2: buckets["location"]+=12; reasons.append("DeepAboveVWAP2σ")
+            elif z>=1.25: buckets["location"]+=8; reasons.append("AboveVWAPStretch")
+            if not pd.isna(bbu.iloc[-1]) and last>=float(bbu.iloc[-1])*.995: buckets["location"]+=8; reasons.append("UpperBand")
+            if r2>=95: buckets["momentum"]+=6; reasons.append("RSI2ExhaustedHigh")
+            elif r2>=88: buckets["momentum"]+=3; reasons.append("RSI2High")
+            if mh0<mh1: buckets["momentum"]+=6; reasons.append("MACDWeakening")
+            if (r5 or {}).get("brdiv"): buckets["momentum"]+=8; reasons.append("BearDiv")
+            if vr>=1.5 and last<op: buckets["volume"]+=8; reasons.append("RedVolumeReversal")
+            elif vr>=1.3: buckets["volume"]+=5; reasons.append("VolumeExpansion")
+            if (r5 or {}).get("vd",.5)<.45: buckets["volume"]+=5; reasons.append("SellVol")
+            if last<float(l.iloc[-2]): buckets["structure"]+=8; reasons.append("CloseBelowPriorLow")
+            if last<float(ema8.iloc[-1]): buckets["structure"]+=4; reasons.append("LostEMA8")
+            if last<vv: buckets["structure"]+=5; reasons.append("LostVWAP")
+            if sector_strength=="WEAK": buckets["context"]+=7; reasons.append("SectorWeak")
+            elif sector_strength=="NEUTRAL": buckets["context"]+=4; reasons.append("SectorNeutral")
+            if regime!="BULLISH": buckets["context"]+=5; reasons.append("MarketNotBullish")
+            stop=float(h.iloc[-12:].max())+.1*max(float(atr.iloc[-1]) if not pd.isna(atr.iloc[-1]) else last*.003,.01); target=min(vv,float(bbm.iloc[-1]) if not pd.isna(bbm.iloc[-1]) else vv); rr=max(last-target,0)/max(stop-last,.01)
+            if sector_strength=="STRONG" and regime=="BULLISH" and last>float(ema8.iloc[-1]): hard=True; reasons.append("TrendDanger")
+        if rr>=2: buckets["rr"]=10; reasons.append("RR>=2")
+        elif rr>=1.5: buckets["rr"]=7; reasons.append("RR>=1.5")
+        elif rr>=1: buckets["rr"]=4; reasons.append("RR>=1")
+        caps={"location":20,"momentum":20,"volume":15,"structure":20,"context":15,"rr":10}; buckets={k:min(v,caps[k]) for k,v in buckets.items()}
+        score=int(sum(buckets.values())); label="REJECT_TREND_DANGER" if hard else ("A_PLUS_REVERSAL" if score>=GITHUB_RQG_A_PLUS_SCORE else "VALID_REVERSAL" if score>=GITHUB_RQG_MIN_SCORE else "WATCH_ONLY" if score>=50 else "REJECT_LOW_QUALITY")
+        out.update({"score":score,"label":label,"passed":(not hard and score>=GITHUB_RQG_MIN_SCORE),"reasons":reasons,"buckets":buckets,"details":{"price":round(last,2),"vwap":round(vv,2),"vwap_z":round(z,2),"rsi2":round(r2,1),"rsi14":round(r14,1),"vol_ratio":round(vr,2),"rr":round(rr,2),"latest":meta.get("latest"),"age_min":meta.get("age_min")}})
+        return out
+    except Exception as e:
+        out.update({"label":"RQG_EXCEPTION","reasons":[str(e)[:100]]}); return out
+
+def sector_snapshot(checked):
+    rows=[]
+    for sec in sorted(checked):
+        c=sector_strength_cache.get(sec,{})
+        if c: rows.append({"sector":sec,"strength":c.get("strength","UNKNOWN"),"reason":c.get("reason","Relative strength vs SPY"),"diff":safe_float(c.get("diff",0)),"sector_return":safe_float(c.get("sector_return",0)),"spy_return":safe_float(c.get("spy_return",0)),"session_return":safe_float(c.get("session_return",0)),"session_spy_return":safe_float(c.get("session_spy_return",0)),"close":safe_float(c.get("close",0)),"latest":c.get("latest_et","N/A"),"age_min":c.get("age_min","N/A"),"source":c.get("source","scanner")})
+    return rows
+
+def load_summary_history():
+    p=os.path.join(script_dir,"docs","scan_summary_history.json")
+    if os.path.exists(p):
+        try:
+            with open(p,"r",encoding="utf-8") as f: data=json.load(f)
+            return data if isinstance(data,list) else []
+        except Exception: return []
+    return []
+
+def save_summary_history(items):
+    items=items[-MAX_GITHUB_SUMMARY_HISTORY:]
+    p=os.path.join(script_dir,"docs","scan_summary_history.json")
+    os.makedirs(os.path.dirname(p),exist_ok=True)
+    with open(p,"w",encoding="utf-8") as f: json.dump(items,f,indent=1)
+    return items
+
 # ================================================================
 # SCAN CYCLE
 # ================================================================
 
-def run_single_scan():
+def run_single_scan(previous_summaries=None):
     if not SCANNER_IMPORTED:
-        return [], "UNKNOWN", 50.0
-
+        return [], "UNKNOWN", 50.0, {"error":"Scanner not imported"}
+    previous_summaries = previous_summaries or []
     now = get_eastern_now()
-    logger.info("=" * 60)
-    logger.info("GITHUB SCAN - %s", now.strftime("%Y-%m-%d %I:%M %p ET"))
-    logger.info("Universe: %d stocks", len(ALL_STOCKS))
-    logger.info("=" * 60)
-
-    regime, spy_rsi = get_market_regime()
-    logger.info("Regime: %s (SPY RSI=%.1f)", regime, spy_rsi)
-
+    logger.info("="*70); logger.info("GITHUB SCAN v5.5 RQG - %s", now.strftime("%Y-%m-%d %I:%M %p ET")); logger.info("="*70)
+    regime, spy_rsi = get_market_regime(); tq_mult, tq_name = get_time_quality()
     filtered = batch_quick_scan(ALL_STOCKS)
-    logger.info("Pass 1: %d/%d passed", len(filtered), len(ALL_STOCKS))
-
-    if not filtered:
-        return [], regime, spy_rsi
-
-    checked = set()
+    logger.info("Pass 1: %d/%d passed | Regime=%s RSI=%.1f | TimeQuality=%s", len(filtered), len(ALL_STOCKS), regime, spy_rsi, tq_name)
+    checked=set()
     for t in filtered:
-        sec = get_stock_sector(t)
+        sec=get_stock_sector(t)
         if sec not in checked and sec != "SPY":
-            check_sector_strength(sec)
-            checked.add(sec)
-            time.sleep(0.5)
-
-    alerts = []
+            try: check_sector_strength(sec)
+            except Exception as e: logger.warning("Sector check failed %s: %s", sec, e)
+            checked.add(sec); time.sleep(0.2)
+    alerts=[]; blocked=[]; candidates=[]
     for ticker in filtered:
         try:
-            sec = get_stock_sector(ticker)
-            ss = sector_strength_cache.get(sec, {}).get("strength", "NEUTRAL")
-            r5 = analyze_stock_v5(ticker, "5m", regime, ss)
-            if r5 is None:
-                continue
-            sig = r5["signal"]
-            conf = r5["confidence"]
-            mtf = "5m"
-            c15 = c30 = c60 = 0
+            sec=get_stock_sector(ticker); ss=sector_strength_cache.get(sec,{}).get("strength","NEUTRAL")
+            r5=analyze_stock_v5(ticker,"5m",regime,ss)
+            if not r5: continue
+            sig=r5["signal"]; c5=r5["confidence"]
+            r15=analyze_stock_v5(ticker,"15m",regime,ss)
+            if not r15 or r15.get("signal")!=sig:
+                candidates.append({"ticker":ticker,"signal":sig,"sector":sec,"stage":"5m_ONLY_15m_NO_MATCH","c5":c5,"price":round(r5.get("cl",0),2)}); continue
+            r30=analyze_stock_v5(ticker,"30m",regime,ss)
+            if not r30 or r30.get("signal")!=sig:
+                candidates.append({"ticker":ticker,"signal":sig,"sector":sec,"stage":"5m+15m_30m_NO_MATCH","c5":c5,"c15":r15.get("confidence",0),"price":round(r5.get("cl",0),2)}); continue
+            r60=None; c60=0; mtf="5m+15m+30m"
             try:
-                r15 = analyze_stock_v5(ticker, "15m", regime, ss)
-                if r15 and r15["signal"] == sig:
-                    mtf = "5m+15m"; c15 = r15["confidence"]
-                    r30 = analyze_stock_v5(ticker, "30m", regime, ss)
-                    if r30 and r30["signal"] == sig:
-                        mtf = "5m+15m+30m"; c30 = r30["confidence"]
-                        r60 = analyze_stock_v5(ticker, "60m", regime, ss)
-                        if r60 and r60["signal"] == sig:
-                            mtf = "5m+15m+30m+60m"; c60 = r60["confidence"]
-            except Exception:
-                pass
-            if "15m" not in mtf:
-                continue
-            confs = [conf, c15]
-            if c30 > 0: confs.append(c30)
-            if c60 > 0: confs.append(c60)
-            avg_c = int(sum(confs) / len(confs))
-            try:
-                pcr = get_options_pcr(ticker)
-            except Exception:
-                pcr = 1.0
-            now_et = get_eastern_now().strftime("%Y-%m-%d %I:%M:%S %p ET")
-            alert = {
-                "ticker": ticker, "signal": sig, "confidence": avg_c,
-                "alert_price": round(r5["cl"], 2),
-                "rsi": round(r5["rsi"], 1),
-                "mfi": round(r5.get("mfi", 0), 1),
-                "cmf": round(r5.get("cmf", 0), 3),
-                "pcr": round(pcr, 2),
-                "regime": regime, "sector_strength": ss,
-                "setup_type": r5.get("setup_type", "REVERSAL"),
-                "trend_3d": round(r5.get("trend_3d", 0), 2),
-                "trend_5d": round(r5.get("trend_5d", 0), 2),
-                "volume_expansion": round(r5.get("volume_expansion", 1.0), 2),
-                "signals": r5.get("signals", []),
-                "mtf_status": mtf,
-                "time": now_et, "date": now.strftime("%Y-%m-%d"),
-            }
-            alerts.append(alert)
-            logger.info("  * %s: %s c=%d mtf=%s", ticker, sig, avg_c, mtf)
-        except Exception as e:
-            logger.warning("  Error %s: %s", ticker, e)
-    logger.info("Scan complete: %d signals", len(alerts))
-    return alerts, regime, spy_rsi
+                r60=analyze_stock_v5(ticker,"60m",regime,ss)
+                if r60 and r60.get("signal")==sig: mtf="5m+15m+30m+60m"; c60=r60.get("confidence",0)
+            except Exception: pass
+            confs=[c5,r15.get("confidence",0),r30.get("confidence",0)] + ([c60] if c60 else [])
+            avg_c=int(sum(confs)/len(confs))
+            rqg=evaluate_github_rqg(ticker,sig,regime,ss,r5,r15,r30,r60)
+            if GITHUB_RQG_ENFORCE_GATE and not rqg.get("passed",False):
+                blocked.append({"ticker":ticker,"signal":sig,"sector":sec,"price":round(r5.get("cl",0),2),"confidence":avg_c,"mtf_status":mtf,"rqg_score":rqg.get("score",0),"rqg_label":rqg.get("label","REJECT"),"rqg_reasons":rqg.get("reasons",[]),"rqg_buckets":rqg.get("buckets",{}),"rqg_details":rqg.get("details",{})}); continue
+            try: pcr=get_options_pcr(ticker)
+            except Exception: pcr=1.0
+            alert={"ticker":ticker,"signal":sig,"confidence":avg_c,"alert_price":round(r5["cl"],2),"rsi":round(r5["rsi"],1),"mfi":round(r5.get("mfi",0),1),"cmf":round(r5.get("cmf",0),3),"pcr":round(pcr,2),"regime":regime,"sector":sec,"sector_strength":ss,"setup_type":r5.get("setup_type","REVERSAL"),"trend_3d":round(r5.get("trend_3d",0),2),"trend_5d":round(r5.get("trend_5d",0),2),"volume_expansion":round(r5.get("volume_expansion",1),2),"signals":list(r5.get("signals",[]))+["RQG=%s/%s"%(rqg.get("score"),rqg.get("label"))]+["RQG_"+x for x in rqg.get("reasons",[])[:4]],"mtf_status":mtf,"c5":c5,"c15":r15.get("confidence",0),"c30":r30.get("confidence",0),"c60":c60,"rqg_score":rqg.get("score",0),"rqg_label":rqg.get("label",""),"rqg_reasons":rqg.get("reasons",[]),"rqg_buckets":rqg.get("buckets",{}),"rqg_details":rqg.get("details",{}),"time":get_eastern_now().strftime("%Y-%m-%d %I:%M:%S %p ET"),"date":now.strftime("%Y-%m-%d"),"result":"PENDING"}
+            alerts.append(alert); logger.info("ALERT %s %s conf=%d mtf=%s rqg=%s/%s", ticker, sig, avg_c, mtf, alert["rqg_score"], alert["rqg_label"])
+        except Exception as e: logger.warning("Error %s: %s", ticker, e)
+    sectors=sorted(sector_snapshot(checked), key=lambda x:x.get("diff",0), reverse=True)
+    summary={"scan_time":now.strftime("%Y-%m-%d %I:%M:%S %p ET"),"date":now.strftime("%Y-%m-%d"),"regime":regime,"spy_rsi":round(float(spy_rsi),1),"time_quality":tq_name,"stocks_scanned":len(ALL_STOCKS),"filtered":len(filtered),"alerts":len(alerts),"blocked":len(blocked),"candidates":candidates[:80],"blocked_alerts":blocked[:100],"sectors":sectors,"rqg_gate":GITHUB_RQG_ENFORCE_GATE,"rqg_threshold":GITHUB_RQG_MIN_SCORE,"leaders_recent":sectors[:3],"laggards_recent":sectors[-3:] if sectors else [],"previous_scan_time":(previous_summaries[-1].get("scan_time") if previous_summaries else "N/A")}
+    return alerts, regime, spy_rsi, summary
 
 
 # ================================================================
@@ -459,276 +569,28 @@ def save_history(history):
 # HTML GENERATOR
 # ================================================================
 
-def generate_html(alerts, regime, spy_rsi, history, charts, options_data):
+def generate_html(alerts, regime, spy_rsi, history, charts, options_data, scan_summary=None, summary_history=None):
     now = get_eastern_now() if SCANNER_IMPORTED else datetime.utcnow()
     scan_time = now.strftime("%Y-%m-%d %I:%M:%S %p ET")
     scan_date = now.strftime("%Y-%m-%d")
-    alerts_sorted = sorted(alerts, key=lambda a: a.get("confidence", 0), reverse=True)
-    total = len(alerts_sorted)
-    bottoms = sum(1 for a in alerts_sorted if a["signal"] == "BOTTOM")
-    tops = total - bottoms
-    num_stocks = len(ALL_STOCKS) if ALL_STOCKS else 260
-    regime_cls = "badge-bull" if regime == "BULLISH" else "badge-bear" if regime == "BEARISH" else "badge-neutral"
-    hist_total = len(history)
-    hist_wins = sum(1 for h in history if h.get("result") == "WIN")
-    hist_losses = sum(1 for h in history if h.get("result") == "LOSS")
-
-    # Convert data to JSON strings
-    alerts_json = json.dumps(alerts_sorted)
-    history_json = json.dumps(history[-200:])  # last 200 entries max
-    charts_json = json.dumps(charts)
-    options_json = json.dumps(options_data)
-
-    html = """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="refresh" content="900">
-<title>Market Scanner v5.3 - """ + scan_date + """</title>
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0e17;--card:#111827;--border:#1e293b;--text:#e2e8f0;--dim:#64748b;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--cyan:#06b6d4;--purple:#a855f7;--orange:#f97316;--yellow:#eab308}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-variant-numeric:tabular-nums;min-height:100vh}
-a{color:var(--cyan);text-decoration:none}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:#0d1320;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100}
-.topbar h1{font-size:18px;font-weight:700;color:var(--cyan)}
-.topbar small{font-size:11px;color:var(--dim)}
-.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block}
-.badge-bull{background:#22c55e22;color:var(--green)}.badge-bear{background:#ef444422;color:var(--red)}.badge-neutral{background:#eab30822;color:var(--yellow)}
-.meta{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--dim)}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;padding:18px 24px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
-.card .label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
-.card .value{font-size:26px;font-weight:700}
-.card .sub{font-size:12px;color:var(--dim);margin-top:4px}
-.tabs{display:flex;gap:0;padding:0 24px;border-bottom:1px solid var(--border);background:#0d1320}
-.tab{padding:12px 24px;cursor:pointer;font-size:14px;font-weight:600;color:var(--dim);border-bottom:3px solid transparent;transition:all .2s}
-.tab:hover{color:var(--text)}.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
-.tc{display:none;padding:20px 24px}.tc.active{display:block}
-.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
-.filters{display:flex;gap:6px;flex-wrap:wrap}
-.fbtn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;font-size:12px;font-weight:600;transition:all .2s}
-.fbtn:hover,.fbtn.active{background:var(--cyan);color:#000;border-color:var(--cyan)}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{background:#0d1320;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;cursor:pointer;text-align:left;border-bottom:1px solid var(--border)}
-thead th:hover{color:var(--cyan)}
-tbody tr{border-bottom:1px solid #1e293b44;transition:background .15s}
-tbody tr:hover{background:#1e293b55}
-td{padding:10px 12px;white-space:nowrap}
-.ticker{font-weight:700;color:var(--cyan);cursor:pointer}
-.sig{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700}
-.sig-b{background:#22c55e22;color:var(--green)}.sig-t{background:#ef444422;color:var(--red)}
-.st{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700}
-.st-r{background:#3b82f622;color:var(--blue)}.st-l{background:#a855f722;color:var(--purple)}.st-h{background:#f9731622;color:var(--orange)}
-.sb{display:flex;align-items:center;gap:6px}.sb .bar{width:50px;height:6px;background:#1e293b;border-radius:3px;overflow:hidden}.sb .bar .fill{height:100%;border-radius:3px}
-.ppos{color:var(--green)}.pneg{color:var(--red)}.pz{color:var(--dim)}
-.ibtn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;padding:4px;transition:color .2s}.ibtn:hover{color:var(--cyan)}
-.empty{text-align:center;padding:60px;color:var(--dim)}.empty .ico{font-size:48px;margin-bottom:12px}
-.footer{text-align:center;padding:20px;color:var(--dim);font-size:11px;border-top:1px solid var(--border);margin-top:20px}
-.chart-container{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
-.opt-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:20px}
-.opt-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
-.opt-card h3{color:var(--cyan);margin-bottom:10px;font-size:15px}
-.legs{width:100%;font-size:12px;margin-bottom:10px}
-.legs th{padding:5px 8px;color:var(--dim);font-size:10px;border-bottom:1px solid var(--border)}
-.legs td{padding:5px 8px}
-.ss{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px}
-.ss .k{color:var(--dim)}.ss .v{font-weight:700;text-align:right}
-.chain-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.sum-row{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
-.sum-s{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 20px;text-align:center}
-.sum-s .num{font-size:22px;font-weight:700}.sum-s .lbl{font-size:11px;color:var(--dim);text-transform:uppercase;margin-top:2px}
-@media(max-width:768px){.cards{grid-template-columns:1fr 1fr}.chain-grid{grid-template-columns:1fr}td,th{padding:6px 8px;font-size:12px}.topbar{flex-direction:column;text-align:center}}
-</style>
-</head>
-<body>
-<div class="topbar">
-  <div><h1>&#9889; Market Scanner v5.3</h1><small>12-Indicator - Multi-Timeframe - GitHub Actions</small></div>
-  <div class="meta"><span class="badge """ + regime_cls + '\">' + regime + """</span><span>Scanned: <b>""" + scan_time + """</b></span><span>""" + str(num_stocks) + """ stocks</span></div>
-</div>
-<div class="cards">
-  <div class="card"><div class="label">Today's Alerts</div><div class="value">""" + str(total) + """</div><div class="sub">&#9650; """ + str(bottoms) + """ Bottom / &#9660; """ + str(tops) + """ Top</div></div>
-  <div class="card"><div class="label">Market Regime</div><div class="value">""" + regime + """</div><div class="sub">SPY RSI: """ + str(round(spy_rsi, 1)) + """</div></div>
-  <div class="card"><div class="label">30-Day History</div><div class="value">""" + str(hist_total) + """</div><div class="sub">W:""" + str(hist_wins) + """ / L:""" + str(hist_losses) + """</div></div>
-  <div class="card"><div class="label">Platform</div><div class="value" style="font-size:18px">GitHub Actions</div><div class="sub">Auto-refreshes every 15 min</div></div>
-</div>
-<div class="tabs">
-  <div class="tab active" onclick="showTab('live')">&#128225; Live Alerts</div>
-  <div class="tab" onclick="showTab('history')">&#128202; History (30d)</div>
-  <div class="tab" onclick="showTab('charts')">&#128200; Charts</div>
-  <div class="tab" onclick="showTab('options')">&#9881; Options</div>
-</div>
-
-<!-- LIVE TAB -->
-<div class="tc active" id="tab-live">
-  <div class="toolbar">
-    <div class="filters" id="fbar">
-      <button class="fbtn active" onclick="flt('ALL')">ALL """ + str(total) + """</button>
-      <button class="fbtn" onclick="flt('BOTTOM')">&#9650; BOTTOM """ + str(bottoms) + """</button>
-      <button class="fbtn" onclick="flt('TOP')">&#9660; TOP """ + str(tops) + """</button>
-    </div>
-  </div>
-  <div style="overflow-x:auto"><table><thead><tr>
-    <th onclick="srt('ticker')">Ticker</th><th onclick="srt('signal')">Signal</th>
-    <th onclick="srt('alert_price')">Alert $</th><th onclick="srt('confidence')">Score</th>
-    <th onclick="srt('setup_type')">Setup</th><th onclick="srt('mtf_status')">MTF</th>
-    <th>Sector</th><th onclick="srt('rsi')">RSI</th><th onclick="srt('trend_3d')">Trend 3d</th>
-    <th>Vol Exp</th><th>PCR</th><th>Signals</th><th>&#128200;</th><th>&#9881;</th>
-  </tr></thead><tbody id="liveBody"></tbody></table></div>
-  <div class="empty" id="liveEmpty" style="display:none"><div class="ico">&#128225;</div><p>No signals detected.</p></div>
-</div>
-
-<!-- HISTORY TAB -->
-<div class="tc" id="tab-history">
-  <div class="sum-row" id="histSum"></div>
-  <div style="overflow-x:auto"><table><thead><tr>
-    <th>Date</th><th>Ticker</th><th>Signal</th><th>Alert $</th><th>Score</th><th>Setup</th><th>MTF</th><th>Regime</th><th>Sector</th><th>Trend 3d</th>
-  </tr></thead><tbody id="histBody"></tbody></table></div>
-  <div class="empty" id="histEmpty" style="display:none"><div class="ico">&#128202;</div><p>No history data yet.</p></div>
-</div>
-
-<!-- CHARTS TAB -->
-<div class="tc" id="tab-charts">
-  <div class="toolbar">
-    <div class="filters" id="chartBtns"></div>
-    <span style="color:var(--dim);font-size:12px">Click ticker to view chart</span>
-  </div>
-  <div id="chartArea">
-    <div class="empty"><div class="ico">&#128200;</div><p>Select a ticker above to view its chart.</p></div>
-  </div>
-</div>
-
-<!-- OPTIONS TAB -->
-<div class="tc" id="tab-options">
-  <div class="toolbar">
-    <div class="filters" id="optBtns"></div>
-    <span style="color:var(--dim);font-size:12px">Click ticker to view options</span>
-  </div>
-  <div id="optArea">
-    <div class="empty"><div class="ico">&#9881;</div><p>Select a ticker above to view options data.</p></div>
-  </div>
-</div>
-
-<div class="footer">
-  Generated by Market Scanner v5.3 on GitHub Actions &#8226; """ + scan_time + """ &#8226; """ + str(num_stocks) + """ stocks scanned<br>
-  <a href="https://stock-hash.github.io/stockusa/">stock-hash.github.io/stockusa</a>
-</div>
-
-<script>
-var alerts=""" + alerts_json + """;
-var history=""" + history_json + """;
-var charts=""" + charts_json + """;
-var optData=""" + options_json + """;
-var cf='ALL',sc='confidence',sd=-1;
-
-function showTab(n){document.querySelectorAll('.tc').forEach(function(t){t.classList.remove('active')});document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});document.getElementById('tab-'+n).classList.add('active');var m={live:0,history:1,charts:2,options:3};document.querySelectorAll('.tab')[m[n]].classList.add('active');if(n==='charts')initChartBtns();if(n==='options')initOptBtns();if(n==='history')renderHistory();}
-function sigB(s){return s==='BOTTOM'?'<span class=\"sig sig-b\">&#9650; BOTTOM</span>':'<span class=\"sig sig-t\">&#9660; TOP</span>';}
-function stB(s){if(!s)return'-';var c=s.indexOf('LEADER')>=0?'st-l':s.indexOf('HYBRID')>=0?'st-h':'st-r';return'<span class=\"st '+c+'\">'+s+'</span>';}
-function scB(v){v=parseInt(v)||0;var c=v>=80?'var(--green)':v>=60?'var(--cyan)':v>=45?'var(--yellow)':'var(--red)';return'<div class=\"sb\">'+v+'<div class=\"bar\"><div class=\"fill\" style=\"width:'+v+'%;background:'+c+'\"></div></div></div>';}
-function fp(v){if(!v||v===0)return'<span class=\"pz\">0.00%</span>';return v>0?'<span class=\"ppos\">+'+v.toFixed(2)+'%</span>':'<span class=\"pneg\">'+v.toFixed(2)+'%</span>';}
-function et(at){if(!at)return'-';var m=at.match(/(\\d{1,2}:\\d{2}:\\d{2}\\s*[AP]M)/i);return m?m[1]+' ET':at;}
-
-function renderAlerts(){
-  var d=alerts.slice();
-  if(cf!=='ALL')d=d.filter(function(a){return a.signal===cf;});
-  if(sc)d.sort(function(a,b){var va=a[sc],vb=b[sc];if(typeof va==='string')return sd*va.localeCompare(vb);return sd*((va||0)-(vb||0));});
-  var body=document.getElementById('liveBody');
-  if(!d.length){body.innerHTML='';document.getElementById('liveEmpty').style.display='';return;}
-  document.getElementById('liveEmpty').style.display='none';
-  var h='';
-  for(var i=0;i<d.length;i++){var a=d[i];var sg=(a.signals||[]).join(', ');
-    h+='<tr><td class=\"ticker\" onclick=\"showChart(\\''+a.ticker+'\\')\">'+ a.ticker+'</td><td>'+sigB(a.signal)+'</td><td>$'+(a.alert_price||0).toFixed(2)+'</td><td>'+scB(a.confidence)+'</td><td>'+stB(a.setup_type)+'</td><td style=\"color:var(--dim);font-size:12px\">'+(a.mtf_status||'-')+'</td><td style=\"font-size:12px\">'+(a.sector_strength||'-')+'</td><td>'+(a.rsi||0).toFixed(1)+'</td><td>'+fp(a.trend_3d)+'</td><td>'+(a.volume_expansion||1).toFixed(1)+'x</td><td>'+(a.pcr||1).toFixed(2)+'</td><td style=\"color:var(--dim);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis\">'+sg+'</td><td><button class=\"ibtn\" onclick=\"showChart(\\''+a.ticker+'\\')\" title=\"Chart\">&#128200;</button></td><td><button class=\"ibtn\" onclick=\"showOpt(\\''+a.ticker+'\\')\" title=\"Options\">&#9881;</button></td></tr>';}
-  body.innerHTML=h;}
-function flt(t){cf=t;document.querySelectorAll('#fbar .fbtn').forEach(function(b){b.classList.remove('active')});event.target.closest('.fbtn').classList.add('active');renderAlerts();}
-function srt(c){if(sc===c)sd*=-1;else{sc=c;sd=-1;}renderAlerts();}
-
-function renderHistory(){
-  var d=history.slice().reverse();
-  document.getElementById('histSum').innerHTML='<div class=\"sum-s\"><div class=\"num\">'+d.length+'</div><div class=\"lbl\">Total (30d)</div></div>';
-  var body=document.getElementById('histBody');
-  if(!d.length){body.innerHTML='';document.getElementById('histEmpty').style.display='';return;}
-  document.getElementById('histEmpty').style.display='none';
-  var h='';
-  for(var i=0;i<d.length;i++){var a=d[i];
-    h+='<tr><td style=\"color:var(--dim)\">'+(a.date||'-')+'</td><td class=\"ticker\" onclick=\"showChart(\\''+a.ticker+'\\')\">'+ a.ticker+'</td><td>'+sigB(a.signal)+'</td><td>$'+(a.alert_price||0).toFixed(2)+'</td><td>'+scB(a.confidence)+'</td><td>'+stB(a.setup_type)+'</td><td style=\"font-size:12px\">'+(a.mtf_status||'-')+'</td><td style=\"font-size:12px\">'+(a.regime||'-')+'</td><td style=\"font-size:12px\">'+(a.sector_strength||'-')+'</td><td>'+fp(a.trend_3d)+'</td></tr>';}
-  body.innerHTML=h;}
-
-// Charts
-function initChartBtns(){
-  var tickers=Object.keys(charts);
-  if(!tickers.length){document.getElementById('chartBtns').innerHTML='<span style=\"color:var(--dim)\">No chart data</span>';return;}
-  var h='';for(var i=0;i<tickers.length;i++){h+='<button class=\"fbtn\" onclick=\"renderChart(\\''+tickers[i]+'\\')\">'+ tickers[i]+'</button>';}
-  document.getElementById('chartBtns').innerHTML=h;
-  renderChart(tickers[0]);}
-function showChart(t){showTab('charts');setTimeout(function(){renderChart(t);},100);}
-function renderChart(t){
-  var d=charts[t];if(!d){document.getElementById('chartArea').innerHTML='<div class=\"empty\"><p>No chart data for '+t+'</p></div>';return;}
-  var area=document.getElementById('chartArea');
-  area.innerHTML='<div class="chart-container"><div id="priceChart" style="height:400px"></div></div><div class="chart-container"><div id="rsiChart" style="height:200px"></div></div><div class="chart-container"><div id="macdChart" style="height:200px"></div></div>';
-  var ts=d.timestamps.map(function(x){return x;});
-  var layout={paper_bgcolor:'#111827',plot_bgcolor:'#111827',font:{color:'#64748b'},xaxis:{gridcolor:'#1e293b'},yaxis:{gridcolor:'#1e293b'},margin:{l:50,r:20,t:40,b:40},legend:{font:{color:'#64748b'}}};
-  Plotly.newPlot('priceChart',[
-    {x:ts,y:d.close,type:'scatter',name:'Close',line:{color:'#06b6d4',width:2}},
-    {x:ts,y:d.bb_upper,type:'scatter',name:'BB Upper',line:{color:'#64748b',width:1,dash:'dot'}},
-    {x:ts,y:d.bb_lower,type:'scatter',name:'BB Lower',line:{color:'#64748b',width:1,dash:'dot'},fill:'tonexty',fillcolor:'rgba(100,116,139,0.05)'},
-    {x:ts,y:d.ema9,type:'scatter',name:'EMA9',line:{color:'#22c55e',width:1}},
-    {x:ts,y:d.ema21,type:'scatter',name:'EMA21',line:{color:'#ef4444',width:1}},
-    {x:ts,y:d.vwap,type:'scatter',name:'VWAP',line:{color:'#eab308',width:1,dash:'dash'}},
-  ],Object.assign({},layout,{title:{text:t+' - Price + Indicators',font:{color:'#e2e8f0'}}}),{responsive:true,displayModeBar:false});
-  Plotly.newPlot('rsiChart',[{x:ts,y:d.rsi,type:'scatter',name:'RSI',line:{color:'#a855f7',width:2}}],Object.assign({},layout,{title:{text:'RSI',font:{color:'#e2e8f0'}},shapes:[{type:'line',y0:70,y1:70,x0:0,x1:1,xref:'paper',line:{color:'#ef4444',dash:'dash',width:1}},{type:'line',y0:30,y1:30,x0:0,x1:1,xref:'paper',line:{color:'#22c55e',dash:'dash',width:1}}]}),{responsive:true,displayModeBar:false});
-  Plotly.newPlot('macdChart',[
-    {x:ts,y:d.macd_line,type:'scatter',name:'MACD',line:{color:'#06b6d4',width:2}},
-    {x:ts,y:d.macd_signal,type:'scatter',name:'Signal',line:{color:'#f97316',width:1}},
-    {x:ts,y:d.macd_hist,type:'bar',name:'Histogram',marker:{color:d.macd_hist.map(function(v){return v>=0?'#22c55e44':'#ef444444';})}}
-  ],Object.assign({},layout,{title:{text:'MACD',font:{color:'#e2e8f0'}}}),{responsive:true,displayModeBar:false});
-  document.querySelectorAll('#chartBtns .fbtn').forEach(function(b){b.classList.remove('active');if(b.textContent===t)b.classList.add('active');});}
-
-// Options
-function initOptBtns(){
-  var tickers=Object.keys(optData);
-  if(!tickers.length){document.getElementById('optBtns').innerHTML='<span style=\"color:var(--dim)\">No options data</span>';return;}
-  var h='';for(var i=0;i<tickers.length;i++){h+='<button class=\"fbtn\" onclick=\"renderOpt(\\''+tickers[i]+'\\')\">'+ tickers[i]+'</button>';}
-  document.getElementById('optBtns').innerHTML=h;
-  renderOpt(tickers[0]);}
-function showOpt(t){showTab('options');setTimeout(function(){renderOpt(t);},100);}
-function renderOpt(t){
-  var d=optData[t];
-  if(!d||d.error){document.getElementById('optArea').innerHTML='<div class=\"empty\"><p>No options data for '+t+(d&&d.error?' - '+d.error:'')+'</p></div>';return;}
-  var area=document.getElementById('optArea');
-  var h='<div style=\"display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap\"><h2 style=\"color:var(--cyan)\">'+t+'</h2><span style=\"font-size:20px;font-weight:700\">$'+d.spot+'</span><span class=\"badge '+(d.signal==='BOTTOM'?'badge-bull':'badge-bear')+'\">'+(d.signal==='BOTTOM'?'BULLISH':'BEARISH')+'</span><span style=\"color:var(--dim)\">Exp: '+d.expiration+' ('+d.dte+'d)</span><span style=\"color:var(--dim)\">IV: '+d.avg_iv+'%</span><span style=\"color:var(--dim)\">PCR: '+d.pcr+'</span></div>';
-  if(d.strategies&&d.strategies.length){
-    h+='<h3 style=\"color:var(--dim);margin-bottom:10px;font-size:13px\">STRATEGIES</h3><div class=\"opt-cards\">';
-    for(var i=0;i<d.strategies.length;i++){var s=d.strategies[i];
-      h+='<div class=\"opt-card\"><h3>'+s.name+'</h3><table class=\"legs\"><thead><tr><th>Action</th><th>Type</th><th>Strike</th><th>Price</th></tr></thead><tbody>';
-      for(var j=0;j<s.legs.length;j++){var l=s.legs[j];var ac=l.action==='BUY'?'color:var(--green)':'color:var(--red)';
-        h+='<tr><td style=\"'+ac+';font-weight:700\">'+l.action+'</td><td>'+l.type+'</td><td>$'+l.strike+'</td><td>$'+l.price.toFixed(2)+'</td></tr>';}
-      h+='</tbody></table><div class=\"ss\"><span class=\"k\">Cost</span><span class=\"v\">$'+(typeof s.cost==='number'?s.cost.toFixed(2):s.cost)+'</span><span class=\"k\">Max Profit</span><span class=\"v\" style=\"color:var(--green)\">'+(typeof s.max_profit==='number'?'$'+s.max_profit.toFixed(2):s.max_profit)+'</span><span class=\"k\">Breakeven</span><span class=\"v\">$'+(typeof s.breakeven==='number'?s.breakeven.toFixed(2):s.breakeven)+'</span></div></div>';}
-    h+='</div>';}
-  if(d.payoff&&d.payoff.length){h+='<div class="chart-container"><div id="payoffChart" style="height:280px"></div></div>';}
-  if(d.unusual&&d.unusual.length){
-    h+='<h3 style=\"color:var(--dim);margin:16px 0 10px;font-size:13px\">UNUSUAL ACTIVITY</h3><table><thead><tr><th>Strike</th><th>Type</th><th>Volume</th><th>OI</th><th>Ratio</th></tr></thead><tbody>';
-    for(var i=0;i<d.unusual.length;i++){var u=d.unusual[i];h+='<tr><td>$'+u.strike+'</td><td><span class=\"badge '+(u.type==='CALL'?'badge-bull':'badge-bear')+'\">'+u.type+'</span></td><td>'+u.volume.toLocaleString()+'</td><td>'+u.oi.toLocaleString()+'</td><td style=\"color:var(--orange);font-weight:700\">'+u.ratio+'x</td></tr>';}
-    h+='</tbody></table>';}
-  if(d.calls||d.puts){
-    h+='<h3 style=\"color:var(--dim);margin:16px 0 10px;font-size:13px\">OPTIONS CHAIN</h3><div class=\"chain-grid\">';
-    h+='<div><h4 style=\"color:var(--green);margin-bottom:6px\">CALLS</h4><div style=\"max-height:300px;overflow-y:auto\"><table><thead><tr><th>Strike</th><th>Bid</th><th>Ask</th><th>IV</th><th>Delta</th><th>Vol</th></tr></thead><tbody>';
-    for(var i=0;i<(d.calls||[]).length;i++){var c=d.calls[i];h+='<tr'+(c.itm?' style=\"background:#22c55e08\"':'')+'><td>$'+c.strike+'</td><td>'+c.bid.toFixed(2)+'</td><td>'+c.ask.toFixed(2)+'</td><td>'+c.iv+'%</td><td>'+c.delta.toFixed(2)+'</td><td>'+c.volume+'</td></tr>';}
-    h+='</tbody></table></div></div>';
-    h+='<div><h4 style=\"color:var(--red);margin-bottom:6px\">PUTS</h4><div style=\"max-height:300px;overflow-y:auto\"><table><thead><tr><th>Strike</th><th>Bid</th><th>Ask</th><th>IV</th><th>Delta</th><th>Vol</th></tr></thead><tbody>';
-    for(var i=0;i<(d.puts||[]).length;i++){var p=d.puts[i];h+='<tr'+(p.itm?' style=\"background:#ef444408\"':'')+'><td>$'+p.strike+'</td><td>'+p.bid.toFixed(2)+'</td><td>'+p.ask.toFixed(2)+'</td><td>'+p.iv+'%</td><td>'+p.delta.toFixed(2)+'</td><td>'+p.volume+'</td></tr>';}
-    h+='</tbody></table></div></div></div>';}
-  area.innerHTML=h;
-  if(d.payoff&&d.payoff.length){
-    var px=d.payoff.map(function(p){return p.price;});var pn=d.payoff.map(function(p){return p.pnl;});
-    Plotly.newPlot('payoffChart',[{x:px,y:pn,type:'scatter',fill:'tozeroy',line:{color:'#06b6d4',width:2},fillcolor:'rgba(6,182,212,0.1)'}],{paper_bgcolor:'#111827',plot_bgcolor:'#111827',title:{text:'Payoff at Expiration',font:{color:'#64748b',size:13}},xaxis:{title:'Stock Price',color:'#64748b',gridcolor:'#1e293b'},yaxis:{title:'P&L ($)',color:'#64748b',gridcolor:'#1e293b',zeroline:true,zerolinecolor:'#334155'},margin:{l:50,r:20,t:40,b:40},shapes:[{type:'line',x0:d.spot,x1:d.spot,y0:0,y1:1,yref:'paper',line:{color:'#eab308',dash:'dash',width:1}}]},{responsive:true,displayModeBar:false});}
-  document.querySelectorAll('#optBtns .fbtn').forEach(function(b){b.classList.remove('active');if(b.textContent===t)b.classList.add('active');});}
-
-renderAlerts();
-</script>
-</body></html>"""
-    return html
+    scan_summary = scan_summary or {}; summary_history = summary_history or []
+    alerts_sorted = sorted(alerts, key=lambda a:(a.get("rqg_score",0),a.get("confidence",0)), reverse=True)
+    hist_wins=sum(1 for h in history if h.get("result")=="WIN"); hist_losses=sum(1 for h in history if h.get("result")=="LOSS")
+    hist_wr=round(hist_wins/max(hist_wins+hist_losses,1)*100,1)
+    data_json=json.dumps({"alerts":alerts_sorted,"history":history[-300:],"charts":charts,"options":options_data,"summary":scan_summary,"summaryHistory":summary_history[-8:]}).replace("</","<\\/")
+    return f"""<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta http-equiv='refresh' content='900'><title>TopBottom v5.5 RQG {scan_date}</title><script src='https://cdn.plot.ly/plotly-2.27.0.min.js'></script><style>
+body{{margin:0;background:#070b12;color:#e5edf7;font-family:Segoe UI,Arial,sans-serif;font-variant-numeric:tabular-nums}}.top{{position:sticky;top:0;background:#09111f;border-bottom:1px solid #243044;padding:14px 22px;z-index:10}}h1{{margin:0;color:#06b6d4;font-size:20px}}.sub{{color:#8ba0b8;font-size:12px}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;padding:18px 22px}}.card{{background:#111827;border:1px solid #243044;border-radius:14px;padding:16px}}.label{{color:#8ba0b8;font-size:11px;text-transform:uppercase}}.value{{font-size:28px;font-weight:800}}.tabs{{display:flex;gap:2px;padding:0 22px;background:#09111f;border-bottom:1px solid #243044;flex-wrap:wrap}}.tab{{padding:13px 18px;color:#8ba0b8;cursor:pointer;font-weight:700;border-bottom:3px solid transparent}}.tab.active{{color:#06b6d4;border-bottom-color:#06b6d4}}.page{{display:none;padding:20px 22px}}.page.active{{display:block}}table{{width:100%;border-collapse:collapse;background:#111827;border:1px solid #243044;font-size:13px}}th{{background:#0b1220;color:#8ba0b8;text-align:left;padding:10px;text-transform:uppercase;font-size:11px}}td{{padding:10px;border-top:1px solid #263247;vertical-align:top}}.pill{{padding:3px 9px;border-radius:99px;font-weight:800;font-size:11px}}.bull{{background:#22c55e22;color:#22c55e}}.bear{{background:#ef444422;color:#ef4444}}.neutral{{background:#eab30822;color:#eab308}}.ticker{{color:#06b6d4;font-weight:900}}.pos{{color:#22c55e}}.neg{{color:#ef4444}}.box{{background:#0d1320;border:1px solid #243044;border-radius:12px;padding:14px;margin:10px 0}}.chips span{{display:inline-block;margin:2px;padding:3px 7px;border-radius:8px;background:#1e293b;color:#cbd5e1;font-size:11px}}.chartbox{{height:520px;background:#111827;border:1px solid #243044;border-radius:12px;margin-top:12px}}select{{background:#0b1220;color:#e5edf7;border:1px solid #243044;border-radius:8px;padding:8px}}
+</style></head><body><div class='top'><h1>TopBottom Universal v5.5 — GitHub Reversal Quality Gate</h1><div class='sub'>Generated {scan_time} • Regime {regime} • SPY RSI {spy_rsi:.1f} • Output docs/TopBottom_Universal.html</div></div>
+<div class='grid'><div class='card'><div class='label'>RQG Passed</div><div class='value'>{len(alerts_sorted)}</div></div><div class='card'><div class='label'>RQG Blocked</div><div class='value'>{scan_summary.get('blocked',0)}</div></div><div class='card'><div class='label'>Filtered</div><div class='value'>{scan_summary.get('filtered',0)}</div></div><div class='card'><div class='label'>History Win Rate</div><div class='value'>{hist_wr}%</div><div class='sub'>W {hist_wins} / L {hist_losses}</div></div><div class='card'><div class='label'>RQG Gate</div><div class='value'>{'ON' if scan_summary.get('rqg_gate',True) else 'OBS'}</div><div class='sub'>Threshold {scan_summary.get('rqg_threshold',65)}</div></div></div>
+<div class='tabs'><div class='tab active' onclick="show('summary')">Summary</div><div class='tab' onclick="show('alerts')">RQG Alerts</div><div class='tab' onclick="show('sectors')">Sectors</div><div class='tab' onclick="show('blocked')">Blocked/Waiting</div><div class='tab' onclick="show('charts')">Charts</div><div class='tab' onclick="show('options')">Options</div><div class='tab' onclick="show('history')">History</div></div>
+<div id='summary' class='page active'></div><div id='alerts' class='page'></div><div id='sectors' class='page'></div><div id='blocked' class='page'></div><div id='charts' class='page'><select id='chartSel' onchange='drawChart()'></select><div id='chart' class='chartbox'></div></div><div id='options' class='page'><select id='optSel' onchange='renderOptions()'></select><div id='optBox'></div></div><div id='history' class='page'></div>
+<script>const DATA={data_json};function show(id){{document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');event.target.classList.add('active');if(id==='charts')drawChart();if(id==='options')renderOptions();}}function pct(v){{let n=Number(v);return isFinite(n)?(n>=0?'+':'')+n.toFixed(2)+'%':'N/A'}}function money(v){{let n=Number(v);return isFinite(n)&&n!==0?'$'+n.toFixed(2):'N/A'}}function pill(v){{return '<span class="pill '+(v==='STRONG'||v==='BOTTOM'?'bull':v==='WEAK'||v==='TOP'?'bear':'neutral')+'">'+v+'</span>'}}function tbl(cols,rows){{if(!rows||!rows.length)return '<div class="box">No rows.</div>';let h='<table><thead><tr>'+cols.map(c=>'<th>'+c[0]+'</th>').join('')+'</tr></thead><tbody>';for(const r of rows)h+='<tr>'+cols.map(c=>'<td>'+c[1](r)+'</td>').join('')+'</tr>';return h+'</tbody></table>'}}
+function renderSummary(){{let s=DATA.summary,h=DATA.summaryHistory||[];document.getElementById('summary').innerHTML=`<div class='box'><b>Current scan:</b> ${{s.scan_time}} | Regime <b>${{s.regime}}</b> | RSI <b>${{s.spy_rsi}}</b> | Filtered <b>${{s.filtered}}</b> | Alerts <b>${{s.alerts}}</b> | Blocked <b>${{s.blocked}}</b></div><div class='box'><b>Recent leaders:</b> ${{(s.leaders_recent||[]).map(x=>x.sector+' '+pct(x.diff)).join(', ')||'N/A'}}<br><b>Recent laggards:</b> ${{(s.laggards_recent||[]).map(x=>x.sector+' '+pct(x.diff)).join(', ')||'N/A'}}</div><h2>Last GitHub Run Comparison</h2>`+tbl([['Run',r=>r.scan_time],['Regime',r=>r.regime],['RSI',r=>r.spy_rsi],['Filtered',r=>r.filtered],['Alerts',r=>r.alerts],['Blocked',r=>r.blocked],['Top sectors',r=>(r.leaders_recent||[]).slice(0,2).map(x=>x.sector+' '+pct(x.diff)).join(', ')]],h.slice().reverse())}}
+function renderAlerts(){{document.getElementById('alerts').innerHTML=tbl([['Ticker',r=>'<span class=ticker>'+r.ticker+'</span>'],['Signal',r=>pill(r.signal)],['Price',r=>money(r.alert_price)],['Conf',r=>r.confidence],['RQG',r=>'<b>'+r.rqg_score+'</b> '+r.rqg_label],['MTF',r=>r.mtf_status],['Sector',r=>r.sector+' '+r.sector_strength],['Reasons',r=>'<div class=chips>'+((r.rqg_reasons||[]).slice(0,8).map(x=>'<span>'+x+'</span>').join(''))+'</div>']],DATA.alerts)}}
+function renderSectors(){{document.getElementById('sectors').innerHTML=tbl([['Sector',r=>'<span class=ticker>'+r.sector+'</span>'],['Strength',r=>pill(r.strength)],['Recent Rel',r=>pct(r.diff)],['Sector Recent',r=>pct(r.sector_return)],['SPY Recent',r=>pct(r.spy_return)],['Whole Day',r=>pct(r.session_return)],['SPY Day',r=>pct(r.session_spy_return)],['Close',r=>money(r.close)],['Data',r=>(r.source||'')+' age '+(r.age_min||'N/A')+'m'],['Reason',r=>r.reason||'']],DATA.summary.sectors)}}
+function renderBlocked(){{document.getElementById('blocked').innerHTML='<h2>Blocked by RQG</h2>'+tbl([['Ticker',r=>'<span class=ticker>'+r.ticker+'</span>'],['Signal',r=>r.signal],['Sector',r=>r.sector],['Price',r=>money(r.price)],['RQG',r=>r.rqg_score+' '+r.rqg_label],['Reasons',r=>(r.rqg_reasons||[]).join(', ')]],DATA.summary.blocked_alerts)+'<h2>Waiting / Not Fully Confirmed</h2>'+tbl([['Ticker',r=>'<span class=ticker>'+r.ticker+'</span>'],['Signal',r=>r.signal],['Sector',r=>r.sector],['Stage',r=>r.stage],['Price',r=>money(r.price)],['C5',r=>r.c5],['C15',r=>r.c15||'']],DATA.summary.candidates)}}
+function setupCharts(){{let keys=Object.keys(DATA.charts||{{}}),s=document.getElementById('chartSel');s.innerHTML=keys.map(k=>'<option>'+k+'</option>').join('');if(keys.length)drawChart()}}function drawChart(){{let t=document.getElementById('chartSel').value,d=DATA.charts[t];if(!d)return;Plotly.newPlot('chart',[{{x:d.timestamps,open:d.open,high:d.high,low:d.low,close:d.close,type:'candlestick',name:t}},{{x:d.timestamps,y:d.vwap,type:'scatter',name:'VWAP'}},{{x:d.timestamps,y:d.ema9,type:'scatter',name:'EMA9'}},{{x:d.timestamps,y:d.bb_upper,type:'scatter',name:'BBU'}},{{x:d.timestamps,y:d.bb_lower,type:'scatter',name:'BBL'}}],{{paper_bgcolor:'#111827',plot_bgcolor:'#0b1220',font:{{color:'#e5edf7'}},xaxis:{{rangeslider:{{visible:false}}}},height:520}},{{responsive:true}})}}
+function setupOptions(){{let keys=Object.keys(DATA.options||{{}}),s=document.getElementById('optSel');s.innerHTML=keys.map(k=>'<option>'+k+'</option>').join('');renderOptions()}}function renderOptions(){{let t=document.getElementById('optSel').value,o=DATA.options[t];document.getElementById('optBox').innerHTML=o?'<div class=box><b>'+t+'</b> Spot '+money(o.spot)+' Exp '+(o.expiration||'')+' PCR '+(o.pcr||'')+'</div>'+tbl([['Strategy',r=>r.name],['Cost',r=>money(r.cost)],['BE',r=>money(r.breakeven)],['Max Profit',r=>r.max_profit]],o.strategies||[]):'<div class=box>No options.</div>'}}function renderHistory(){{document.getElementById('history').innerHTML=tbl([['Date',r=>r.date],['Ticker',r=>'<span class=ticker>'+r.ticker+'</span>'],['Signal',r=>r.signal],['Price',r=>money(r.alert_price)],['Conf',r=>r.confidence],['RQG',r=>(r.rqg_score||'')+' '+(r.rqg_label||'')],['MTF',r=>r.mtf_status],['Result',r=>r.result||'PENDING']],(DATA.history||[]).slice().reverse())}}renderSummary();renderAlerts();renderSectors();renderBlocked();setupCharts();setupOptions();renderHistory();</script></body></html>"""
 
 
 # ================================================================
@@ -737,77 +599,41 @@ renderAlerts();
 
 def main():
     logger.info("=" * 65)
-    logger.info("MARKET SCANNER v5.3 - GITHUB ACTIONS (FULL FEATURES)")
+    logger.info("MARKET SCANNER v5.5 - GITHUB ACTIONS RQG DASHBOARD")
     logger.info("=" * 65)
-
-    # Run scan
-    alerts, regime, spy_rsi = run_single_scan()
-
-    # Fetch chart data for alerted tickers
+    summary_history = load_summary_history()
+    alerts, regime, spy_rsi, scan_summary = run_single_scan(summary_history)
     charts = {}
-    for a in alerts:
-        t = a["ticker"]
-        if t not in charts:
-            logger.info("  Fetching chart: %s", t)
-            cd = fetch_chart_data(t)
-            if cd:
-                charts[t] = cd
-            time.sleep(0.5)
-    logger.info("Chart data: %d tickers", len(charts))
-
-    # Fetch options data for alerted tickers
+    tickers = [a["ticker"] for a in alerts[:20]] + [b["ticker"] for b in scan_summary.get("blocked_alerts", [])[:10]]
+    for t in list(dict.fromkeys(tickers)):
+        cd = fetch_chart_data(t)
+        if cd: charts[t] = cd
+        time.sleep(0.2)
     options = {}
-    for a in alerts:
-        t = a["ticker"]
-        if t not in options:
-            logger.info("  Fetching options: %s", t)
-            od = fetch_options_data(t, a.get("signal", "BOTTOM"))
-            if od:
-                options[t] = od
-            time.sleep(0.5)
-    logger.info("Options data: %d tickers", len(options))
-
-    # Load and update history
+    for a in alerts[:15]:
+        t=a["ticker"]
+        od = fetch_options_data(t, a.get("signal", "BOTTOM"))
+        if od: options[t] = od
+        time.sleep(0.2)
     history = load_history()
-    for a in alerts:
-        history.append(a)
+    for a in alerts: history.append(a)
     history = save_history(history)
-    logger.info("History: %d total entries (30d rolling)", len(history))
-
-    # Generate HTML
-    html = generate_html(alerts, regime, spy_rsi, history, charts, options)
-
-    # Write output
-    docs_dir = os.path.join(script_dir, "docs")
-    os.makedirs(docs_dir, exist_ok=True)
+    summary_history.append(scan_summary)
+    summary_history = save_summary_history(summary_history)
+    html = generate_html(alerts, regime, spy_rsi, history, charts, options, scan_summary, summary_history)
+    docs_dir = os.path.join(script_dir, "docs"); os.makedirs(docs_dir, exist_ok=True)
     output_path = os.path.join(docs_dir, "TopBottom_Universal.html")
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(html)
-    logger.info("Dashboard: %s (%d bytes)", output_path, len(html))
-
-    # Write JSON
-    json_path = os.path.join(docs_dir, "latest_scan.json")
-    scan_data = {
-        "scan_time": get_eastern_now().strftime("%Y-%m-%d %I:%M:%S %p ET") if SCANNER_IMPORTED else "",
-        "regime": regime, "spy_rsi": spy_rsi,
-        "total_alerts": len(alerts),
-        "stocks_scanned": len(ALL_STOCKS) if ALL_STOCKS else 260,
-        "alerts": alerts,
-    }
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(scan_data, f, indent=2)
-
-    # Email
+    with open(output_path, "w", encoding="utf-8") as f: f.write(html)
+    with open(os.path.join(docs_dir, "latest_scan.json"), "w", encoding="utf-8") as f:
+        json.dump({"scan_time": scan_summary.get("scan_time"), "regime": regime, "spy_rsi": spy_rsi, "total_alerts": len(alerts), "blocked": scan_summary.get("blocked",0), "stocks_scanned": len(ALL_STOCKS) if ALL_STOCKS else 260, "alerts": alerts, "summary": scan_summary}, f, indent=2)
     if alerts:
-        try:
-            et_now = get_eastern_now().strftime("%Y-%m-%d") if SCANNER_IMPORTED else ""
-            send_email("v5.3 GitHub - " + str(len(alerts)) + " signals - " + et_now, html)
-        except Exception:
-            pass
-
-    logger.info("GitHub Actions scan complete!")
+        try: send_email("v5.5 GitHub RQG - " + str(len(alerts)) + " signals", html)
+        except Exception: pass
+    logger.info("Dashboard: %s (%d bytes)", output_path, len(html))
+    logger.info("GitHub Actions RQG scan complete!")
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
+
