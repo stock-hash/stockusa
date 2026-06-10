@@ -1,11 +1,11 @@
-name: Market Scanner v5.3
+name: Market Scanner v5.6
 
 on:
   schedule:
-    # EDT window (UTC-4): 9:30 AM–4:15 PM ET ≈ 13:30–20:15 UTC
-    - cron: '7,22,37,52 13-20 * * 1-5'
-    # EST window (UTC-5): 9:30 AM–4:15 PM ET ≈ 14:30–21:15 UTC
-    - cron: '7,22,37,52 14-21 * * 1-5'
+    # EDT window (UTC-4): 9:35 AM-4:10 PM ET = 13:35-20:10 UTC
+    - cron: '5,20,35,50 13-20 * * 1-5'
+    # EST window (UTC-5): 9:35 AM-4:10 PM ET = 14:35-21:10 UTC
+    - cron: '5,20,35,50 14-21 * * 1-5'
   workflow_dispatch:
 
 permissions:
@@ -17,11 +17,11 @@ env:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
 
     concurrency:
       group: scanner-push
-      cancel-in-progress: false
+      cancel-in-progress: true
 
     steps:
       - name: Checkout repository
@@ -39,14 +39,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance pandas numpy pytz python-dotenv
+          pip install yfinance pandas numpy pytz python-dotenv peewee
 
       - name: Debug trigger info
         run: |
           echo "Event: ${{ github.event_name }}"
           echo "Schedule: ${{ github.event.schedule }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "SHA: ${{ github.sha }}"
           date -u
           TZ=America/New_York date
 
@@ -72,7 +70,7 @@ jobs:
           print("In hours:", in_hours)
 
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
-              fh.write(f"run={'true' if in_hours else 'false'}\n")
+              fh.write("run=%s\n" % ("true" if in_hours else "false"))
           PYEOF
 
       - name: Run market scanner
@@ -83,8 +81,8 @@ jobs:
           RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
         run: |
-          echo "Starting Market Scanner v5.3..."
-          python run_github.py
+          echo "Starting Market Scanner v5.6 — Single Scan Mode..."
+          timeout 1200 python run_github.py
           echo "Scanner complete."
 
       - name: Verify output
@@ -98,7 +96,7 @@ jobs:
 
           if [ -f docs/latest_scan.json ]; then
             echo "JSON: $(wc -c < docs/latest_scan.json) bytes"
-            python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print('Alerts: ' + str(d.get('total_alerts',0)))"
+            python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print('Alerts:', d.get('total_alerts',0), 'Near-miss:', d.get('near_miss_count',0))"
           fi
 
       - name: Commit and push results
@@ -109,8 +107,9 @@ jobs:
           git diff --cached --quiet && echo "No changes to commit" || {
             SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
             ALERTS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('total_alerts',0))" 2>/dev/null || echo "0")
+            NEARMISS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('near_miss_count',0))" 2>/dev/null || echo "0")
             git pull --rebase origin main
-            git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts"
+            git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts, ${NEARMISS} near-miss"
             git push
             echo "Results pushed to GitHub Pages"
           }
