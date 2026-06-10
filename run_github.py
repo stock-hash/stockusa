@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
 ================================================================
-MARKET SCANNER v5.5 - GITHUB ACTIONS RUNNER WITH REVERSAL QUALITY GATE
+MARKET SCANNER v5.6 - GITHUB ACTIONS RUNNER + DYNAMIC UNIVERSE + SMART GATES + NEAR-MISS
 ================================================================
 Generates a self-contained HTML dashboard for GitHub Pages with:
   - Live alerts with scores, setup types, MTF status
+  - NEAR-MISS watchlist (stocks at 30M+ confirmation with high scores)
   - 30-day rolling history (accumulated across runs)
   - Interactive charts (Plotly) for each alerted ticker
   - Options chain + strategies for each alerted ticker
   - All data embedded as JSON - NO API calls needed
+  v5.6 UPGRADES: RQG gate 65->55, early 30M promotion, near-miss watchlist, dynamic stock universe
 
 Output: docs/TopBottom_Universal.html
 History: docs/scan_history.json (rolling 30 days)
@@ -45,7 +47,7 @@ try:
         MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE,
     )
     SCANNER_IMPORTED = True
-    logger.info("Scanner imported: %d stocks", len(ALL_STOCKS))
+    logger.info("Scanner imported: %d stocks (v5.6 with additional hot stocks)", len(ALL_STOCKS))
 except ImportError as e:
     logger.error("Cannot import scanner: %s", e)
     SCANNER_IMPORTED = False
@@ -71,7 +73,7 @@ try:
     logger.info("v5.5 RQG imported from market_scanner_v5")
 except Exception as e:
     _scanner_rqg = None
-    _SCANNER_RQG_MIN_SCORE = 65
+    _SCANNER_RQG_MIN_SCORE = 55  # v5.6: Lowered from 65
     logger.info("v5.5 RQG not imported; using GitHub fallback: %s", e)
 
 def patched_yf_download(*args, **kwargs):
@@ -314,7 +316,7 @@ def run_single_scan(previous_summaries=None):
         return [], "UNKNOWN", 50.0, {"error":"Scanner not imported"}
     previous_summaries = previous_summaries or []
     now = get_eastern_now()
-    logger.info("="*70); logger.info("GITHUB SCAN v5.5 RQG - %s", now.strftime("%Y-%m-%d %I:%M %p ET")); logger.info("="*70)
+    logger.info("="*70); logger.info("GITHUB SCAN v5.6 RQG+NearMiss - %s", now.strftime("%Y-%m-%d %I:%M %p ET")); logger.info("="*70)
     regime, spy_rsi = get_market_regime(); tq_mult, tq_name = get_time_quality()
     filtered = batch_quick_scan(ALL_STOCKS)
     logger.info("Pass 1: %d/%d passed | Regime=%s RSI=%.1f | TimeQuality=%s", len(filtered), len(ALL_STOCKS), regime, spy_rsi, tq_name)
@@ -353,8 +355,39 @@ def run_single_scan(previous_summaries=None):
             alert={"ticker":ticker,"signal":sig,"confidence":avg_c,"alert_price":round(r5["cl"],2),"rsi":round(r5["rsi"],1),"mfi":round(r5.get("mfi",0),1),"cmf":round(r5.get("cmf",0),3),"pcr":round(pcr,2),"regime":regime,"sector":sec,"sector_strength":ss,"setup_type":r5.get("setup_type","REVERSAL"),"trend_3d":round(r5.get("trend_3d",0),2),"trend_5d":round(r5.get("trend_5d",0),2),"volume_expansion":round(r5.get("volume_expansion",1),2),"signals":list(r5.get("signals",[]))+["RQG=%s/%s"%(rqg.get("score"),rqg.get("label"))]+["RQG_"+x for x in rqg.get("reasons",[])[:4]],"mtf_status":mtf,"c5":c5,"c15":r15.get("confidence",0),"c30":r30.get("confidence",0),"c60":c60,"rqg_score":rqg.get("score",0),"rqg_label":rqg.get("label",""),"rqg_reasons":rqg.get("reasons",[]),"rqg_buckets":rqg.get("buckets",{}),"rqg_details":rqg.get("details",{}),"time":get_eastern_now().strftime("%Y-%m-%d %I:%M:%S %p ET"),"date":now.strftime("%Y-%m-%d"),"result":"PENDING"}
             alerts.append(alert); logger.info("ALERT %s %s conf=%d mtf=%s rqg=%s/%s", ticker, sig, avg_c, mtf, alert["rqg_score"], alert["rqg_label"])
         except Exception as e: logger.warning("Error %s: %s", ticker, e)
+    # v5.6: Build near-miss watchlist from blocked (passed MTF, failed RQG) + high-stage candidates
+    near_miss = []
+    for b in blocked:
+        rqg_s = b.get("rqg_score", 0)
+        conf = b.get("confidence", 0)
+        if rqg_s >= 40:
+            quality = "***" if conf >= 90 else ("**" if conf >= 80 else "*")
+            sec_str = sector_strength_cache.get(b.get("sector", "SPY"), {}).get("strength", "?")
+            near_miss.append({
+                "ticker": b["ticker"], "signal": b["signal"], "c5": conf,
+                "sector": b.get("sector", "?"), "sector_strength": sec_str,
+                "stage": "RQG_BLOCKED_%s" % b.get("rqg_label", "?"),
+                "price": b.get("price", 0), "rqg_score": rqg_s,
+                "rqg_label": b.get("rqg_label", "?"), "quality": quality,
+                "mtf_status": b.get("mtf_status", "?"),
+            })
+    for c in candidates:
+        if c.get("c5", 0) >= 75 and "5m_ONLY" not in c.get("stage", ""):
+            quality = "**" if c.get("c5", 0) >= 85 else "*"
+            sec_str = sector_strength_cache.get(c.get("sector", "SPY"), {}).get("strength", "?")
+            near_miss.append({
+                "ticker": c["ticker"], "signal": c["signal"], "c5": c.get("c5", 0),
+                "sector": c.get("sector", "?"), "sector_strength": sec_str,
+                "stage": c.get("stage", "?"), "price": c.get("price", 0),
+                "rqg_score": 0, "rqg_label": "NOT_REACHED", "quality": quality,
+                "mtf_status": "partial",
+            })
+    near_miss.sort(key=lambda x: (x.get("c5", 0), x.get("rqg_score", 0)), reverse=True)
+    near_miss = near_miss[:25]
+    logger.info("Near-miss watchlist: %d (from %d blocked, %d candidates)", len(near_miss), len(blocked), len(candidates))
+
     sectors=sorted(sector_snapshot(checked), key=lambda x:x.get("diff",0), reverse=True)
-    summary={"scan_time":now.strftime("%Y-%m-%d %I:%M:%S %p ET"),"date":now.strftime("%Y-%m-%d"),"regime":regime,"spy_rsi":round(float(spy_rsi),1),"time_quality":tq_name,"stocks_scanned":len(ALL_STOCKS),"filtered":len(filtered),"alerts":len(alerts),"blocked":len(blocked),"candidates":candidates[:80],"blocked_alerts":blocked[:100],"sectors":sectors,"rqg_gate":GITHUB_RQG_ENFORCE_GATE,"rqg_threshold":GITHUB_RQG_MIN_SCORE,"leaders_recent":sectors[:3],"laggards_recent":sectors[-3:] if sectors else [],"previous_scan_time":(previous_summaries[-1].get("scan_time") if previous_summaries else "N/A")}
+    summary={"scan_time":now.strftime("%Y-%m-%d %I:%M:%S %p ET"),"date":now.strftime("%Y-%m-%d"),"regime":regime,"spy_rsi":round(float(spy_rsi),1),"time_quality":tq_name,"stocks_scanned":len(ALL_STOCKS),"filtered":len(filtered),"alerts":len(alerts),"blocked":len(blocked),"candidates":candidates[:80],"blocked_alerts":blocked[:100],"sectors":sectors,"rqg_gate":GITHUB_RQG_ENFORCE_GATE,"rqg_threshold":GITHUB_RQG_MIN_SCORE,"leaders_recent":sectors[:3],"laggards_recent":sectors[-3:] if sectors else [],"previous_scan_time":(previous_summaries[-1].get("scan_time") if previous_summaries else "N/A"),"near_miss":near_miss,"near_miss_count":len(near_miss)}
     return alerts, regime, spy_rsi, summary
 
 
@@ -686,7 +719,7 @@ def generate_html(alerts, regime, spy_rsi, history, charts, options_data, scan_s
     data_json=json.dumps({"alerts":alerts_sorted,"history":history_30,"charts":charts,"options":options_data,"summary":scan_summary,"summaryHistory":summary_history[-30:]}).replace("</","<\\/")
     html = """<!DOCTYPE html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><meta http-equiv='refresh' content='900'><title>TopBottom v5.6 GitHub Quality Summary __DATE__</title><script src='https://cdn.plot.ly/plotly-2.27.0.min.js'></script><style>
 :root{--bg:#070b12;--panel:#111827;--panel2:#0b1220;--line:#243044;--text:#e5edf7;--muted:#8ba0b8;--cyan:#06b6d4;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--blue:#60a5fa}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif;font-variant-numeric:tabular-nums}.top{position:sticky;top:0;background:#09111f;border-bottom:1px solid var(--line);padding:14px 22px;z-index:10}h1{margin:0;color:var(--cyan);font-size:20px}.sub{color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;padding:18px 22px}.card,.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px}.label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}.value{font-size:28px;font-weight:800}.tabs{display:flex;gap:2px;padding:0 22px;background:#09111f;border-bottom:1px solid var(--line);flex-wrap:wrap}.tab{padding:13px 18px;color:var(--muted);cursor:pointer;font-weight:700;border-bottom:3px solid transparent}.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}.page{display:none;padding:20px 22px}.page.active{display:block}table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);font-size:13px}th{background:var(--panel2);color:var(--muted);text-align:left;padding:10px;text-transform:uppercase;font-size:11px;position:sticky;top:118px}td{padding:10px;border-top:1px solid #263247;vertical-align:top}.pill{padding:3px 9px;border-radius:99px;font-weight:800;font-size:11px;display:inline-block}.bull{background:#22c55e22;color:var(--green)}.bear{background:#ef444422;color:var(--red)}.neutral{background:#eab30822;color:var(--yellow)}.ticker{color:var(--cyan);font-weight:900}.pos{color:var(--green)}.neg{color:var(--red)}.chips span{display:inline-block;margin:2px;padding:3px 7px;border-radius:8px;background:#1e293b;color:#cbd5e1;font-size:11px}.chartbox{height:560px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-top:12px}select,input{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}.reason{max-width:620px;white-space:normal}.small{font-size:12px;color:var(--muted)}
-</style></head><body><div class='top'><h1>TopBottom Universal v5.6 — GitHub Quality Gate Dashboard</h1><div class='sub'>Generated __SCAN_TIME__ • Regime __REGIME__ • SPY RSI __SPY_RSI__ • Output docs/TopBottom_Universal.html</div></div>
+</style></head><body><div class='top'><h1>TopBottom Universal v5.6 — GitHub Quality Gate + Near-Miss Dashboard</h1><div class='sub'>Generated __SCAN_TIME__ • Regime __REGIME__ • SPY RSI __SPY_RSI__ • Output docs/TopBottom_Universal.html</div></div>
 <div class='grid'><div class='card'><div class='label'>RQG Passed</div><div class='value'>__ALERT_COUNT__</div></div><div class='card'><div class='label'>RQG Blocked</div><div class='value'>__BLOCKED__</div></div><div class='card'><div class='label'>Filtered / Universe</div><div class='value'>__FILTERED__</div><div class='sub'>of __SCANNED__ scanned</div></div><div class='card'><div class='label'>Pending / Tracking</div><div class='value'>__PENDING__</div></div><div class='card'><div class='label'>30-Day Win Rate</div><div class='value'>__WR__%</div><div class='sub'>W __WINS__ / L __LOSSES__ • __HISTCOUNT__ records</div></div><div class='card'><div class='label'>RQG Gate</div><div class='value'>__GATE__</div><div class='sub'>Threshold __THRESH__</div></div></div>
 <div class='tabs'><div class='tab active' onclick="show('summary',this)">Summary</div><div class='tab' onclick="show('alerts',this)">RQG Alerts</div><div class='tab' onclick="show('sectors',this)">Sectors</div><div class='tab' onclick="show('blocked',this)">Blocked/Waiting</div><div class='tab' onclick="show('charts',this)">Charts</div><div class='tab' onclick="show('options',this)">Options</div><div class='tab' onclick="show('history',this)">30-Day History</div><div class='tab' onclick="show('logs',this)">Readable Log</div></div>
 <div id='summary' class='page active'></div><div id='alerts' class='page'></div><div id='sectors' class='page'></div><div id='blocked' class='page'></div><div id='charts' class='page'><select id='chartSel' onchange='drawChart()'></select><div id='chart' class='chartbox'></div></div><div id='options' class='page'><select id='optSel' onchange='renderOptions()'></select><div id='optBox'></div></div><div id='history' class='page'></div><div id='logs' class='page'></div>
@@ -736,7 +769,15 @@ def main():
     html = generate_html(alerts, regime, spy_rsi, history, charts, options, scan_summary, summary_history)
     docs_dir = os.path.join(script_dir, "docs"); os.makedirs(docs_dir, exist_ok=True)
     output_path = os.path.join(docs_dir, "TopBottom_Universal.html")
+    # v5.6: Inject near-miss into the embedded DATA for the dashboard
+    if "near_miss" not in combined_json:
+        combined_json["near_miss"] = scan_summary.get("near_miss", [])
+
     with open(output_path, "w", encoding="utf-8") as f: f.write(html)
+    # v5.6: Add near-miss to JSON
+    combined_json["near_miss"] = scan_summary.get("near_miss", [])
+    combined_json["near_miss_count"] = scan_summary.get("near_miss_count", 0)
+
     with open(os.path.join(docs_dir, "latest_scan.json"), "w", encoding="utf-8") as f:
         json.dump({"scan_time": scan_summary.get("scan_time"), "regime": regime, "spy_rsi": spy_rsi, "total_alerts": len(alerts), "blocked": scan_summary.get("blocked",0), "stocks_scanned": len(ALL_STOCKS) if ALL_STOCKS else 260, "alerts": alerts, "summary": scan_summary}, f, indent=2)
     email_window = should_send_report_email(force=False)
