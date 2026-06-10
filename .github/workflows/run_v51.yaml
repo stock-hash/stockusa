@@ -2,11 +2,11 @@ name: Market Scanner v5.3
 
 on:
   schedule:
-    # Run every 15 minutes during market hours (Mon-Fri, 9:30 AM - 4:15 PM ET)
-    # GitHub Actions uses UTC: ET = UTC-4 (EDT) or UTC-5 (EST)
-    # 9:30 AM ET = 13:30 UTC, 4:15 PM ET = 20:15 UTC
-    - cron: '*/15 13-20 * * 1-5'
-  workflow_dispatch:  # Manual trigger button
+    # EDT window (UTC-4): 9:30 AM–4:15 PM ET ≈ 13:30–20:15 UTC
+    - cron: '7,22,37,52 13-20 * * 1-5'
+    # EST window (UTC-5): 9:30 AM–4:15 PM ET ≈ 14:30–21:15 UTC
+    - cron: '7,22,37,52 14-21 * * 1-5'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,6 +18,7 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
     concurrency:
       group: scanner-push
       cancel-in-progress: false
@@ -37,8 +38,17 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install yfinance pandas numpy pytz python-dotenv
+
+      - name: Debug trigger info
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Schedule: ${{ github.event.schedule }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          date -u
+          TZ=America/New_York date
 
       - name: Check market hours
         id: market_check
@@ -46,22 +56,23 @@ jobs:
           python3 << 'PYEOF'
           import pytz
           from datetime import datetime
+          import os
+
           et = pytz.timezone("US/Eastern")
           now = datetime.now(et)
-          mkt_open = now.replace(hour=9, minute=25, second=0)
-          mkt_close = now.replace(hour=16, minute=15, second=0)
+
+          mkt_open = now.replace(hour=9, minute=25, second=0, microsecond=0)
+          mkt_close = now.replace(hour=16, minute=15, second=0, microsecond=0)
+
           is_weekday = now.weekday() < 5
-          in_hours = mkt_open <= now <= mkt_close and is_weekday
-          time_str = now.strftime("%I:%M %p ET")
-          print("Current ET: " + time_str)
-          print("Market open: " + str(in_hours))
-          import os
+          in_hours = is_weekday and (mkt_open <= now <= mkt_close)
+
+          print("Current ET:", now.strftime("%Y-%m-%d %I:%M:%S %p %Z"))
+          print("Weekday:", is_weekday)
+          print("In hours:", in_hours)
+
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
-              if in_hours:
-                  fh.write("run=true\n")
-              else:
-                  fh.write("run=false\n")
-                  print("Market is closed - skipping scan")
+              fh.write(f"run={'true' if in_hours else 'false'}\n")
           PYEOF
 
       - name: Run market scanner
@@ -80,9 +91,11 @@ jobs:
         run: |
           echo "=== Output files ==="
           ls -la docs/ || echo "No docs directory"
+
           if [ -f docs/TopBottom_Universal.html ]; then
             echo "Dashboard: $(wc -c < docs/TopBottom_Universal.html) bytes"
           fi
+
           if [ -f docs/latest_scan.json ]; then
             echo "JSON: $(wc -c < docs/latest_scan.json) bytes"
             python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print('Alerts: ' + str(d.get('total_alerts',0)))"
@@ -96,8 +109,8 @@ jobs:
           git diff --cached --quiet && echo "No changes to commit" || {
             SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
             ALERTS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('total_alerts',0))" 2>/dev/null || echo "0")
-            git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts"
             git pull --rebase origin main
+            git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts"
             git push
             echo "Results pushed to GitHub Pages"
           }
