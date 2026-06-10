@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
 ================================================================
-MARKET SCANNER v5.6 - GITHUB ACTIONS RUNNER + DYNAMIC UNIVERSE + SMART GATES + NEAR-MISS
+MARKET SCANNER v5.6 - GITHUB ACTIONS RUNNER + NEAR-MISS WATCHLIST + SMART GATES
 ================================================================
 Generates a self-contained HTML dashboard for GitHub Pages with:
   - Live alerts with scores, setup types, MTF status
-  - NEAR-MISS watchlist (stocks at 30M+ confirmation with high scores)
   - 30-day rolling history (accumulated across runs)
   - Interactive charts (Plotly) for each alerted ticker
   - Options chain + strategies for each alerted ticker
   - All data embedded as JSON - NO API calls needed
-  v5.6 UPGRADES: RQG gate 65->55, early 30M promotion, near-miss watchlist, dynamic stock universe
+  - v5.6: Near-miss watchlist, RQG gate 65->55, expanded universe (400+ stocks)
 
 Output: docs/TopBottom_Universal.html
 History: docs/scan_history.json (rolling 30 days)
@@ -47,7 +46,7 @@ try:
         MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE,
     )
     SCANNER_IMPORTED = True
-    logger.info("Scanner imported: %d stocks (v5.6 with additional hot stocks)", len(ALL_STOCKS))
+    logger.info("Scanner imported: %d stocks", len(ALL_STOCKS))
 except ImportError as e:
     logger.error("Cannot import scanner: %s", e)
     SCANNER_IMPORTED = False
@@ -744,12 +743,12 @@ renderSummary();renderAlerts();renderSectors();renderBlocked();renderHistory();r
 
 def main():
     logger.info("=" * 65)
-    logger.info("MARKET SCANNER v5.5 - GITHUB ACTIONS RQG DASHBOARD")
+    logger.info("MARKET SCANNER v5.6 - GITHUB ACTIONS RQG + NEAR-MISS DASHBOARD")
     logger.info("=" * 65)
     summary_history = load_summary_history()
     alerts, regime, spy_rsi, scan_summary = run_single_scan(summary_history)
     charts = {}
-    tickers = [a["ticker"] for a in alerts[:20]] + [b["ticker"] for b in scan_summary.get("blocked_alerts", [])[:10]]
+    tickers = [a["ticker"] for a in alerts[:20]] + [b["ticker"] for b in scan_summary.get("blocked_alerts", [])[:10]] + [nm["ticker"] for nm in scan_summary.get("near_miss", [])[:10]]
     for t in list(dict.fromkeys(tickers)):
         cd = fetch_chart_data(t)
         if cd: charts[t] = cd
@@ -769,17 +768,9 @@ def main():
     html = generate_html(alerts, regime, spy_rsi, history, charts, options, scan_summary, summary_history)
     docs_dir = os.path.join(script_dir, "docs"); os.makedirs(docs_dir, exist_ok=True)
     output_path = os.path.join(docs_dir, "TopBottom_Universal.html")
-    # v5.6: Inject near-miss into the embedded DATA for the dashboard
-    if "near_miss" not in combined_json:
-        combined_json["near_miss"] = scan_summary.get("near_miss", [])
-
     with open(output_path, "w", encoding="utf-8") as f: f.write(html)
-    # v5.6: Add near-miss to JSON
-    combined_json["near_miss"] = scan_summary.get("near_miss", [])
-    combined_json["near_miss_count"] = scan_summary.get("near_miss_count", 0)
-
     with open(os.path.join(docs_dir, "latest_scan.json"), "w", encoding="utf-8") as f:
-        json.dump({"scan_time": scan_summary.get("scan_time"), "regime": regime, "spy_rsi": spy_rsi, "total_alerts": len(alerts), "blocked": scan_summary.get("blocked",0), "stocks_scanned": len(ALL_STOCKS) if ALL_STOCKS else 260, "alerts": alerts, "summary": scan_summary}, f, indent=2)
+        json.dump({"scan_time": scan_summary.get("scan_time"), "regime": regime, "spy_rsi": spy_rsi, "total_alerts": len(alerts), "blocked": scan_summary.get("blocked",0), "stocks_scanned": len(ALL_STOCKS) if ALL_STOCKS else 260, "near_miss": scan_summary.get("near_miss", []), "near_miss_count": scan_summary.get("near_miss_count", 0), "alerts": alerts, "summary": scan_summary}, f, indent=2)
     email_window = should_send_report_email(force=False)
     if email_window:
         try:
