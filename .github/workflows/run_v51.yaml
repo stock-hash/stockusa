@@ -108,8 +108,14 @@ jobs:
             SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
             ALERTS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('total_alerts',0))" 2>/dev/null || echo "0")
             NEARMISS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('near_miss_count',0))" 2>/dev/null || echo "0")
-            git pull --rebase origin main
             git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts, ${NEARMISS} near-miss"
+            git pull --rebase origin main || {
+              echo "Rebase conflict — forcing recovery..."
+              git rebase --abort 2>/dev/null || true
+              git pull origin main --no-rebase --strategy-option theirs
+              git add docs/
+              git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts (merge recovery)" --allow-empty
+            }
             git push
             echo "Results pushed to GitHub Pages"
           }
