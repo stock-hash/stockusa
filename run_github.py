@@ -46,6 +46,7 @@ try:
         MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE,
     )
     SCANNER_IMPORTED = True
+    scanner.ALL_STOCKS = scanner.ALL_STOCKS[:100]  # GitHub: cap at 260 for speed
     logger.info("Scanner imported: %d stocks", len(ALL_STOCKS))
 except ImportError as e:
     logger.error("Cannot import scanner: %s", e)
