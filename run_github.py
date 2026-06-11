@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ================================================================
-MARKET SCANNER v5.6 - GITHUB ACTIONS RUNNER + NEAR-MISS WATCHLIST + SMART GATES
+MARKET SCANNER v5.6 - GITHUB ACTIONS + SPEED-OPTIMIZED + NEAR-MISS
 ================================================================
 Generates a self-contained HTML dashboard for GitHub Pages with:
   - Live alerts with scores, setup types, MTF status
@@ -9,7 +9,7 @@ Generates a self-contained HTML dashboard for GitHub Pages with:
   - Interactive charts (Plotly) for each alerted ticker
   - Options chain + strategies for each alerted ticker
   - All data embedded as JSON - NO API calls needed
-  - v5.6: Near-miss watchlist, RQG gate 65->55, expanded universe (400+ stocks)
+  - v5.6: Speed-optimized (sleep cap), near-miss watchlist, RQG 65->55
 
 Output: docs/TopBottom_Universal.html
 History: docs/scan_history.json (rolling 30 days)
@@ -46,7 +46,6 @@ try:
         MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE,
     )
     SCANNER_IMPORTED = True
-    scanner.ALL_STOCKS = scanner.ALL_STOCKS[:100]  # GitHub: cap at 260 for speed
     logger.info("Scanner imported: %d stocks", len(ALL_STOCKS))
 except ImportError as e:
     logger.error("Cannot import scanner: %s", e)
@@ -75,6 +74,31 @@ except Exception as e:
     _scanner_rqg = None
     _SCANNER_RQG_MIN_SCORE = 55  # v5.6: Lowered from 65
     logger.info("v5.5 RQG not imported; using GitHub fallback: %s", e)
+
+# ═══════════════════════════════════════════════════════════════
+# v5.6 GITHUB SPEED FIX — Eliminate excessive sleep times
+# market_scanner_v5.py's safe_download() sleeps 1.5-2.5s per call.
+# 100 stocks × 5 timeframes × 2s = 1000s of pure sleep = TIMEOUT!
+# This patch caps ALL sleeps to 0.3s max, saving ~15 minutes per scan.
+# ═══════════════════════════════════════════════════════════════
+import time as _time_module
+_original_sleep = _time_module.sleep
+
+def _github_fast_sleep(seconds):
+    """Cap sleep to 0.3s for GitHub Actions. Saves ~15 min per scan."""
+    _original_sleep(min(float(seconds), 0.3))
+
+_time_module.sleep = _github_fast_sleep
+logger.info("v5.6 SPEED PATCH: time.sleep capped at 0.3s (saves ~15 min)")
+
+# Also patch the scanner module's time reference
+try:
+    import market_scanner_v5 as _scanner_time_mod
+    _scanner_time_mod.time.sleep = _github_fast_sleep
+    logger.info("v5.6 Scanner module time.sleep also patched")
+except Exception:
+    pass
+
 
 def patched_yf_download(*args, **kwargs):
     if _HAS_PATCH:
@@ -355,7 +379,7 @@ def run_single_scan(previous_summaries=None):
             alert={"ticker":ticker,"signal":sig,"confidence":avg_c,"alert_price":round(r5["cl"],2),"rsi":round(r5["rsi"],1),"mfi":round(r5.get("mfi",0),1),"cmf":round(r5.get("cmf",0),3),"pcr":round(pcr,2),"regime":regime,"sector":sec,"sector_strength":ss,"setup_type":r5.get("setup_type","REVERSAL"),"trend_3d":round(r5.get("trend_3d",0),2),"trend_5d":round(r5.get("trend_5d",0),2),"volume_expansion":round(r5.get("volume_expansion",1),2),"signals":list(r5.get("signals",[]))+["RQG=%s/%s"%(rqg.get("score"),rqg.get("label"))]+["RQG_"+x for x in rqg.get("reasons",[])[:4]],"mtf_status":mtf,"c5":c5,"c15":r15.get("confidence",0),"c30":r30.get("confidence",0),"c60":c60,"rqg_score":rqg.get("score",0),"rqg_label":rqg.get("label",""),"rqg_reasons":rqg.get("reasons",[]),"rqg_buckets":rqg.get("buckets",{}),"rqg_details":rqg.get("details",{}),"time":get_eastern_now().strftime("%Y-%m-%d %I:%M:%S %p ET"),"date":now.strftime("%Y-%m-%d"),"result":"PENDING"}
             alerts.append(alert); logger.info("ALERT %s %s conf=%d mtf=%s rqg=%s/%s", ticker, sig, avg_c, mtf, alert["rqg_score"], alert["rqg_label"])
         except Exception as e: logger.warning("Error %s: %s", ticker, e)
-    # v5.6: Build near-miss watchlist from blocked (passed MTF, failed RQG) + high-stage candidates
+    # v5.6: Build near-miss watchlist
     near_miss = []
     for b in blocked:
         rqg_s = b.get("rqg_score", 0)
@@ -744,18 +768,18 @@ renderSummary();renderAlerts();renderSectors();renderBlocked();renderHistory();r
 
 def main():
     logger.info("=" * 65)
-    logger.info("MARKET SCANNER v5.6 - GITHUB ACTIONS RQG + NEAR-MISS DASHBOARD")
+    logger.info("MARKET SCANNER v5.6 - GITHUB ACTIONS SPEED + NEAR-MISS")
     logger.info("=" * 65)
     summary_history = load_summary_history()
     alerts, regime, spy_rsi, scan_summary = run_single_scan(summary_history)
     charts = {}
-    tickers = [a["ticker"] for a in alerts[:20]] + [b["ticker"] for b in scan_summary.get("blocked_alerts", [])[:10]] + [nm["ticker"] for nm in scan_summary.get("near_miss", [])[:10]]
-    for t in list(dict.fromkeys(tickers)):
+    tickers = [a["ticker"] for a in alerts[:20]] + [b["ticker"] for b in scan_summary.get("blocked_alerts", [])[:10]] + [nm["ticker"] for nm in scan_summary.get("near_miss", [])[:5]]
+    for t in list(dict.fromkeys(tickers))[:8]:  # v5.6: Cap at 8 for GitHub speed
         cd = fetch_chart_data(t)
         if cd: charts[t] = cd
         time.sleep(0.2)
     options = {}
-    for a in alerts[:15]:
+    for a in alerts[:5]:  # v5.6: Cap at 5 for speed
         t=a["ticker"]
         od = fetch_options_data(t, a.get("signal", "BOTTOM"))
         if od: options[t] = od
