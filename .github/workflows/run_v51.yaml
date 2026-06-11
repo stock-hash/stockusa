@@ -17,7 +17,7 @@ env:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     concurrency:
       group: scanner-push
@@ -82,7 +82,7 @@ jobs:
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
         run: |
           echo "Starting Market Scanner v5.6 — Single Scan Mode..."
-          timeout 1200 python run_github.py
+          python run_github.py
           echo "Scanner complete."
 
       - name: Verify output
