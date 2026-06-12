@@ -77,6 +77,11 @@ tr:hover{background:#161b2266}
 .export-btn{padding:6px 14px;border-radius:6px;border:1px solid #3fb950;background:transparent;color:#3fb950;cursor:pointer;font-size:12px;font-weight:600}
 .export-btn:hover{background:#3fb95015}
 @media(max-width:768px){.cards{grid-template-columns:repeat(2,1fr)}.topbar{flex-wrap:wrap;gap:6px}.wk-topwrap{grid-template-columns:1fr}}
+
+.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1000;background:rgba(0,0,0,.85)}
+.modal-box{position:relative;width:95%;max-width:1200px;margin:20px auto;background:#0d1117;border:1px solid #30363d;border-radius:12px;overflow:hidden}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#161b22;border-bottom:1px solid #30363d;flex-wrap:wrap;gap:8px}
+.modal-close{background:none;border:none;color:#f85149;font-size:24px;cursor:pointer;padding:0 8px}
 </style>
 </head>
 <body>
@@ -134,6 +139,7 @@ tr:hover{background:#161b2266}
 
 <script>
 var lD=[],hD=[],nmD=[],lF='all',hF='all',hR='all',sortCol='',sortDir=1;
+var px={},ch={},cI={ema:1,bb:1,vwap:1,vol:1},cTk='';
 
 function esc(s){return s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function f$(v){if(v===null||v===undefined||v===''||isNaN(v)||Number(v)<=0)return'<span style="color:#8b949e">&mdash;</span>';return'$'+Number(v).toFixed(2)}
@@ -141,6 +147,11 @@ function fP(v){if(!v||v==0)return'<span class="regime-unknown">0.00%</span>';var
 function rB(v){if(v==='BOTTOM')return'<span class="badge badge-green">▲ BOTTOM</span>';if(v==='TOP')return'<span class="badge badge-red">▼ TOP</span>';if(v==='WIN')return'<span class="badge badge-green">✅ WIN</span>';if(v==='LOSS')return'<span class="badge badge-red">❌ LOSS</span>';if(v==='PENDING')return'<span class="badge badge-yellow">⏳ PENDING</span>';return'<span class="badge badge-yellow">'+esc(v)+'</span>'}
 function scB(v){v=Number(v)||0;var c=v>=90?'#3fb950':v>=75?'#58a6ff':v>=60?'#e3b341':'#f85149';var w=Math.min(v,100);return'<div class="score-bar"><b style="color:'+c+'">'+v+'</b><div style="width:60px;height:6px;border-radius:3px;background:#21262d"><div style="width:'+w+'%;height:100%;border-radius:3px;background:'+c+'"></div></div></div>'}
 function sec(name,str){if(!name||name==='Unknown')return'<span class="sec-unknown">Unknown</span>';var c='sec-neutral';if(str==='STRONG')c='sec-strong';else if(str==='WEAK')c='sec-weak';return'<span class="'+c+'">'+esc(name)+(str?' ('+str+')':'')+'</span>'}
+
+function gP(t){return px[t]||0}
+function cPnl(a){var ap=parseFloat(a.alert_price)||0,cp=parseFloat(a.current_price)||gP(a.ticker);if(ap>0&&cp>0)return{cp:cp,pnl:Math.round((cp-ap)*100)/100,pct:Math.round((cp-ap)/ap*10000)/100};return{cp:0,pnl:0,pct:0}}
+function cSts(a){var p=cPnl(a);if(a.result&&a.result!=='PENDING'&&a.result!=='')return a.result;if(Math.abs(p.pct)<0.05)return'FLAT';if(a.signal==='BOTTOM')return p.pct>0?'WIN':'LOSS';if(a.signal==='TOP')return p.pct<0?'WIN':'LOSS';return'PENDING'}
+
 function regCls(r){if(!r)return'regime-unknown';r=r.toUpperCase();if(r.indexOf('STRONG BULL')>=0)return'regime-strong-bull';if(r.indexOf('BULLISH')>=0||r==='NEUTRAL-BULL')return'regime-bull';if(r.indexOf('STRONG BEAR')>=0)return'regime-strong-bear';if(r.indexOf('BEARISH')>=0||r==='NEUTRAL-BEAR')return'regime-bear';if(r.indexOf('NEUTRAL')>=0)return'regime-neutral';return'regime-unknown'}
 function regBdg(r){if(!r)return'badge-yellow';r=r.toUpperCase();if(r.indexOf('BULL')>=0)return'badge-green';if(r.indexOf('BEAR')>=0)return'badge-red';return'badge-yellow'}
 
@@ -153,13 +164,16 @@ function renderLive(){
   var s=document.getElementById('lSrch').value.toUpperCase();
   var fl=lD.filter(function(a){if(lF!=='all'&&a.signal!==lF)return 0;if(s&&(a.ticker||'').toUpperCase().indexOf(s)<0)return 0;return 1});
   if(!fl.length){document.getElementById('lTbl').innerHTML='<div class="empty"><div class="icon">⚡</div>No alerts for current scan.</div>';return}
-  var h='<table><thead><tr><th>Date</th><th>Ticker</th><th>Signal</th><th>Alert$</th><th>Score</th><th>RQG</th><th>Regime</th><th>Sector</th><th>Setup</th><th>MTF</th><th>Time</th></tr></thead><tbody>';
+  var h='<table><thead><tr><th>Date</th><th>Ticker</th><th>Signal</th><th>Alert$</th><th>Current$</th><th>P&L%</th><th>Score</th><th>RQG</th><th>Regime</th><th>Sector</th><th>Setup</th><th>MTF</th><th>Time</th></tr></thead><tbody>';
   fl.forEach(function(a){
     var t=a.time||a.alert_time||'';
     h+='<tr><td>'+esc(a.date||'')+'</td>';
-    h+='<td><a href="javascript:void(0)" style="color:#58a6ff;font-weight:700">'+esc(a.ticker)+'</a></td>';
+    var _p=cPnl(a);
+    h+='<td><a href="javascript:void(0)" onclick="openC(\''+esc(a.ticker)+'\')" style="color:#58a6ff;font-weight:700">'+esc(a.ticker)+'</a></td>';
     h+='<td>'+rB(a.signal)+'</td>';
     h+='<td>'+f$(a.alert_price)+'</td>';
+    h+='<td>'+f$(_p.cp)+'</td>';
+    h+='<td>'+fP(_p.pct)+'</td>';
     h+='<td>'+scB(a.confidence)+'</td>';
     h+='<td><b>'+esc(a.rqg_score||'')+'</b> <span style="font-size:11px;color:#8b949e">'+esc(a.rqg_label||'')+'</span></td>';
     h+='<td><span class="'+regCls(a.regime)+'">'+esc(a.regime||'')+'</span></td>';
@@ -185,11 +199,13 @@ function renderHist(){
     var chg=a.change_pct||a.pnl_pct||0;
     var t=a.time||a.alert_time||'';
     h+='<tr><td>'+esc(a.date||'')+'</td>';
-    h+='<td><a href="javascript:void(0)" style="color:#58a6ff;font-weight:700">'+esc(a.ticker)+'</a></td>';
+    var _hp=cPnl(a),_hst=cSts(a);
+    h+='<td><a href="javascript:void(0)" onclick="openC(\''+esc(a.ticker)+'\')" style="color:#58a6ff;font-weight:700">'+esc(a.ticker)+'</a></td>';
     h+='<td>'+rB(a.signal)+'</td>';
     h+='<td>'+f$(a.alert_price)+'</td>';
-    h+='<td>'+fP(chg)+'</td>';
-    h+='<td>'+rB(a.result||'PENDING')+'</td>';
+    h+='<td>'+f$(_hp.cp)+'</td>';
+    h+='<td>'+fP(_hp.pct)+'</td>';
+    h+='<td>'+rB(_hst)+'</td>';
     h+='<td>'+scB(a.confidence)+'</td>';
     h+='<td><span class="'+regCls(a.regime)+'">'+esc(a.regime||'')+'</span></td>';
     h+='<td>'+sec(a.sector||a.ss||'',a.sector_strength||'')+'</td>';
@@ -201,7 +217,7 @@ function renderHist(){
   document.getElementById('hTbl').innerHTML=h;
 }
 
-function sortH(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1}hD.sort(function(a,b){var va=a[col]||'',vb=b[col]||'';if(typeof va==='number')return(va-vb)*sortDir;return String(va).localeCompare(String(vb))*sortDir});renderHist()}
+function sortH(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1}hD.sort(function(a,b){var va=a[col],vb=b[col];if(col==='pnl_pct'){va=cPnl(a).pct;vb=cPnl(b).pct}va=va||'';vb=vb||'';if(!isNaN(va)&&!isNaN(vb))return(Number(va)-Number(vb))*sortDir;return String(va).localeCompare(String(vb))*sortDir});renderHist()}
 
 function buildWeekly(){
   if(!hD.length){document.getElementById('wCont').innerHTML='<div class="empty"><div class="icon">📅</div>No history data for weekly view.</div>';return}
@@ -277,6 +293,27 @@ function exportCSV(){
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='scanner_history.csv';a.click();
 }
 
+
+// ============ CHART MODAL ============
+function openC(tk){cTk=tk;document.getElementById('cmTk').textContent=tk;document.getElementById('cmPx').textContent=px[tk]?'$'+px[tk].toFixed(2):'';document.getElementById('cModal').style.display='block';var cd=ch[tk];if(!cd){document.getElementById('cmCh').innerHTML='<div style="padding:60px;text-align:center;color:#8b949e">No chart data for '+esc(tk)+'.<br>Charts are generated during market scans.</div>';return}drawC(cd)}
+function closeC(){document.getElementById('cModal').style.display='none'}
+function togI(k){cI[k]=cI[k]?0:1;document.getElementById('t'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('on');if(cTk&&ch[cTk])drawC(ch[cTk])}
+function drawC(cd){
+  var tr=[];
+  tr.push({x:cd.timestamps,open:cd.open,high:cd.high,low:cd.low,close:cd.close,type:'candlestick',name:'Price',increasing:{line:{color:'#3fb950'}},decreasing:{line:{color:'#f85149'}},xaxis:'x',yaxis:'y'});
+  if(cI.ema&&cd.ema9)tr.push({x:cd.timestamps,y:cd.ema9,type:'scatter',mode:'lines',name:'EMA9',line:{color:'#f0883e',width:1},xaxis:'x',yaxis:'y'});
+  if(cI.ema&&cd.ema21)tr.push({x:cd.timestamps,y:cd.ema21,type:'scatter',mode:'lines',name:'EMA21',line:{color:'#a371f7',width:1},xaxis:'x',yaxis:'y'});
+  if(cI.bb&&cd.bb_upper){tr.push({x:cd.timestamps,y:cd.bb_upper,type:'scatter',mode:'lines',name:'BB+',line:{color:'rgba(88,166,255,0.3)',width:1},xaxis:'x',yaxis:'y'});tr.push({x:cd.timestamps,y:cd.bb_lower,type:'scatter',mode:'lines',name:'BB-',line:{color:'rgba(88,166,255,0.3)',width:1},fill:'tonexty',fillcolor:'rgba(88,166,255,0.04)',xaxis:'x',yaxis:'y'})}
+  if(cI.vwap&&cd.vwap)tr.push({x:cd.timestamps,y:cd.vwap,type:'scatter',mode:'lines',name:'VWAP',line:{color:'#e3b341',width:1.5,dash:'dot'},xaxis:'x',yaxis:'y'});
+  if(cI.vol&&cd.volume)tr.push({x:cd.timestamps,y:cd.volume,type:'bar',name:'Vol',marker:{color:'rgba(88,166,255,0.3)'},xaxis:'x',yaxis:'y2'});
+  var layout={paper_bgcolor:'#0d1117',plot_bgcolor:'#0d1117',font:{color:'#c9d1d9',size:11},margin:{t:10,b:30,l:50,r:50},showlegend:false,
+    xaxis:{gridcolor:'#21262d',rangeslider:{visible:false}},
+    yaxis:{gridcolor:'#21262d',side:'right',title:'Price'},
+    yaxis2:{overlaying:'y',side:'left',showgrid:false,visible:false,range:[0,Math.max.apply(null,(cd.volume||[1]).filter(function(v){return v!=null}))*4]}
+  };
+  Plotly.newPlot('cmCh',tr,layout,{responsive:true,displayModeBar:false});
+}
+
 // ============ DATA LOADING ============
 function loadData(){
   // Load latest scan (today's alerts + near-miss + summary)
@@ -299,12 +336,29 @@ function loadData(){
     document.getElementById('regB').textContent=regime;
     document.getElementById('regB').className='badge '+regBdg(regime);
 
+    // Merge embedded prices
+    if(d.prices){for(var k in d.prices)px[k]=d.prices[k]}
     renderLive();
     renderNM();
   }).catch(function(err){
     console.log('latest_scan.json not found:',err);
     document.getElementById('lTbl').innerHTML='<div class="empty"><div class="icon">⚡</div>Waiting for first scan... Run manually or wait for next scheduled scan.</div>';
   });
+
+  // Load prices for all tickers
+  fetch('./prices.json?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
+    var p=d.prices||{};for(var k in p)px[k]=p[k];
+    console.log('Prices loaded:',Object.keys(px).length);
+    renderLive();renderHist();
+    // Merge prices into history
+    hD.forEach(function(a){var t=a.ticker;if(t&&px[t]&&(!a.current_price||a.current_price<=0)){a.current_price=px[t]}});
+    renderHist();
+  }).catch(function(err){console.log('prices.json:',err)});
+
+  // Load chart data
+  fetch('./charts.json?t='+Date.now()).then(function(r){return r.json()}).then(function(d){
+    ch=d||{};console.log('Charts loaded:',Object.keys(ch).length);
+  }).catch(function(err){console.log('charts.json:',err)});
 
   // Load 30-day history
   fetch('./scan_history.json?t='+Date.now()).then(function(r){return r.json()}).then(function(data){
@@ -327,5 +381,22 @@ loadData();
 // Auto-refresh every 90 seconds
 setInterval(loadData, 90000);
 </script>
+
+<!-- CHART MODAL -->
+<div id="cModal" class="modal-bg" onclick="if(event.target===this)closeC()">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div><b id="cmTk" style="color:#58a6ff;font-size:18px"></b> <span id="cmPx" style="margin-left:8px"></span></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="fbtn on" id="tEma" onclick="togI('ema')">EMA</button>
+        <button class="fbtn on" id="tBb" onclick="togI('bb')">BB</button>
+        <button class="fbtn on" id="tVwap" onclick="togI('vwap')">VWAP</button>
+        <button class="fbtn on" id="tVol" onclick="togI('vol')">Vol</button>
+        <button class="modal-close" onclick="closeC()">&times;</button>
+      </div>
+    </div>
+    <div id="cmCh" style="height:500px"></div>
+  </div>
+</div>
 </body>
 </html>
