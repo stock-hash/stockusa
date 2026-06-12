@@ -805,6 +805,136 @@ def main():
             logger.error("Scheduled report email failed: %s", e)
     logger.info("Dashboard: %s (%d bytes)", output_path, len(html))
     logger.info("GitHub Actions RQG scan complete!")
+    
+    # ================================================================
+    # v5.7 PATCH: Save current prices + chart data for GitHub Pages
+    # ================================================================
+    logger.info("Fetching current prices for GitHub Pages dashboard...")
+
+    # Collect ALL unique tickers
+    all_tickers = list(set(
+        [a.get("ticker","") for a in alerts if a.get("ticker")] +
+        [h.get("ticker","") for h in history if h.get("ticker")]
+    ))
+    all_tickers = [t for t in all_tickers if t][:100]
+
+    # Batch fetch prices
+    prices_data = {}
+    if all_tickers:
+        try:
+            for chunk_start in range(0, len(all_tickers), 20):
+                chunk = all_tickers[chunk_start:chunk_start+20]
+                try:
+                    d = patched_yf_download(chunk, period="1d", interval="1d",
+                                            progress=False, auto_adjust=True, threads=False)
+                    if d is not None and not d.empty:
+                        if isinstance(d.columns, pd.MultiIndex):
+                            for t in chunk:
+                                try:
+                                    val = d[t]["Close"].iloc[-1]
+                                    if hasattr(val, 'iloc'): val = val.iloc[0]
+                                    fv = safe_float(val, 0)
+                                    if fv > 0: prices_data[t] = round(fv, 2)
+                                except Exception: pass
+                        elif len(chunk) == 1:
+                            try:
+                                cols = d.columns
+                                if isinstance(cols, pd.MultiIndex):
+                                    cols = cols.get_level_values(0)
+                                val = d["Close"].iloc[-1]
+                                if hasattr(val, 'iloc'): val = val.iloc[0]
+                                fv = safe_float(val, 0)
+                                if fv > 0: prices_data[chunk[0]] = round(fv, 2)
+                            except Exception: pass
+                    time.sleep(0.3)
+                except Exception as e:
+                    logger.warning("Batch price chunk error: %s", e)
+
+            # Individual fallback for missing
+            missing = [t for t in all_tickers if t not in prices_data]
+            for t in missing[:30]:
+                try:
+                    tk = yf.Ticker(t)
+                    try:
+                        fi = tk.fast_info
+                        lp = safe_float(getattr(fi, 'last_price', 0), 0)
+                        if lp > 0:
+                            prices_data[t] = round(lp, 2)
+                            continue
+                    except Exception: pass
+                    hist_t = tk.history(period="2d")
+                    if hist_t is not None and not hist_t.empty:
+                        val = safe_float(hist_t["Close"].iloc[-1], 0)
+                        if val > 0:
+                            prices_data[t] = round(val, 2)
+                except Exception: pass
+            logger.info("Fetched prices for %d/%d tickers", len(prices_data), len(all_tickers))
+        except Exception as e:
+            logger.error("Price fetch error: %s", e)
+
+    # Update history with current prices and P&L
+    for h in history:
+        t = h.get("ticker", "")
+        if t and t in prices_data:
+            h["current_price"] = prices_data[t]
+            ap = safe_float(h.get("alert_price", 0), 0)
+            cp = prices_data[t]
+            if ap > 0 and cp > 0:
+                h["pnl"] = round(cp - ap, 2)
+                h["pnl_pct"] = round((cp - ap) / ap * 100, 2)
+                h["change_pct"] = h["pnl_pct"]
+
+    # Update today's alerts too
+    for a in alerts:
+        t = a.get("ticker", "")
+        if t and t in prices_data:
+            a["current_price"] = prices_data[t]
+            ap = safe_float(a.get("alert_price", 0), 0)
+            cp = prices_data[t]
+            if ap > 0 and cp > 0:
+                a["pnl"] = round(cp - ap, 2)
+                a["pnl_pct"] = round((cp - ap) / ap * 100, 2)
+
+    # Save prices.json
+    prices_path = os.path.join(docs_dir, "prices.json")
+    with open(prices_path, "w", encoding="utf-8") as f:
+        json.dump({"prices": prices_data, "count": len(prices_data),
+                   "timestamp": get_eastern_now().strftime("%Y-%m-%d %I:%M:%S %p ET") if SCANNER_IMPORTED else ""
+                   }, f, indent=1)
+    logger.info("Saved prices.json: %d tickers", len(prices_data))
+
+    # Re-save history with current prices
+    save_history(history)
+
+    # Save chart data for top 15 tickers
+    chart_tickers = list(dict.fromkeys(
+        [a["ticker"] for a in alerts[:12]] +
+        [nm["ticker"] for nm in scan_summary.get("near_miss",[])[:5]]
+    ))[:15]
+    all_charts = {}
+    for ct in chart_tickers:
+        cd = fetch_chart_data(ct)
+        if cd:
+            all_charts[ct] = cd
+        time.sleep(0.2)
+    charts_path = os.path.join(docs_dir, "charts.json")
+    with open(charts_path, "w", encoding="utf-8") as f:
+        json.dump(all_charts, f)
+    logger.info("Saved charts.json: %d tickers", len(all_charts))
+
+    # Re-save latest_scan.json with prices
+    with open(os.path.join(docs_dir, "latest_scan.json"), "w", encoding="utf-8") as f:
+        json.dump({"scan_time": scan_summary.get("scan_time"), "regime": regime,
+                   "spy_rsi": float(spy_rsi), "total_alerts": len(alerts),
+                   "blocked": scan_summary.get("blocked",0),
+                   "stocks_scanned": len(ALL_STOCKS) if ALL_STOCKS else 260,
+                   "near_miss": scan_summary.get("near_miss", []),
+                   "near_miss_count": scan_summary.get("near_miss_count", 0),
+                   "alerts": alerts, "summary": scan_summary,
+                   "prices": prices_data}, f, indent=2)
+
+    logger.info("All GitHub Pages data files updated with prices!")
+
     return 0
 
 
