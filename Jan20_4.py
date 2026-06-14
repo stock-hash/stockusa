@@ -33,7 +33,7 @@ try:
     from dateutil import parser
 except ImportError:
     print("CRITICAL ERROR: Missing libraries.")
-    print("Run: pip install pandas numpy beautifulsoup4 lxml openpyxl python-dateutil")
+    print("Run: pip install pandas numpy beautifulsoup4 openpyxl python-dateutil")
     sys.exit(1)
 import pandas_market_calendars as mcal
 import smtplib
@@ -453,7 +453,7 @@ def fetch_earnings_date_original(ticker):
         url = f"https://finviz.com/quote.ashx?t={ticker}"
         raw = _fetch_url(url)
         if raw:
-            soup = BeautifulSoup(raw, "lxml")
+            soup = BeautifulSoup(raw, "html.parser")
             label = soup.find("td", string=re.compile("Earnings"))
             if label:
                 val = label.find_next_sibling("td").text.strip()
@@ -468,7 +468,7 @@ def fetch_earnings_date(ticker):
         url = f"https://finviz.com/quote.ashx?t={ticker}"
         raw = _fetch_url(url)
         if raw:
-            soup = BeautifulSoup(raw, "lxml")
+            soup = BeautifulSoup(raw, "html.parser")
             label = soup.find("td", string=re.compile("Earnings"))
             if label:
                 val = label.find_next_sibling("td").text.strip()
@@ -506,6 +506,15 @@ def fetch_price_at_date(ticker, date_str):
 # ------------------------------------------------------------------------------
 # 4.5  OPTIONS INTELLIGENCE ENGINE
 # ------------------------------------------------------------------------------
+def _safe_opt_val(obj, key, default=0):
+    """Extract value from Yahoo options data — handles both dict and scalar formats."""
+    val = obj.get(key, default)
+    if isinstance(val, dict):
+        return val.get("raw", default)
+    if isinstance(val, (int, float)):
+        return val
+    return default
+
 def opt_fetch_options_chain(ticker):
     """Fetch nearest-expiry options chain from Yahoo Finance."""
     try:
@@ -519,16 +528,18 @@ def opt_fetch_options_chain(ticker):
             return None
         opts = result[0].get("options", [])
         if not opts:
+            logger.debug(f"No options data for {ticker}")
             return None
         return opts[0]  # nearest expiry
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Options chain fetch error for {ticker}: {e}")
         return None
 
 def opt_calculate_pcr(chain):
     """Put / Call ratio by volume."""
     try:
-        call_vol = sum(c.get("volume", {}).get("raw", 0) for c in chain.get("calls", []))
-        put_vol  = sum(p.get("volume", {}).get("raw", 0) for p in chain.get("puts", []))
+        call_vol = sum(_safe_opt_val(c, "volume", 0) for c in chain.get("calls", []))
+        put_vol  = sum(_safe_opt_val(p, "volume", 0) for p in chain.get("puts", []))
         if call_vol == 0:
             return 999.0
         return round(put_vol / call_vol, 2)
@@ -541,7 +552,7 @@ def opt_calculate_iv(chain):
         ivs = []
         for leg in ("calls", "puts"):
             for o in chain.get(leg, []):
-                iv = o.get("impliedVolatility", {}).get("raw", None)
+                iv = _safe_opt_val(o, "impliedVolatility", 0)
                 if iv and iv > 0:
                     ivs.append(iv)
         return round(sum(ivs) / len(ivs), 4) if ivs else 0.0
@@ -554,12 +565,12 @@ def opt_detect_unusual_activity(chain):
     try:
         for leg in ("calls", "puts"):
             for o in chain.get(leg, []):
-                vol = o.get("volume", {}).get("raw", 0)
-                oi  = o.get("openInterest", {}).get("raw", 0)
+                vol = _safe_opt_val(o, "volume", 0)
+                oi  = _safe_opt_val(o, "openInterest", 0)
                 if oi > 0 and vol > OPT_UNUSUAL_THRESHOLD * oi:
                     unusual.append({
                         "type": leg[:-1],  # call / put
-                        "strike": o.get("strike", {}).get("raw", 0),
+                        "strike": _safe_opt_val(o, "strike", 0),
                         "vol": vol,
                         "oi": oi,
                         "ratio": round(vol / oi, 1),
@@ -571,22 +582,29 @@ def opt_detect_unusual_activity(chain):
 def opt_max_pain(chain):
     """Calculate max-pain strike (strike where option writers lose least)."""
     try:
-        strikes = set()
-        calls = {c["strike"]["raw"]: c for c in chain.get("calls", []) if "strike" in c}
-        puts  = {p["strike"]["raw"]: p for p in chain.get("puts", []) if "strike" in p}
-        strikes = sorted(set(list(calls.keys()) + list(puts.keys())))
-        if not strikes:
+        calls = {}
+        for c in chain.get("calls", []):
+            sk = _safe_opt_val(c, "strike", 0)
+            if sk > 0:
+                calls[sk] = c
+        puts = {}
+        for p in chain.get("puts", []):
+            sk = _safe_opt_val(p, "strike", 0)
+            if sk > 0:
+                puts[sk] = p
+        all_strikes = sorted(set(list(calls.keys()) + list(puts.keys())))
+        if not all_strikes:
             return 0.0
         min_pain = float("inf")
         mp_strike = 0
-        for s in strikes:
+        for s in all_strikes:
             pain = 0
             for k, c in calls.items():
-                oi = c.get("openInterest", {}).get("raw", 0)
+                oi = _safe_opt_val(c, "openInterest", 0)
                 if s > k:
                     pain += (s - k) * oi
             for k, p in puts.items():
-                oi = p.get("openInterest", {}).get("raw", 0)
+                oi = _safe_opt_val(p, "openInterest", 0)
                 if s < k:
                     pain += (k - s) * oi
             if pain < min_pain:
@@ -676,7 +694,7 @@ def fetch_finviz_screener():
                "sh_price_o5,ta_sma20_pa,ta_sma50_pa&ft=4&o=-volume")
         raw = _fetch_url(url)
         if raw:
-            soup = BeautifulSoup(raw, "lxml")
+            soup = BeautifulSoup(raw, "html.parser")
             rows = soup.find_all("a", class_="screener-link-primary")
             for a in rows:
                 t = a.text.strip().upper()
@@ -699,7 +717,7 @@ def fetch_congress_trades():
         ct_url = "https://www.capitoltrades.com/trades?per_page=96&sort=-txDate"
         raw = _fetch_url(ct_url)
         if raw:
-            soup = BeautifulSoup(raw, "lxml")
+            soup = BeautifulSoup(raw, "html.parser")
             for cell in soup.find_all("span", class_="q-field"):
                 t = cell.text.strip().upper()
                 if t and 1 <= len(t) <= 5 and t.isalpha():
@@ -1547,6 +1565,10 @@ def build_dashboard(results):
     compressed_main = compress_data(clean_data)
     compressed_daily = compress_data(charts_daily)
     compressed_intra = compress_data(charts_intra)
+    # --- FORCE-ADD quality/options filter tags so buttons ALWAYS appear ---
+    for forced_tag in ["Quality A+", "Quality A", "Quality B", "Opts Bullish", "Opts Bearish", "Unusual Options"]:
+        tag_set.add(forced_tag)
+
     compressed_tags = compress_data(sorted(list(tag_set)))
 
     html = f"""<!DOCTYPE html>
@@ -2005,7 +2027,7 @@ def report_11am():
     results = _report_results_ref
     if not results:
         return
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now = _get_et_now().strftime("%Y-%m-%d %H:%M")
     data_block = ""
     for r in sorted(results, key=lambda x: x.get("quality_score", 0), reverse=True)[:20]:
         data_block += f"{r['ticker']} | ${r['price']:.2f} | Chg: {r['chg']*100:.2f}% | Tier: {r.get('quality_tier','C')} | RQG: {r.get('quality_score',0)} | Smart$: {r.get('opts_smart_money','N/A')} | Sector: {r['sector']} | Tags: {', '.join(r['tags'][:5])}\n"
@@ -2030,7 +2052,7 @@ def report_2pm():
     results = _report_results_ref
     if not results:
         return
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now = _get_et_now().strftime("%Y-%m-%d %H:%M")
     gainers = sorted([r for r in results if r["chg"] > 0], key=lambda x: x["chg"], reverse=True)[:10]
     losers  = sorted([r for r in results if r["chg"] < 0], key=lambda x: x["chg"])[:10]
 
@@ -2052,7 +2074,7 @@ def report_3pm():
     results = _report_results_ref
     if not results:
         return
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now = _get_et_now().strftime("%Y-%m-%d %H:%M")
     data_block = ""
     for r in sorted(results, key=lambda x: x.get("quality_score", 0), reverse=True)[:20]:
         data_block += f"{r['ticker']} | ${r['price']:.2f} | Chg: {r['chg']*100:.2f}% | Tier: {r.get('quality_tier','C')} | Smart$: {r.get('opts_smart_money','N/A')} | PCR: {r.get('opts_pcr',0)} | IV: {r.get('opts_iv',0)} | Tags: {', '.join(r['tags'][:5])}\n"
@@ -2077,7 +2099,7 @@ def report_4pm():
     results = _report_results_ref
     if not results:
         return
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now = _get_et_now().strftime("%Y-%m-%d %H:%M")
     positive = sum(1 for r in results if r["chg"] >= 0)
     negative = len(results) - positive
     a_plus = [r for r in results if r.get("quality_tier") == "A+"]
@@ -2101,34 +2123,87 @@ def report_4pm():
     </body></html>"""
     send_email_report(f"[SCANNER] 4PM EOD Summary — {now}", html)
 
-def schedule_reports():
-    """Thread-based scheduler: fires reports at 11AM/2PM/3PM/4PM ET."""
+def _get_et_now():
+    """Get current Eastern Time (handles EDT/EST automatically)."""
+    try:
+        import calendar
+        utc_now = datetime.now(timezone.utc)
+        month = utc_now.month
+        if 3 < month < 11:
+            is_dst = True
+        elif month == 3:
+            second_sun = 14 - calendar.weekday(utc_now.year, 3, 1)
+            if second_sun <= 0: second_sun += 7
+            is_dst = utc_now.day >= second_sun
+        elif month == 11:
+            first_sun = 7 - calendar.weekday(utc_now.year, 11, 1)
+            if first_sun <= 0: first_sun += 7
+            is_dst = utc_now.day < first_sun
+        else:
+            is_dst = False
+        offset = timedelta(hours=-4 if is_dst else -5)
+        return utc_now + offset
+    except Exception:
+        return datetime.now()
+
+def fire_reports_now():
+    """Fire applicable email reports immediately based on current ET time."""
     if not ENABLE_EMAIL_REPORTS:
-        logger.info("Email reports disabled.")
+        logger.info("Email reports disabled via ENABLE_EMAIL_REPORTS.")
         return
+    if not EMAIL_REPORT_ADDRESS or not EMAIL_REPORT_PASSWORD:
+        logger.warning("Email report credentials not configured. Skipping reports.")
+        return
+
+    et_now = _get_et_now()
+    hour = et_now.hour
+    today_str = et_now.strftime("%Y-%m-%d")
+    flag_file = os.path.join(LOG_DIR, f"reports_fired_{today_str}.json")
+
+    # Load fired flags for today
     fired = set()
-    logger.info("Email report scheduler started.")
-    while True:
+    if os.path.exists(flag_file):
         try:
-            now = datetime.now()
-            # Approximate ET (adjust if needed)
-            hour, minute = now.hour, now.minute
-            key = f"{now.date()}-{hour}"
-            if hour == 11 and minute < 5 and f"{key}-11am" not in fired:
-                fired.add(f"{key}-11am")
-                threading.Thread(target=report_11am, daemon=True).start()
-            elif hour == 14 and minute < 5 and f"{key}-2pm" not in fired:
-                fired.add(f"{key}-2pm")
-                threading.Thread(target=report_2pm, daemon=True).start()
-            elif hour == 15 and minute < 5 and f"{key}-3pm" not in fired:
-                fired.add(f"{key}-3pm")
-                threading.Thread(target=report_3pm, daemon=True).start()
-            elif hour == 16 and minute < 5 and f"{key}-4pm" not in fired:
-                fired.add(f"{key}-4pm")
-                threading.Thread(target=report_4pm, daemon=True).start()
+            with open(flag_file, "r") as f:
+                fired = set(json.load(f))
+        except Exception:
+            fired = set()
+
+    reports_to_fire = []
+    if hour >= 11 and "11am" not in fired:
+        reports_to_fire.append(("11am", report_11am))
+    if hour >= 14 and "2pm" not in fired:
+        reports_to_fire.append(("2pm", report_2pm))
+    if hour >= 15 and "3pm" not in fired:
+        reports_to_fire.append(("3pm", report_3pm))
+    if hour >= 16 and "4pm" not in fired:
+        reports_to_fire.append(("4pm", report_4pm))
+
+    if not reports_to_fire:
+        logger.info(f"No pending email reports for {today_str} at {hour}:00 ET. Already fired: {fired or 'none'}")
+        return
+
+    logger.info(f"Firing {len(reports_to_fire)} email reports at {et_now.strftime('%H:%M')} ET...")
+
+    for label, report_fn in reports_to_fire:
+        try:
+            logger.info(f"  Sending {label} report...")
+            report_fn()
+            fired.add(label)
+            logger.info(f"  {label} report SENT successfully.")
         except Exception as e:
-            logger.error(f"Report scheduler error: {e}")
-        time.sleep(60)  # check every minute
+            logger.error(f"  {label} report FAILED: {e}")
+
+    # Save fired flags
+    try:
+        with open(flag_file, "w") as f:
+            json.dump(list(fired), f)
+    except Exception:
+        pass
+
+def schedule_reports():
+    """Wrapper for backward compatibility — calls fire_reports_now()."""
+    fire_reports_now()
 
 
 # ------------------------------------------------------------------------------
@@ -2270,11 +2345,13 @@ def main():
     else:
         print("CRITICAL: No results generated.")
 
-    # --- START EMAIL REPORT SCHEDULER ---
+    # --- FIRE EMAIL REPORTS ---
     if ENABLE_EMAIL_REPORTS:
-        print("Starting email report scheduler (11AM/2PM/3PM/4PM ET)...")
-        sched_thread = threading.Thread(target=schedule_reports, daemon=True)
-        sched_thread.start()
+        print("Checking & firing email reports based on ET time...")
+        try:
+            fire_reports_now()
+        except Exception as e:
+            logger.error(f"Email report firing failed: {e}")
 
 def market_is_open():
     nyse = mcal.get_calendar("NYSE")
