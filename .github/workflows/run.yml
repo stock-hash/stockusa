@@ -2,10 +2,14 @@ name: Auto Update Stock Dashboard
 
 on:
   schedule:
-    # Runs at 10:00 AM EST (15:00 UTC)
-    - cron: "0 15 * * *"
-    # Runs at 1:00 PM EST (18:00 UTC)
-    - cron: "0 18 * * *"
+    # 11:00 AM EDT (15:00 UTC) — fires 11AM Institutional Research report
+    - cron: "0 15 * * 1-5"
+    # 2:00 PM EDT (18:00 UTC) — fires 2PM Mid-Day Intelligence report
+    - cron: "0 18 * * 1-5"
+    # 3:00 PM EDT (19:00 UTC) — fires 3PM Pre-Close Institutional report
+    - cron: "0 19 * * 1-5"
+    # 4:00 PM EDT (20:00 UTC) — fires 4PM EOD Summary report
+    - cron: "0 20 * * 1-5"
   workflow_dispatch:   # Allows you to trigger it manually via the Actions tab
 
 permissions:
