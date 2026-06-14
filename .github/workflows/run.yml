@@ -44,6 +44,7 @@ jobs:
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          ENABLE_EMAIL_REPORTS: ${{ secrets.ENABLE_EMAIL_REPORTS }}
           PYTHONUNBUFFERED: "1"
 
       - name: Commit and Push changes
