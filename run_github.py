@@ -772,10 +772,7 @@ def main():
     logger.info("MARKET SCANNER v5.6 - GITHUB ACTIONS SPEED + NEAR-MISS")
     logger.info("=" * 65)
 
-    # FIX 2026-07-02:
-    # docs_dir is used by the v5.7 prices.json patch before the HTML
-    # output block. Define it once at the start of main() so every later
-    # dashboard/json writer uses the same guaranteed folder path.
+    # FIX 2026-07-02: define docs_dir once before prices/dashboard files are saved.
     docs_dir = os.path.join(script_dir, "docs")
     os.makedirs(docs_dir, exist_ok=True)
 
