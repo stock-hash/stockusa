@@ -14,21 +14,25 @@ permissions:
 env:
   TZ: America/New_York
 
+# IMPORTANT:
+# One dashboard writer at a time.
+# Do not cancel a running scan in the middle of writing/pushing docs.
+concurrency:
+  group: stockusa-dashboard-publish
+  cancel-in-progress: false
+
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    concurrency:
-      group: scanner-push
-      cancel-in-progress: true
+    timeout-minutes: 35
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ github.token }}
           fetch-depth: 0
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -45,7 +49,9 @@ jobs:
         run: |
           echo "Event: ${{ github.event_name }}"
           echo "Schedule: ${{ github.event.schedule }}"
+          echo "UTC time:"
           date -u
+          echo "New York time:"
           TZ=America/New_York date
 
       - name: Check market hours
@@ -74,6 +80,7 @@ jobs:
           PYEOF
 
       - name: Run market scanner
+        id: scanner
         if: steps.market_check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
@@ -84,38 +91,95 @@ jobs:
           echo "Starting Market Scanner v5.6 — Single Scan Mode..."
           python run_github.py
           echo "Scanner complete."
+          echo "did_run=true" >> "$GITHUB_OUTPUT"
 
-      - name: Verify output
+      - name: Verify generated output
+        if: steps.scanner.outputs.did_run == 'true'
         run: |
           echo "=== Output files ==="
-          ls -la docs/ || echo "No docs directory"
+          ls -la docs/ || {
+            echo "ERROR: docs directory missing"
+            exit 1
+          }
 
           if [ -f docs/TopBottom_Universal.html ]; then
             echo "Dashboard: $(wc -c < docs/TopBottom_Universal.html) bytes"
+          else
+            echo "ERROR: docs/TopBottom_Universal.html missing"
+            exit 1
           fi
 
           if [ -f docs/latest_scan.json ]; then
-            echo "JSON: $(wc -c < docs/latest_scan.json) bytes"
-            python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print('Alerts:', d.get('total_alerts',0), 'Near-miss:', d.get('near_miss_count',0))"
+            echo "latest_scan.json: $(wc -c < docs/latest_scan.json) bytes"
+            python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print('Scan time:', d.get('scan_time')); print('Alerts:', d.get('total_alerts',0)); print('Near-miss:', d.get('near_miss_count',0))"
+          else
+            echo "ERROR: docs/latest_scan.json missing"
+            exit 1
           fi
 
-      - name: Commit and push results
+          if [ -f docs/prices.json ]; then
+            echo "prices.json: $(wc -c < docs/prices.json) bytes"
+            python3 -c "import json; d=json.load(open('docs/prices.json')); print('Prices timestamp:', d.get('timestamp')); print('Prices count:', d.get('count'))"
+          else
+            echo "WARNING: docs/prices.json missing"
+          fi
+
+          if [ -f docs/charts.json ]; then
+            echo "charts.json: $(wc -c < docs/charts.json) bytes"
+          else
+            echo "WARNING: docs/charts.json missing"
+          fi
+
+      - name: Commit and push generated dashboard files
+        if: steps.scanner.outputs.did_run == 'true'
         run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
+          set -e
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          echo "=== Save generated docs to temp ==="
+          rm -rf /tmp/generated_docs
+          mkdir -p /tmp/generated_docs
+          cp -R docs/. /tmp/generated_docs/
+
+          echo "=== Sync local repo with latest origin/main ==="
+          git fetch origin main
+          git reset --hard origin/main
+
+          echo "=== Restore newly generated docs over latest repo ==="
+          mkdir -p docs
+          rm -rf docs/*
+          cp -R /tmp/generated_docs/. docs/
+
+          echo "=== Git status after restoring generated docs ==="
+          git status --short
+
+          echo "=== Stage docs files ==="
           git add docs/
-          git diff --cached --quiet && echo "No changes to commit" || {
-            SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
-            ALERTS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('total_alerts',0))" 2>/dev/null || echo "0")
-            NEARMISS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('near_miss_count',0))" 2>/dev/null || echo "0")
-            git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts, ${NEARMISS} near-miss"
-            git pull --rebase origin main || {
-              echo "Rebase conflict — forcing recovery..."
-              git rebase --abort 2>/dev/null || true
-              git pull origin main --no-rebase --strategy-option theirs
-              git add docs/
-              git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts (merge recovery)" --allow-empty
-            }
-            git push
-            echo "Results pushed to GitHub Pages"
-          }
+
+          if git diff --cached --quiet; then
+            echo "No dashboard changes to commit."
+            exit 0
+          fi
+
+          SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
+          ALERTS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('total_alerts',0))" 2>/dev/null || echo "0")
+          NEARMISS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('near_miss_count',0))" 2>/dev/null || echo "0")
+
+          git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts, ${NEARMISS} near-miss"
+
+          echo "=== Push dashboard update ==="
+          git push origin HEAD:main
+
+          echo "Results pushed to GitHub Pages source branch."
+
+      - name: Final verification summary
+        if: steps.scanner.outputs.did_run == 'true'
+        run: |
+          echo "Workflow completed."
+          echo "Check these files after GitHub Pages refresh:"
+          echo "https://stock-hash.github.io/stockusa/latest_scan.json"
+          echo "https://stock-hash.github.io/stockusa/prices.json"
+          echo "https://stock-hash.github.io/stockusa/charts.json"
+          echo "https://stock-hash.github.io/stockusa/TopBottom_Universal.html"
