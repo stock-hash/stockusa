@@ -771,6 +771,14 @@ def main():
     logger.info("=" * 65)
     logger.info("MARKET SCANNER v5.6 - GITHUB ACTIONS SPEED + NEAR-MISS")
     logger.info("=" * 65)
+
+    # FIX 2026-07-02:
+    # docs_dir is used by the v5.7 prices.json patch before the HTML
+    # output block. Define it once at the start of main() so every later
+    # dashboard/json writer uses the same guaranteed folder path.
+    docs_dir = os.path.join(script_dir, "docs")
+    os.makedirs(docs_dir, exist_ok=True)
+
     summary_history = load_summary_history()
     alerts, regime, spy_rsi, scan_summary = run_single_scan(summary_history)
     charts = {}
@@ -895,7 +903,6 @@ def main():
 
 
     html = generate_html(alerts, regime, spy_rsi, history, charts, options, scan_summary, summary_history)
-    docs_dir = os.path.join(script_dir, "docs"); os.makedirs(docs_dir, exist_ok=True)
     output_path = os.path.join(docs_dir, "TopBottom_Universal.html")
     with open(output_path, "w", encoding="utf-8") as f: f.write(html)
     with open(os.path.join(docs_dir, "latest_scan.json"), "w", encoding="utf-8") as f:
