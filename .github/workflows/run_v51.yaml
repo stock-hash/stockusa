@@ -14,9 +14,6 @@ permissions:
 env:
   TZ: America/New_York
 
-# IMPORTANT:
-# One dashboard writer at a time.
-# Do not cancel a running scan in the middle of writing/pushing docs.
 concurrency:
   group: stockusa-dashboard-publish
   cancel-in-progress: false
@@ -81,7 +78,7 @@ jobs:
 
       - name: Auto-patch run_github.py dashboard CSS
         run: |
-          python - << 'PYEOF'
+          python3 << 'PYEOF'
           from pathlib import Path
           p = Path("run_github.py")
           if not p.exists():
@@ -92,15 +89,15 @@ jobs:
           new = ".page{display:none;padding:20px 22px}.page.active{display:block}table"
           if old in text:
               p.write_text(text.replace(old, new), encoding="utf-8")
-              print("CSS PATCHED: dashboard tabs will now display correctly")
+              print("CSS PATCHED in run_github.py")
           elif ".page.active{display:block}" in text:
-              print("Already patched, skipping")
+              print("run_github.py already patched, skipping")
           else:
-              print("Warning: patched pattern not found - check run_github.py manually")
+              print("Warning: pattern not found in run_github.py - will rely on HTML post-patch")
           PYEOF
+
       - name: Run market scanner
         id: scanner
-        
         if: steps.market_check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
@@ -112,6 +109,38 @@ jobs:
           python run_github.py
           echo "Scanner complete."
           echo "did_run=true" >> "$GITHUB_OUTPUT"
+
+      - name: Force-fix generated dashboard HTML
+        if: steps.scanner.outputs.did_run == 'true'
+        run: |
+          python3 << 'PYEOF'
+          from pathlib import Path
+          p = Path("docs/TopBottom_Universal.html")
+          if not p.exists():
+              print("No dashboard HTML to fix - skipping")
+              raise SystemExit(0)
+          html = p.read_text(encoding="utf-8")
+          before = len(html)
+
+          bad = ".page{display:none;padding:20px 22px}.page.activetable"
+          good = ".page{display:none;padding:20px 22px}.page.active{display:block}table"
+          if bad in html:
+              html = html.replace(bad, good)
+              print("Rewrote broken .page.activetable CSS in HTML")
+          else:
+              print("Broken CSS pattern not found in HTML (may already be fixed)")
+
+          override = "<style>.page{display:none}.page.active{display:block !important}</style></head>"
+          marker = "<!-- FORCE_TAB_FIX -->"
+          if marker not in html and "</head>" in html:
+              html = html.replace("</head>", marker + override, 1)
+              print("Injected !important CSS override before </head>")
+          else:
+              print("Override already present or no </head> tag found")
+
+          p.write_text(html, encoding="utf-8")
+          print(f"Dashboard HTML patched: {before} -> {len(html)} bytes")
+          PYEOF
 
       - name: Verify generated output
         if: steps.scanner.outputs.did_run == 'true'
