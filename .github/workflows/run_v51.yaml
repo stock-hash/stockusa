@@ -79,8 +79,28 @@ jobs:
               fh.write("run=%s\n" % ("true" if in_hours else "false"))
           PYEOF
 
+      - name: Auto-patch run_github.py dashboard CSS
+        run: |
+          python - << 'PYEOF'
+          from pathlib import Path
+          p = Path("run_github.py")
+          if not p.exists():
+              print("run_github.py not found, skipping patch")
+              raise SystemExit(0)
+          text = p.read_text(encoding="utf-8")
+          old = ".page{display:none;padding:20px 22px}.page.activetable"
+          new = ".page{display:none;padding:20px 22px}.page.active{display:block}table"
+          if old in text:
+              p.write_text(text.replace(old, new), encoding="utf-8")
+              print("CSS PATCHED: dashboard tabs will now display correctly")
+          elif ".page.active{display:block}" in text:
+              print("Already patched, skipping")
+          else:
+              print("Warning: patched pattern not found - check run_github.py manually")
+          PYEOF
       - name: Run market scanner
         id: scanner
+        
         if: steps.market_check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
