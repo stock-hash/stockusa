@@ -1,4 +1,4 @@
-name: Market Scanner v5.6
+name: Market Scanner v5.6 Fixed
 
 on:
   schedule:
@@ -55,9 +55,9 @@ jobs:
         id: market_check
         run: |
           python3 << 'PYEOF'
+          import os
           import pytz
           from datetime import datetime
-          import os
 
           et = pytz.timezone("US/Eastern")
           now = datetime.now(et)
@@ -72,28 +72,31 @@ jobs:
           print("Weekday:", is_weekday)
           print("In hours:", in_hours)
 
-          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
               fh.write("run=%s\n" % ("true" if in_hours else "false"))
           PYEOF
 
-      - name: Auto-patch run_github.py dashboard CSS
+      - name: Auto-patch run_github.py dashboard CSS only if exact known bug exists
         run: |
           python3 << 'PYEOF'
           from pathlib import Path
+
           p = Path("run_github.py")
           if not p.exists():
-              print("run_github.py not found, skipping patch")
+              print("run_github.py not found, skipping CSS patch")
               raise SystemExit(0)
-          text = p.read_text(encoding="utf-8")
+
+          text = p.read_text(encoding="utf-8", errors="replace")
           old = ".page{display:none;padding:20px 22px}.page.activetable"
           new = ".page{display:none;padding:20px 22px}.page.active{display:block}table"
+
           if old in text:
               p.write_text(text.replace(old, new), encoding="utf-8")
               print("CSS PATCHED in run_github.py")
           elif ".page.active{display:block}" in text:
-              print("run_github.py already patched, skipping")
+              print("run_github.py already contains .page.active display rule")
           else:
-              print("Warning: pattern not found in run_github.py - will rely on HTML rebuild")
+              print("Known CSS bug pattern not found. No source file changes made.")
           PYEOF
 
       - name: Run market scanner
@@ -105,330 +108,89 @@ jobs:
           RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
         run: |
-          echo "Starting Market Scanner v5.6 — Single Scan Mode..."
+          set -e
+          echo "Starting Market Scanner v5.6 - Single Scan Mode..."
           python run_github.py
           echo "Scanner complete."
           echo "did_run=true" >> "$GITHUB_OUTPUT"
 
-      - name: Rebuild dashboard HTML from JSON
+      - name: Safety audit generated docs
         if: steps.scanner.outputs.did_run == 'true'
         run: |
-          python3 << 'PYEOF'
-          import json, os
-          from pathlib import Path
-          from html import escape
+          set -e
+          echo "=== Output files after scanner ==="
 
-          docs = Path("docs")
-          def load(name, default):
-              p = docs / name
-              if not p.exists(): return default
-              try: return json.loads(p.read_text(encoding="utf-8"))
-              except Exception: return default
-
-          latest = load("latest_scan.json", {})
-          history = load("scan_history.json", [])
-          summary_hist = load("scan_summary_history.json", [])
-          prices = load("prices.json", {}).get("prices", {})
-
-          summary = latest.get("summary", {}) or {}
-          alerts = latest.get("alerts", []) or []
-          sectors = summary.get("sectors", []) or []
-          blocked = summary.get("blocked_alerts", []) or []
-          candidates = summary.get("candidates", []) or []
-          scan_time = summary.get("scan_time", latest.get("scan_time", ""))
-          regime = latest.get("regime", summary.get("regime", ""))
-          spy_rsi = latest.get("spy_rsi", summary.get("spy_rsi", ""))
-          filtered = summary.get("filtered", 0)
-          stocks_scanned = summary.get("stocks_scanned", latest.get("stocks_scanned", 0))
-          blocked_ct = summary.get("blocked", 0)
-          pending_total = len(candidates)
-          rqg_thresh = summary.get("rqg_threshold", 55)
-          rqg_gate = summary.get("rqg_gate", True)
-
-          wins = sum(1 for h in history if h.get("result")=="WIN")
-          losses = sum(1 for h in history if h.get("result")=="LOSS")
-          wr = round(wins/max(wins+losses,1)*100,1)
-
-          def E(x): return escape(str(x if x is not None else ""))
-          def pill(v):
-              v = str(v or "")
-              c = "bull" if v in ("BOTTOM","STRONG","WIN") else ("bear" if v in ("TOP","WEAK","LOSS") else "neutral")
-              return f'<span class="pill {c}">{E(v)}</span>'
-          def money(v):
-              try:
-                  n = float(v)
-                  return "N/A" if n==0 else f"${n:.2f}"
-              except: return "N/A"
-          def pct(v):
-              try:
-                  n = float(v); s = "+" if n>=0 else ""
-                  c = "var(--green)" if n>0 else ("var(--red)" if n<0 else "var(--muted)")
-                  return f'<span style="color:{c}">{s}{n:.2f}%</span>'
-              except: return '<span style="color:var(--muted)">N/A</span>'
-
-          def rows(items, cols, empty="No data."):
-              if not items: return f'<div class="box">{empty}</div>'
-              h = ['<table><thead><tr>'] + [f'<th>{c[0]}</th>' for c in cols] + ['</tr></thead><tbody>']
-              for r in items:
-                  h.append('<tr>')
-                  for c in cols:
-                      h.append(f'<td>{cr}</td>')
-                  h.append('</tr>')
-              h.append('</tbody></table>')
-              return "".join(h)
-
-          for a in alerts:
-              t = a.get("ticker"); cp = prices.get(t)
-              if cp: a["current_price"] = cp
-          for h in history:
-              t = h.get("ticker"); cp = prices.get(t)
-              if cp: h["current_price"] = cp
-
-          def pnl_pct(r):
-              try:
-                  ap = float(r.get("alert_price",0) or 0)
-                  cp = float(r.get("current_price",0) or 0)
-                  return ((cp-ap)/ap*100) if (ap>0 and cp>0) else 0
-              except: return 0
-
-          alerts_cols = [
-              ("Ticker", lambda r: f'<span class="ticker">{E(r.get("ticker",""))}</span>'),
-              ("Signal", lambda r: pill(r.get("signal",""))),
-              ("Alert$", lambda r: money(r.get("alert_price",0))),
-              ("Current$", lambda r: money(r.get("current_price",0))),
-              ("P&L %", lambda r: pct(pnl_pct(r))),
-              ("Conf", lambda r: E(r.get("confidence",""))),
-              ("RQG", lambda r: f'<b>{E(r.get("rqg_score",""))}</b> <span class="small">{E(r.get("rqg_label",""))}</span>'),
-              ("MTF", lambda r: E(r.get("mtf_status",""))),
-              ("Sector", lambda r: f'{E(r.get("sector",""))} {pill(r.get("sector_strength",""))}'),
-              ("Reasons", lambda r: '<div class="chips">' + "".join(f'<span>{E(x)}</span>' for x in (r.get("rqg_reasons") or [])[:8]) + '</div>'),
-          ]
-          alerts_html = rows(alerts, alerts_cols, "No alerts this scan.")
-
-          sectors_cols = [
-              ("Sector", lambda r: f'<span class="ticker">{E(r.get("sector",""))}</span>'),
-              ("State", lambda r: pill(r.get("strength",""))),
-              ("Close", lambda r: money(r.get("close",0))),
-              ("Recent Rel", lambda r: pct(r.get("diff",0))),
-              ("Whole Day", lambda r: pct(r.get("session_return",0))),
-              ("SPY Day", lambda r: pct(r.get("session_spy_return",0))),
-              ("Reason", lambda r: f'<div class="reason">{E(r.get("reason",""))}</div>'),
-          ]
-          sectors_html = rows(sectors, sectors_cols, "No sector data.")
-
-          blocked_cols = [
-              ("Ticker", lambda r: f'<span class="ticker">{E(r.get("ticker",""))}</span>'),
-              ("Signal", lambda r: pill(r.get("signal",""))),
-              ("Sector", lambda r: E(r.get("sector",""))),
-              ("Price", lambda r: money(r.get("price",0))),
-              ("Conf", lambda r: E(r.get("confidence",""))),
-              ("RQG", lambda r: f'<b>{E(r.get("rqg_score",""))}</b> <span class="small">{E(r.get("rqg_label",""))}</span>'),
-              ("Reasons", lambda r: '<div class="chips">' + "".join(f'<span>{E(x)}</span>' for x in (r.get("rqg_reasons") or [])[:8]) + '</div>'),
-          ]
-          cand_cols = [
-              ("Ticker", lambda r: f'<span class="ticker">{E(r.get("ticker",""))}</span>'),
-              ("Signal", lambda r: pill(r.get("signal",""))),
-              ("Sector", lambda r: E(r.get("sector",""))),
-              ("Stage", lambda r: f'<span class="small">{E(r.get("stage",""))}</span>'),
-              ("C5", lambda r: E(r.get("c5",""))),
-              ("Price", lambda r: money(r.get("price",0))),
-          ]
-          blocked_html = '<h2>Blocked by RQG</h2>' + rows(blocked, blocked_cols, "No blocked alerts.") + '<h2>Waiting / Tracking Candidates</h2>' + rows(candidates, cand_cols, "No candidates.")
-
-          hist_cols = [
-              ("Date", lambda r: E(r.get("date",""))),
-              ("Time", lambda r: f'<span class="small">{E(r.get("time") or r.get("alert_time",""))}</span>'),
-              ("Ticker", lambda r: f'<span class="ticker">{E(r.get("ticker",""))}</span>'),
-              ("Signal", lambda r: pill(r.get("signal",""))),
-              ("Alert$", lambda r: money(r.get("alert_price",0))),
-              ("Current$", lambda r: money(r.get("current_price",0))),
-              ("Result", lambda r: pill(r.get("result") or "PENDING")),
-              ("P&L %", lambda r: pct(r.get("pnl_pct") or r.get("change_pct") or pnl_pct(r))),
-              ("RQG", lambda r: E(r.get("rqg_score",""))),
-          ]
-          hist_html = f'<div class="box"><b>Rolling history:</b> {len(history)} records.</div>' + rows(list(reversed(history[-200:])), hist_cols, "No history yet.")
-
-          leaders = summary.get("leaders_recent", []) or []
-          laggards = summary.get("laggards_recent", []) or []
-          def sec_line(items,f="diff"):
-              return ", ".join(f'{E(x.get("sector",""))} {pill(x.get("strength",""))} {pct(x.get(f,0))}' for x in items) or "N/A"
-
-          runs_html = ""
-          if summary_hist:
-              runs_html = '<h2>Last Runs</h2><table><thead><tr><th>Time</th><th>Regime</th><th>RSI</th><th>Filtered</th><th>Alerts</th><th>Blocked</th></tr></thead><tbody>'
-              for h in reversed(summary_hist[-8:]):
-                  runs_html += f'<tr><td><span class="small">{E(h.get("scan_time",""))}</span></td><td>{pill(h.get("regime",""))}</td><td>{E(h.get("spy_rsi",""))}</td><td>{E(h.get("filtered",""))}</td><td>{E(h.get("alerts",""))}</td><td>{E(h.get("blocked",""))}</td></tr>'
-              runs_html += '</tbody></table>'
-
-          rqg_gate_str = "ON" if rqg_gate else "OBS"
-          summary_html = (f'<div class="box"><b>Current scan:</b> {E(scan_time)} | Regime <b>{E(regime)}</b> | RSI <b>{E(spy_rsi)}</b> | Alerts <b>{len(alerts)}</b> | Blocked <b>{blocked_ct}</b> | RQG <b>{rqg_gate_str}/{E(rqg_thresh)}</b></div>'
-                          f'<div class="two"><div class="box"><h3>Leaders (Recent Rel)</h3>{sec_line(leaders)}</div>'
-                          f'<div class="box"><h3>Laggards (Recent Rel)</h3>{sec_line(laggards)}</div></div>' + runs_html)
-
-          logs_body = json.dumps({"scan_time":scan_time,"regime":regime,"spy_rsi":spy_rsi,"alerts":len(alerts),"blocked":blocked_ct,"filtered":filtered,"pending":pending_total,"near_miss":summary.get("near_miss_count",0)}, indent=2, default=str)
-          logs_html = f'<h2>Readable End-of-Scan Log</h2><div class="box"><pre style="white-space:pre-wrap;line-height:1.45">{E(logs_body)}</pre></div>'
-
-          try: spy_rsi_f = f"{float(spy_rsi):.1f}"
-          except: spy_rsi_f = str(spy_rsi)
-
-          CSS_BLOCK = """<style>
-          :root{--bg:#070b12;--panel:#111827;--panel2:#0b1220;--line:#243044;--text:#e5edf7;--muted:#8ba0b8;--cyan:#06b6d4;--green:#22c55e;--red:#ef4444;--yellow:#eab308}
-          *{box-sizing:border-box}
-          body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
-          .top{position:sticky;top:0;background:#09111f;border-bottom:1px solid var(--line);padding:14px 22px;z-index:10}
-          h1{margin:0;color:var(--cyan);font-size:20px} h2{color:var(--cyan);margin:18px 0 10px 0;font-size:16px} h3{margin:0 0 8px 0;color:var(--cyan);font-size:14px}
-          .sub{color:var(--muted);font-size:12px}
-          .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;padding:18px 22px}
-          .card,.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px}
-          .label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-          .value{font-size:28px;font-weight:800}
-          .tabs{display:flex;gap:2px;padding:0 22px;background:#09111f;border-bottom:1px solid var(--line);flex-wrap:wrap}
-          .tab{padding:13px 18px;color:var(--muted);cursor:pointer;font-weight:700;border-bottom:3px solid transparent}
-          .tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
-          .page{display:none;padding:20px 22px} .page.active{display:block !important}
-          table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);font-size:13px;margin-top:8px}
-          th{background:var(--panel2);color:var(--muted);text-align:left;padding:10px;text-transform:uppercase;font-size:11px}
-          td{padding:10px;border-top:1px solid #263247;vertical-align:top}
-          .pill{padding:3px 9px;border-radius:99px;font-weight:800;font-size:11px;display:inline-block}
-          .bull{background:#22c55e22;color:var(--green)} .bear{background:#ef444422;color:var(--red)} .neutral{background:#eab30822;color:var(--yellow)}
-          .ticker{color:var(--cyan);font-weight:900} .small{font-size:12px;color:var(--muted)}
-          .chips span{display:inline-block;margin:2px;padding:3px 7px;border-radius:8px;background:#1e293b;color:#cbd5e1;font-size:11px}
-          .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px}
-          .reason{max-width:620px;white-space:normal}
-          </style>"""
-
-          JS_BLOCK = """<script>
-          (function(){try{
-            var tabs=document.querySelectorAll('.tab'), pages=document.querySelectorAll('.page');
-            tabs.forEach(function(t){t.addEventListener('click',function(){
-              var name=t.getAttribute('data-tab');
-              pages.forEach(function(p){p.classList.remove('active')});
-              tabs.forEach(function(x){x.classList.remove('active')});
-              var pg=document.getElementById(name); if(pg)pg.classList.add('active');
-              t.classList.add('active');
-            })});
-          }catch(e){console.error(e)}})();
-          </script>"""
-
-          html = (
-              '<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="900"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TopBottom v5.6 Dashboard</title>'
-              + CSS_BLOCK
-              + '</head><body>'
-              + f'<div class="top"><h1>TopBottom Universal v5.6 - Dashboard</h1><div class="sub">Generated {E(scan_time)} &bull; Regime {E(regime)} &bull; SPY RSI {E(spy_rsi_f)}</div></div>'
-              + '<div class="grid">'
-              + f'<div class="card"><div class="label">RQG Passed</div><div class="value">{len(alerts)}</div></div>'
-              + f'<div class="card"><div class="label">RQG Blocked</div><div class="value">{blocked_ct}</div></div>'
-              + f'<div class="card"><div class="label">Filtered / Universe</div><div class="value">{filtered}</div><div class="sub">of {stocks_scanned} scanned</div></div>'
-              + f'<div class="card"><div class="label">Pending / Tracking</div><div class="value">{pending_total}</div></div>'
-              + f'<div class="card"><div class="label">30-Day Win Rate</div><div class="value">{wr}%</div><div class="sub">W {wins} / L {losses} &bull; {len(history)} records</div></div>'
-              + f'<div class="card"><div class="label">RQG Gate</div><div class="value">{rqg_gate_str}</div><div class="sub">Threshold {rqg_thresh}</div></div>'
-              + '</div>'
-              + '<div class="tabs">'
-              + '<div class="tab active" data-tab="summary">Summary</div>'
-              + '<div class="tab" data-tab="alerts">RQG Alerts</div>'
-              + '<div class="tab" data-tab="sectors">Sectors</div>'
-              + '<div class="tab" data-tab="blocked">Blocked/Waiting</div>'
-              + '<div class="tab" data-tab="history">30-Day History</div>'
-              + '<div class="tab" data-tab="logs">Readable Log</div>'
-              + '</div>'
-              + f'<div id="summary" class="page active">{summary_html}</div>'
-              + f'<div id="alerts" class="page">{alerts_html}</div>'
-              + f'<div id="sectors" class="page">{sectors_html}</div>'
-              + f'<div id="blocked" class="page">{blocked_html}</div>'
-              + f'<div id="history" class="page">{hist_html}</div>'
-              + f'<div id="logs" class="page">{logs_html}</div>'
-              + JS_BLOCK
-              + '</body></html>'
-          )
-
-          out = docs / "TopBottom_Universal.html"
-          out.write_text(html, encoding="utf-8")
-          print(f"Rebuilt dashboard: {out} ({len(html)} bytes)")
-          print(f"Contents: {len(alerts)} alerts, {len(sectors)} sectors, {len(blocked)} blocked, {len(candidates)} candidates, {len(history)} history records")
-          PYEOF
-
-      - name: Cache-buster - version the dashboard filename
-        if: steps.scanner.outputs.did_run == 'true'
-        run: |
-          python3 << 'PYEOF'
-          from pathlib import Path
-          import time, shutil
-
-          docs = Path("docs")
-          main_html = docs / "TopBottom_Universal.html"
-          if not main_html.exists():
-              print("ERROR: No dashboard file to version.")
-              raise SystemExit(0)
-
-          version = int(time.time())
-          versioned_name = f"TopBottom_Universal.v{version}.html"
-          versioned_path = docs / versioned_name
-
-          shutil.copy(main_html, versioned_path)
-          print(f"Created versioned dashboard: {versioned_name}")
-
-          redirect_html = (
-              '<!DOCTYPE html><html><head>'
-              '<meta charset="utf-8">'
-              '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">'
-              '<meta http-equiv="Pragma" content="no-cache">'
-              '<meta http-equiv="Expires" content="0">'
-              f'<meta http-equiv="refresh" content="0; url={versioned_name}?t={version}">'
-              '<title>Loading Dashboard...</title>'
-              '<style>body{background:#070b12;color:#e5edf7;font-family:Segoe UI,Arial,sans-serif;padding:40px;text-align:center}a{color:#06b6d4}</style>'
-              '</head><body>'
-              '<h2>Loading fresh dashboard...</h2>'
-              f'<p><a href="{versioned_name}?t={version}">Click here if not redirected automatically</a></p>'
-              '<script>'
-              f'window.location.replace("{versioned_name}?t={version}");'
-              '</script>'
-              '</body></html>'
-          )
-          main_html.write_text(redirect_html, encoding="utf-8")
-          print(f"Rewrote TopBottom_Universal.html as no-cache redirect to {versioned_name}")
-
-          old_versions = sorted(docs.glob("TopBottom_Universal.v*.html"))
-          if len(old_versions) > 3:
-              for old in old_versions[:-3]:
-                  old.unlink()
-                  print(f"Cleaned up {old.name}")
-          PYEOF
-
-      - name: Verify generated output
-        if: steps.scanner.outputs.did_run == 'true'
-        run: |
-          echo "=== Output files ==="
-          ls -la docs/ || {
-            echo "ERROR: docs directory missing"
-            exit 1
-          }
-
-          if [ -f docs/TopBottom_Universal.html ]; then
-            echo "Dashboard: $(wc -c < docs/TopBottom_Universal.html) bytes"
-          else
-            echo "ERROR: docs/TopBottom_Universal.html missing"
+          if [ ! -d docs ]; then
+            echo "ERROR: docs directory missing after scanner run."
             exit 1
           fi
 
-          if [ -f docs/latest_scan.json ]; then
-            echo "latest_scan.json: $(wc -c < docs/latest_scan.json) bytes"
-            python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print('Scan time:', d.get('scan_time')); print('Alerts:', d.get('total_alerts',0)); print('Near-miss:', d.get('near_miss_count',0))"
-          else
-            echo "ERROR: docs/latest_scan.json missing"
+          ls -la docs/
+
+          if [ ! -f docs/TopBottom_Universal.html ]; then
+            echo "ERROR: docs/TopBottom_Universal.html missing after scanner run."
             exit 1
+          fi
+
+          DASH_BYTES=$(wc -c < docs/TopBottom_Universal.html)
+          echo "Dashboard bytes: ${DASH_BYTES}"
+
+          # Guardrail: do not publish a tiny broken dashboard or redirect wrapper.
+          if [ "$DASH_BYTES" -lt 20000 ]; then
+            echo "ERROR: Dashboard file is too small (${DASH_BYTES} bytes)."
+            echo "This usually means the full dashboard was overwritten by a partial page or redirect."
+            exit 1
+          fi
+
+          # Guardrail: make sure the page has the tab/page activation CSS rule.
+          if grep -q ".page.active" docs/TopBottom_Universal.html; then
+            echo "OK: Dashboard contains .page.active CSS/JS support."
+          else
+            echo "WARNING: .page.active not found in dashboard HTML. Tabs may not display correctly."
+          fi
+
+          # Guardrail: verify JSON output if available, but do not fail for optional files.
+          if [ -f docs/latest_scan.json ]; then
+            echo "latest_scan.json bytes: $(wc -c < docs/latest_scan.json)"
+            python3 << 'PYEOF'
+          import json
+          from pathlib import Path
+
+          p = Path("docs/latest_scan.json")
+          d = json.loads(p.read_text(encoding="utf-8"))
+
+          summary = d.get("summary", {}) if isinstance(d.get("summary", {}), dict) else {}
+          alerts = d.get("alerts", [])
+          if not isinstance(alerts, list):
+              alerts = []
+
+          scan_time = d.get("scan_time") or summary.get("scan_time") or "N/A"
+          total_alerts = d.get("total_alerts")
+          if total_alerts is None:
+              total_alerts = len(alerts)
+
+          near_miss = d.get("near_miss_count")
+          if near_miss is None:
+              near_miss = summary.get("near_miss_count", 0)
+
+          print("Scan time:", scan_time)
+          print("Alerts:", total_alerts)
+          print("Near-miss:", near_miss)
+          PYEOF
+          else
+            echo "WARNING: docs/latest_scan.json missing. Continuing because some scanner versions embed data directly in HTML."
           fi
 
           if [ -f docs/prices.json ]; then
-            echo "prices.json: $(wc -c < docs/prices.json) bytes"
-            python3 -c "import json; d=json.load(open('docs/prices.json')); print('Prices timestamp:', d.get('timestamp')); print('Prices count:', d.get('count'))"
+            echo "prices.json bytes: $(wc -c < docs/prices.json)"
           else
-            echo "WARNING: docs/prices.json missing"
+            echo "WARNING: docs/prices.json missing."
           fi
 
           if [ -f docs/charts.json ]; then
-            echo "charts.json: $(wc -c < docs/charts.json) bytes"
+            echo "charts.json bytes: $(wc -c < docs/charts.json)"
           else
-            echo "WARNING: docs/charts.json missing"
+            echo "WARNING: docs/charts.json missing."
           fi
 
       - name: Commit and push generated dashboard files
@@ -465,8 +227,31 @@ jobs:
           fi
 
           SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
-          ALERTS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('total_alerts',0))" 2>/dev/null || echo "0")
-          NEARMISS=$(python3 -c "import json; d=json.load(open('docs/latest_scan.json')); print(d.get('near_miss_count',0))" 2>/dev/null || echo "0")
+          ALERTS=$(python3 - << 'PYEOF'
+          import json
+          from pathlib import Path
+          try:
+              d = json.loads(Path("docs/latest_scan.json").read_text(encoding="utf-8"))
+              alerts = d.get("total_alerts")
+              if alerts is None:
+                  raw = d.get("alerts", [])
+                  alerts = len(raw) if isinstance(raw, list) else 0
+              print(alerts)
+          except Exception:
+              print(0)
+          PYEOF
+          )
+          NEARMISS=$(python3 - << 'PYEOF'
+          import json
+          from pathlib import Path
+          try:
+              d = json.loads(Path("docs/latest_scan.json").read_text(encoding="utf-8"))
+              summary = d.get("summary", {}) if isinstance(d.get("summary", {}), dict) else {}
+              print(d.get("near_miss_count", summary.get("near_miss_count", 0)))
+          except Exception:
+              print(0)
+          PYEOF
+          )
 
           git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts, ${NEARMISS} near-miss"
 
@@ -479,8 +264,15 @@ jobs:
         if: steps.scanner.outputs.did_run == 'true'
         run: |
           echo "Workflow completed."
+          echo "This fixed workflow does NOT rebuild or replace your full dashboard HTML."
+          echo "It preserves whatever run_github.py generated into docs/."
           echo "Check these files after GitHub Pages refresh:"
           echo "https://stock-hash.github.io/stockusa/latest_scan.json"
           echo "https://stock-hash.github.io/stockusa/prices.json"
           echo "https://stock-hash.github.io/stockusa/charts.json"
           echo "https://stock-hash.github.io/stockusa/TopBottom_Universal.html"
+
+      - name: No scan outside market hours
+        if: steps.market_check.outputs.run != 'true' && github.event_name != 'workflow_dispatch'
+        run: |
+          echo "Outside market hours. Scheduled run skipped."
