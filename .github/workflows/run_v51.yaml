@@ -172,7 +172,7 @@ jobs:
               for r in items:
                   h.append('<tr>')
                   for c in cols:
-                      h.append(f'<td>{c[1](r)}</td>')
+                      h.append(f'<td>{cr}</td>')
                   h.append('</tr>')
               h.append('</tbody></table>')
               return "".join(h)
@@ -345,6 +345,53 @@ jobs:
           out.write_text(html, encoding="utf-8")
           print(f"Rebuilt dashboard: {out} ({len(html)} bytes)")
           print(f"Contents: {len(alerts)} alerts, {len(sectors)} sectors, {len(blocked)} blocked, {len(candidates)} candidates, {len(history)} history records")
+          PYEOF
+
+      - name: Cache-buster - version the dashboard filename
+        if: steps.scanner.outputs.did_run == 'true'
+        run: |
+          python3 << 'PYEOF'
+          from pathlib import Path
+          import time, shutil
+
+          docs = Path("docs")
+          main_html = docs / "TopBottom_Universal.html"
+          if not main_html.exists():
+              print("ERROR: No dashboard file to version.")
+              raise SystemExit(0)
+
+          version = int(time.time())
+          versioned_name = f"TopBottom_Universal.v{version}.html"
+          versioned_path = docs / versioned_name
+
+          shutil.copy(main_html, versioned_path)
+          print(f"Created versioned dashboard: {versioned_name}")
+
+          redirect_html = (
+              '<!DOCTYPE html><html><head>'
+              '<meta charset="utf-8">'
+              '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">'
+              '<meta http-equiv="Pragma" content="no-cache">'
+              '<meta http-equiv="Expires" content="0">'
+              f'<meta http-equiv="refresh" content="0; url={versioned_name}?t={version}">'
+              '<title>Loading Dashboard...</title>'
+              '<style>body{background:#070b12;color:#e5edf7;font-family:Segoe UI,Arial,sans-serif;padding:40px;text-align:center}a{color:#06b6d4}</style>'
+              '</head><body>'
+              '<h2>Loading fresh dashboard...</h2>'
+              f'<p><a href="{versioned_name}?t={version}">Click here if not redirected automatically</a></p>'
+              '<script>'
+              f'window.location.replace("{versioned_name}?t={version}");'
+              '</script>'
+              '</body></html>'
+          )
+          main_html.write_text(redirect_html, encoding="utf-8")
+          print(f"Rewrote TopBottom_Universal.html as no-cache redirect to {versioned_name}")
+
+          old_versions = sorted(docs.glob("TopBottom_Universal.v*.html"))
+          if len(old_versions) > 3:
+              for old in old_versions[:-3]:
+                  old.unlink()
+                  print(f"Cleaned up {old.name}")
           PYEOF
 
       - name: Verify generated output
