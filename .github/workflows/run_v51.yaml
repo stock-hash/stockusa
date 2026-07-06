@@ -146,7 +146,8 @@ jobs:
           if grep -q ".page.active" docs/TopBottom_Universal.html; then
             echo "OK: Dashboard contains .page.active CSS/JS support."
           else
-            echo "WARNING: .page.active not found in dashboard HTML. Tabs may not display correctly."
+            echo "ERROR: .page.active not found in dashboard HTML. Tabs may not display correctly."
+            exit 1
           fi
 
           # Guardrail: verify JSON output if available, but do not fail for optional files.
@@ -193,6 +194,73 @@ jobs:
             echo "WARNING: docs/charts.json missing."
           fi
 
+      - name: Validate generated dashboard JavaScript
+        if: steps.scanner.outputs.did_run == 'true'
+        run: |
+          set -e
+          echo "=== Validate generated dashboard JavaScript ==="
+
+          if [ ! -f docs/TopBottom_Universal.html ]; then
+            echo "ERROR: docs/TopBottom_Universal.html missing."
+            exit 1
+          fi
+
+          python3 << 'PYEOF'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          html_path = Path("docs/TopBottom_Universal.html")
+          html = html_path.read_text(encoding="utf-8", errors="replace")
+
+          scripts = re.findall(r"<script[^>]*>(.*?)</script>", html, re.S | re.I)
+          inline_scripts = [s.strip() for s in scripts if s.strip()]
+
+          if not inline_scripts:
+              raise SystemExit("ERROR: No inline dashboard script found in TopBottom_Universal.html")
+
+          # Validate each inline script separately. This catches broken quote escaping
+          # that causes the visible header/cards to load but the body/tabs to stay blank.
+          for idx, js in enumerate(inline_scripts, start=1):
+              js_path = Path(f"dashboard_check_{idx}.js")
+              js_path.write_text(js, encoding="utf-8")
+
+              result = subprocess.run(
+                  ["node", "--check", str(js_path)],
+                  text=True,
+                  capture_output=True
+              )
+
+              if result.stdout:
+                  print(result.stdout)
+              if result.stderr:
+                  print(result.stderr)
+
+              if result.returncode != 0:
+                  raise SystemExit(f"ERROR: Dashboard JavaScript syntax check failed in inline script #{idx}")
+
+          print(f"OK: {len(inline_scripts)} inline dashboard script block(s) passed JavaScript syntax check.")
+          PYEOF
+
+      - name: Validate dashboard has render functions
+        if: steps.scanner.outputs.did_run == 'true'
+        run: |
+          set -e
+          echo "=== Validate dashboard render function names ==="
+
+          DASH="docs/TopBottom_Universal.html"
+
+          for NEEDLE in "renderSummary" "renderAlerts" "renderSectors" "renderBlocked" "renderHistory" "function show"; do
+            if grep -q "$NEEDLE" "$DASH"; then
+              echo "OK: Found $NEEDLE"
+            else
+              echo "ERROR: Missing required dashboard function/string: $NEEDLE"
+              exit 1
+            fi
+          done
+
+          echo "OK: Dashboard render function audit passed."
+
       - name: Commit and push generated dashboard files
         if: steps.scanner.outputs.did_run == 'true'
         run: |
@@ -227,6 +295,7 @@ jobs:
           fi
 
           SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
+
           ALERTS=$(python3 - << 'PYEOF'
           import json
           from pathlib import Path
@@ -241,6 +310,7 @@ jobs:
               print(0)
           PYEOF
           )
+
           NEARMISS=$(python3 - << 'PYEOF'
           import json
           from pathlib import Path
@@ -264,13 +334,14 @@ jobs:
         if: steps.scanner.outputs.did_run == 'true'
         run: |
           echo "Workflow completed."
-          echo "This fixed workflow does NOT rebuild or replace your full dashboard HTML."
+          echo "This workflow does NOT rebuild or replace your full dashboard HTML outside run_github.py."
           echo "It preserves whatever run_github.py generated into docs/."
+          echo "It now blocks publishing if the generated dashboard JavaScript is broken."
           echo "Check these files after GitHub Pages refresh:"
           echo "https://stock-hash.github.io/stockusa/latest_scan.json"
           echo "https://stock-hash.github.io/stockusa/prices.json"
           echo "https://stock-hash.github.io/stockusa/charts.json"
-          echo "https://stock-hash.github.io/stockusa/TopBottom_Universal.html"
+          echo "https://stock-hash.github.io/stockusa/TopBottom_Universal.html?v=20260705fix1"
 
       - name: No scan outside market hours
         if: steps.market_check.outputs.run != 'true' && github.event_name != 'workflow_dispatch'
