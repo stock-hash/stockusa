@@ -1,1597 +1,5 @@
 [
  {
-  "scan_time": "2026-07-29 11:49:55 AM ET",
-  "date": "2026-07-29",
-  "regime": "NEUTRAL",
-  "spy_rsi": 46.1,
-  "time_quality": "PRIME",
-  "stocks_scanned": 386,
-  "filtered": 206,
-  "alerts": 77,
-  "blocked": 12,
-  "candidates": [
-   {
-    "ticker": "AMZN",
-    "signal": "TOP",
-    "sector": "XLY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 35,
-    "price": 228.68
-   },
-   {
-    "ticker": "JNJ",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 65,
-    "price": 268.24
-   },
-   {
-    "ticker": "JPM",
-    "signal": "BOTTOM",
-    "sector": "XLF",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 58,
-    "c15": 47,
-    "price": 348.88
-   },
-   {
-    "ticker": "MA",
-    "signal": "TOP",
-    "sector": "XLF",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 81,
-    "price": 568.58
-   },
-   {
-    "ticker": "HD",
-    "signal": "TOP",
-    "sector": "XLY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 45,
-    "price": 341.12
-   },
-   {
-    "ticker": "MRK",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 40,
-    "price": 131.93
-   },
-   {
-    "ticker": "INTC",
-    "signal": "BOTTOM",
-    "sector": "XLK",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 70,
-    "price": 83.11
-   },
-   {
-    "ticker": "SHW",
-    "signal": "TOP",
-    "sector": "XLB",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 85,
-    "price": 344.18
-   },
-   {
-    "ticker": "CAT",
-    "signal": "TOP",
-    "sector": "XLI",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 100,
-    "price": 786.01
-   },
-   {
-    "ticker": "META",
-    "signal": "TOP",
-    "sector": "XLC",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 76,
-    "c15": 76,
-    "price": 588.3
-   },
-   {
-    "ticker": "XOM",
-    "signal": "BOTTOM",
-    "sector": "XLE",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 91,
-    "price": 157.87
-   },
-   {
-    "ticker": "LLY",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 38,
-    "c15": 36,
-    "price": 1226.21
-   },
-   {
-    "ticker": "ABBV",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 73,
-    "c15": 36,
-    "price": 267.11
-   },
-   {
-    "ticker": "PEP",
-    "signal": "TOP",
-    "sector": "XLP",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 56,
-    "c15": 53,
-    "price": 145.03
-   },
-   {
-    "ticker": "COST",
-    "signal": "TOP",
-    "sector": "XLP",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 44,
-    "price": 975.55
-   },
-   {
-    "ticker": "AVGO",
-    "signal": "BOTTOM",
-    "sector": "XLK",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 70,
-    "c15": 61,
-    "price": 372.18
-   },
-   {
-    "ticker": "DHR",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 50,
-    "price": 202.12
-   },
-   {
-    "ticker": "CRM",
-    "signal": "TOP",
-    "sector": "XLK",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 72,
-    "price": 188.63
-   },
-   {
-    "ticker": "AMD",
-    "signal": "TOP",
-    "sector": "XLK",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 100,
-    "price": 428.4
-   },
-   {
-    "ticker": "CMCSA",
-    "signal": "TOP",
-    "sector": "XLC",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 42,
-    "c15": 54,
-    "price": 24.68
-   },
-   {
-    "ticker": "UPS",
-    "signal": "TOP",
-    "sector": "XLI",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 90,
-    "c15": 100,
-    "price": 105.2
-   },
-   {
-    "ticker": "LOW",
-    "signal": "TOP",
-    "sector": "XLY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 58,
-    "price": 217.46
-   },
-   {
-    "ticker": "INTU",
-    "signal": "TOP",
-    "sector": "XLK",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 50,
-    "price": 333.4
-   },
-   {
-    "ticker": "AMAT",
-    "signal": "BOTTOM",
-    "sector": "XLK",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 36,
-    "c15": 37,
-    "price": 446.4
-   },
-   {
-    "ticker": "BKNG",
-    "signal": "BOTTOM",
-    "sector": "XLY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 100,
-    "price": 201.71
-   },
-   {
-    "ticker": "GILD",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 37,
-    "price": 134.25
-   },
-   {
-    "ticker": "VRTX",
-    "signal": "BOTTOM",
-    "sector": "XLV",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 100,
-    "c15": 97,
-    "price": 491.11
-   },
-   {
-    "ticker": "REGN",
-    "signal": "BOTTOM",
-    "sector": "XLV",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 78,
-    "c15": 100,
-    "price": 696.37
-   },
-   {
-    "ticker": "LRCX",
-    "signal": "TOP",
-    "sector": "XLK",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 100,
-    "price": 255.51
-   },
-   {
-    "ticker": "PANW",
-    "signal": "TOP",
-    "sector": "XLK",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 61,
-    "price": 315.85
-   },
-   {
-    "ticker": "KLAC",
-    "signal": "TOP",
-    "sector": "XLK",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 100,
-    "price": 174.24
-   },
-   {
-    "ticker": "SCHW",
-    "signal": "BOTTOM",
-    "sector": "XLF",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 89,
-    "price": 105.87
-   },
-   {
-    "ticker": "ZTS",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 36,
-    "price": 78.86
-   },
-   {
-    "ticker": "CI",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 38,
-    "price": 299.35
-   },
-   {
-    "ticker": "CL",
-    "signal": "BOTTOM",
-    "sector": "XLP",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 99,
-    "c15": 100,
-    "price": 93.17
-   },
-   {
-    "ticker": "MCK",
-    "signal": "BOTTOM",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 100,
-    "price": 904.88
-   },
-   {
-    "ticker": "CMG",
-    "signal": "BOTTOM",
-    "sector": "XLY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 100,
-    "price": 34.13
-   },
-   {
-    "ticker": "ORLY",
-    "signal": "TOP",
-    "sector": "XLY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 48,
-    "price": 91.14
-   },
-   {
-    "ticker": "EMR",
-    "signal": "TOP",
-    "sector": "XLI",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 64,
-    "price": 145.66
-   },
-   {
-    "ticker": "ROP",
-    "signal": "TOP",
-    "sector": "XLI",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 83,
-    "c15": 69,
-    "price": 406.2
-   },
-   {
-    "ticker": "MCHP",
-    "signal": "BOTTOM",
-    "sector": "XLK",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 40,
-    "price": 71.71
-   },
-   {
-    "ticker": "HCA",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 46,
-    "price": 413.52
-   },
-   {
-    "ticker": "KMB",
-    "signal": "TOP",
-    "sector": "XLP",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 46,
-    "price": 112.86
-   },
-   {
-    "ticker": "RSG",
-    "signal": "TOP",
-    "sector": "XLI",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 67,
-    "price": 222.36
-   },
-   {
-    "ticker": "FICO",
-    "signal": "TOP",
-    "sector": "XLK",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 93,
-    "c15": 74,
-    "price": 1396.69
-   },
-   {
-    "ticker": "VRSK",
-    "signal": "TOP",
-    "sector": "XLI",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 60,
-    "price": 220.79
-   },
-   {
-    "ticker": "EW",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 45,
-    "c15": 37,
-    "price": 85.57
-   },
-   {
-    "ticker": "IDXX",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 49,
-    "price": 570.95
-   },
-   {
-    "ticker": "TT",
-    "signal": "BOTTOM",
-    "sector": "XLI",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 60,
-    "price": 445.23
-   },
-   {
-    "ticker": "IR",
-    "signal": "BOTTOM",
-    "sector": "XLI",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 63,
-    "c15": 80,
-    "price": 84.17
-   },
-   {
-    "ticker": "DECK",
-    "signal": "TOP",
-    "sector": "XLY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 55,
-    "price": 103.18
-   },
-   {
-    "ticker": "TRGP",
-    "signal": "BOTTOM",
-    "sector": "XLE",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 82,
-    "price": 266.94
-   },
-   {
-    "ticker": "EME",
-    "signal": "BOTTOM",
-    "sector": "XLI",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 37,
-    "c15": 37,
-    "price": 673.5
-   },
-   {
-    "ticker": "XYL",
-    "signal": "TOP",
-    "sector": "XLI",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 88,
-    "price": 123.57
-   },
-   {
-    "ticker": "ROK",
-    "signal": "BOTTOM",
-    "sector": "XLI",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 43,
-    "price": 451.57
-   },
-   {
-    "ticker": "AME",
-    "signal": "BOTTOM",
-    "sector": "XLI",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 68,
-    "c15": 45,
-    "price": 234.82
-   },
-   {
-    "ticker": "PODD",
-    "signal": "TOP",
-    "sector": "XLV",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 36,
-    "price": 169.96
-   },
-   {
-    "ticker": "TER",
-    "signal": "BOTTOM",
-    "sector": "XLK",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 40,
-    "price": 329.58
-   },
-   {
-    "ticker": "ENTG",
-    "signal": "BOTTOM",
-    "sector": "XLK",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 36,
-    "c15": 37,
-    "price": 108.95
-   },
-   {
-    "ticker": "ONTO",
-    "signal": "BOTTOM",
-    "sector": "XLK",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 42,
-    "c15": 45,
-    "price": 217.61
-   },
-   {
-    "ticker": "XLV",
-    "signal": "TOP",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 49,
-    "price": 168.09
-   },
-   {
-    "ticker": "XLI",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 95,
-    "c15": 61,
-    "price": 177.09
-   },
-   {
-    "ticker": "XLY",
-    "signal": "TOP",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 44,
-    "c15": 46,
-    "price": 112.01
-   },
-   {
-    "ticker": "XLP",
-    "signal": "TOP",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 77,
-    "price": 87.68
-   },
-   {
-    "ticker": "PAVE",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 70,
-    "c15": 61,
-    "price": 55.15
-   },
-   {
-    "ticker": "BOTZ",
-    "signal": "TOP",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 93,
-    "price": 33.7
-   },
-   {
-    "ticker": "TAN",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 82,
-    "c15": 60,
-    "price": 47.62
-   },
-   {
-    "ticker": "ICLN",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 72,
-    "c15": 50,
-    "price": 16.88
-   },
-   {
-    "ticker": "REMX",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 59,
-    "price": 64.25
-   },
-   {
-    "ticker": "VNQ",
-    "signal": "TOP",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 60,
-    "price": 100.59
-   },
-   {
-    "ticker": "ARKK",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 63,
-    "c15": 49,
-    "price": 70.73
-   },
-   {
-    "ticker": "TLT",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 74,
-    "c15": 58,
-    "price": 83.83
-   },
-   {
-    "ticker": "LQD",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 60,
-    "price": 106.42
-   },
-   {
-    "ticker": "SQQQ",
-    "signal": "TOP",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 49,
-    "c15": 79,
-    "price": 48.53
-   },
-   {
-    "ticker": "TNA",
-    "signal": "TOP",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 100,
-    "price": 66.44
-   },
-   {
-    "ticker": "TECS",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 92,
-    "price": 86.95
-   },
-   {
-    "ticker": "BITO",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 71,
-    "price": 8.65
-   },
-   {
-    "ticker": "DRIV",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 63,
-    "c15": 63,
-    "price": 32.0
-   },
-   {
-    "ticker": "XRT",
-    "signal": "TOP",
-    "sector": "SPY",
-    "stage": "5m_ONLY_15m_NO_MATCH",
-    "c5": 94,
-    "price": 91.57
-   },
-   {
-    "ticker": "WEAT",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "c5": 60,
-    "c15": 44,
-    "price": 24.58
-   }
-  ],
-  "blocked_alerts": [
-   {
-    "ticker": "BRK-B",
-    "signal": "BOTTOM",
-    "sector": "XLF",
-    "price": 510.3,
-    "confidence": 96,
-    "mtf_status": "5m+15m+30m",
-    "rqg_score": 37,
-    "rqg_label": "WATCH_ONLY",
-    "rqg_reasons": [
-     "LowerBandLocation",
-     "BuyVolumeImproving",
-     "ReclaimEMA8",
-     "BackInsideLowerBand",
-     "ReclaimedVWAP",
-     "SectorNeutral",
-     "MarketNotBearish",
-     "PositiveRelativeStrength"
-    ],
-    "rqg_buckets": {
-     "location": 8,
-     "divergence": 0,
-     "volume": 5,
-     "reclaim": 12,
-     "context": 12,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 510.42,
-     "vwap": 500.98,
-     "vwap_z": 4.85,
-     "rsi2": 55.7,
-     "rsi14": 56.5,
-     "macd_hist": 0.1708,
-     "macd_hist_prev": 0.1872,
-     "vol_ratio": 0.21,
-     "rr": 0.0,
-     "vwap_slope_8bars_pct": 0.022,
-     "ema20_slope_8bars_pct": 0.072,
-     "source": "yfinance",
-     "latest": "2026-07-29 11:50:00 AM ET",
-     "age_min": 2.4
-    }
-   },
-   {
-    "ticker": "MO",
-    "signal": "BOTTOM",
-    "sector": "XLP",
-    "price": 75.8,
-    "confidence": 100,
-    "mtf_status": "5m+15m+30m+60m",
-    "rqg_score": 37,
-    "rqg_label": "WATCH_ONLY",
-    "rqg_reasons": [
-     "MACDHistImproving",
-     "BuyVolumeImproving",
-     "CloseAbovePriorHigh",
-     "ReclaimEMA8",
-     "ReclaimedVWAP",
-     "SectorStrong",
-     "MarketNotBearish"
-    ],
-    "rqg_buckets": {
-     "location": 0,
-     "divergence": 4,
-     "volume": 5,
-     "reclaim": 16,
-     "context": 12,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 75.8,
-     "vwap": 73.78,
-     "vwap_z": 7.86,
-     "rsi2": 100.0,
-     "rsi14": 53.5,
-     "macd_hist": 0.0119,
-     "macd_hist_prev": -0.002,
-     "vol_ratio": 0.91,
-     "rr": 0.0,
-     "vwap_slope_8bars_pct": 0.031,
-     "ema20_slope_8bars_pct": 0.139,
-     "source": "yfinance",
-     "latest": "2026-07-29 11:50:00 AM ET",
-     "age_min": 4.8
-    }
-   },
-   {
-    "ticker": "ITW",
-    "signal": "BOTTOM",
-    "sector": "XLI",
-    "price": 291.98,
-    "confidence": 75,
-    "mtf_status": "5m+15m+30m+60m",
-    "rqg_score": 31,
-    "rqg_label": "WATCH_ONLY",
-    "rqg_reasons": [
-     "MACDHistImproving",
-     "ReclaimedVWAP",
-     "WeakSectorButStockOverride",
-     "MarketNotBearish",
-     "PositiveRelativeStrength",
-     "RR>=2"
-    ],
-    "rqg_buckets": {
-     "location": 0,
-     "divergence": 4,
-     "volume": 0,
-     "reclaim": 4,
-     "context": 13,
-     "risk_reward": 10
-    },
-    "rqg_details": {
-     "price": 291.98,
-     "vwap": 288.57,
-     "vwap_z": 1.38,
-     "rsi2": 22.6,
-     "rsi14": 33.1,
-     "macd_hist": 0.0343,
-     "macd_hist_prev": 0.0156,
-     "vol_ratio": 0.0,
-     "rr": 2.67,
-     "vwap_slope_8bars_pct": 0.014,
-     "ema20_slope_8bars_pct": -0.283,
-     "source": "yfinance",
-     "latest": "2026-07-29 11:55:00 AM ET",
-     "age_min": 0.3
-    }
-   },
-   {
-    "ticker": "FSLR",
-    "signal": "TOP",
-    "sector": "XLK",
-    "price": 198.77,
-    "confidence": 87,
-    "mtf_status": "5m+15m+30m+60m",
-    "rqg_score": 37,
-    "rqg_label": "WATCH_ONLY",
-    "rqg_reasons": [
-     "MACDHistWeakening",
-     "SellVolumeImproving",
-     "CloseBelowPriorLow",
-     "LostEMA8",
-     "LostVWAP",
-     "SectorWeak",
-     "MarketNotBullish"
-    ],
-    "rqg_buckets": {
-     "location": 0,
-     "divergence": 4,
-     "volume": 5,
-     "reclaim": 16,
-     "context": 12,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 198.77,
-     "vwap": 202.51,
-     "vwap_z": -3.49,
-     "rsi2": 0.0,
-     "rsi14": 36.1,
-     "macd_hist": -0.1421,
-     "macd_hist_prev": -0.1045,
-     "vol_ratio": 0.22,
-     "rr": 0.0,
-     "vwap_slope_8bars_pct": -0.012,
-     "ema20_slope_8bars_pct": -0.314,
-     "source": "yfinance",
-     "latest": "2026-07-29 11:55:00 AM ET",
-     "age_min": 1.6
-    }
-   },
-   {
-    "ticker": "SLV",
-    "signal": "TOP",
-    "sector": "SPY",
-    "price": 51.49,
-    "confidence": 91,
-    "mtf_status": "5m+15m+30m",
-    "rqg_score": 36,
-    "rqg_label": "WATCH_ONLY",
-    "rqg_reasons": [
-     "UpperBandLocation",
-     "MACDHistWeakening",
-     "LostEMA8",
-     "BackInsideUpperBand",
-     "LostVWAP",
-     "SectorNeutral",
-     "MarketNotBullish",
-     "NegativeRelativeStrength"
-    ],
-    "rqg_buckets": {
-     "location": 8,
-     "divergence": 4,
-     "volume": 0,
-     "reclaim": 12,
-     "context": 12,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 51.49,
-     "vwap": 52.32,
-     "vwap_z": -9.91,
-     "rsi2": 5.0,
-     "rsi14": 59.1,
-     "macd_hist": 0.0062,
-     "macd_hist_prev": 0.0092,
-     "vol_ratio": 0.56,
-     "rr": 0.0,
-     "vwap_slope_8bars_pct": -0.018,
-     "ema20_slope_8bars_pct": -0.004,
-     "source": "yfinance",
-     "latest": "2026-07-29 11:55:00 AM ET",
-     "age_min": 4.2
-    }
-   },
-   {
-    "ticker": "EWH",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "price": 22.89,
-    "confidence": 77,
-    "mtf_status": "5m+15m+30m",
-    "rqg_score": 39,
-    "rqg_label": "WATCH_ONLY",
-    "rqg_reasons": [
-     "LowerBandLocation",
-     "RSI2Exhausted",
-     "BuyVolumeImproving",
-     "BackInsideLowerBand",
-     "ReclaimedVWAP",
-     "SectorNeutral",
-     "MarketNotBearish",
-     "PositiveRelativeStrength"
-    ],
-    "rqg_buckets": {
-     "location": 8,
-     "divergence": 6,
-     "volume": 5,
-     "reclaim": 8,
-     "context": 12,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 22.9,
-     "vwap": 22.7,
-     "vwap_z": 4.72,
-     "rsi2": 0.0,
-     "rsi14": 60.0,
-     "macd_hist": 0.0029,
-     "macd_hist_prev": 0.0035,
-     "vol_ratio": 0.38,
-     "rr": 0.0,
-     "vwap_slope_8bars_pct": 0.013,
-     "ema20_slope_8bars_pct": -0.004,
-     "source": "yfinance",
-     "latest": "2026-07-29 11:55:00 AM ET",
-     "age_min": 4.5
-    }
-   },
-   {
-    "ticker": "TUR",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "price": 38.16,
-    "confidence": 72,
-    "mtf_status": "5m+15m+30m+60m",
-    "rqg_score": 39,
-    "rqg_label": "WATCH_ONLY",
-    "rqg_reasons": [
-     "DeepBelowVWAP2\u03c3",
-     "BelowVWAP",
-     "MACDHistImproving",
-     "SectorNeutral",
-     "MarketNotBearish",
-     "RR>=2"
-    ],
-    "rqg_buckets": {
-     "location": 16,
-     "divergence": 4,
-     "volume": 0,
-     "reclaim": 0,
-     "context": 9,
-     "risk_reward": 10
-    },
-    "rqg_details": {
-     "price": 38.16,
-     "vwap": 39.1,
-     "vwap_z": -4.66,
-     "rsi2": 33.3,
-     "rsi14": 15.3,
-     "macd_hist": -0.0481,
-     "macd_hist_prev": -0.0572,
-     "vol_ratio": 0.0,
-     "rr": 25.33,
-     "vwap_slope_8bars_pct": -0.073,
-     "ema20_slope_8bars_pct": -0.664,
-     "source": "yfinance",
-     "latest": "2026-07-29 11:55:00 AM ET",
-     "age_min": 4.7
-    }
-   },
-   {
-    "ticker": "RBLX",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "price": 49.17,
-    "confidence": 72,
-    "mtf_status": "5m+15m+30m+60m",
-    "rqg_score": 16,
-    "rqg_label": "REJECT_LOW_QUALITY",
-    "rqg_reasons": [
-     "ReclaimedVWAP",
-     "SectorNeutral",
-     "MarketNotBearish",
-     "PositiveRelativeStrength"
-    ],
-    "rqg_buckets": {
-     "location": 0,
-     "divergence": 0,
-     "volume": 0,
-     "reclaim": 4,
-     "context": 12,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 49.17,
-     "vwap": 48.21,
-     "vwap_z": 2.56,
-     "rsi2": 33.3,
-     "rsi14": 59.2,
-     "macd_hist": 0.0286,
-     "macd_hist_prev": 0.0383,
-     "vol_ratio": 0.12,
-     "rr": 0.0,
-     "vwap_slope_8bars_pct": 0.028,
-     "ema20_slope_8bars_pct": 0.128,
-     "source": "yfinance",
-     "latest": "2026-07-29 12:00:00 PM ET",
-     "age_min": 2.2
-    }
-   },
-   {
-    "ticker": "WOOF",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "price": 2.79,
-    "confidence": 99,
-    "mtf_status": "5m+15m+30m",
-    "rqg_score": 29,
-    "rqg_label": "REJECT_LOW_QUALITY",
-    "rqg_reasons": [
-     "MACDHistImproving",
-     "BuyVolumeImproving",
-     "ReclaimEMA8",
-     "ReclaimedVWAP",
-     "SectorNeutral",
-     "MarketNotBearish",
-     "PositiveRelativeStrength"
-    ],
-    "rqg_buckets": {
-     "location": 0,
-     "divergence": 4,
-     "volume": 5,
-     "reclaim": 8,
-     "context": 12,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 2.78,
-     "vwap": 2.69,
-     "vwap_z": 2.7,
-     "rsi2": 50.0,
-     "rsi14": 54.2,
-     "macd_hist": 0.0029,
-     "macd_hist_prev": 0.0028,
-     "vol_ratio": 0.49,
-     "rr": 0.0,
-     "vwap_slope_8bars_pct": 0.079,
-     "ema20_slope_8bars_pct": -0.086,
-     "source": "yfinance",
-     "latest": "2026-07-29 12:00:00 PM ET",
-     "age_min": 4.9
-    }
-   },
-   {
-    "ticker": "CROX",
-    "signal": "BOTTOM",
-    "sector": "SPY",
-    "price": 135.17,
-    "confidence": 56,
-    "mtf_status": "5m+15m+30m+60m",
-    "rqg_score": 32,
-    "rqg_label": "WATCH_ONLY",
-    "rqg_reasons": [
-     "MACDHistImproving",
-     "CloseAbovePriorHigh",
-     "ReclaimEMA8",
-     "ReclaimedVWAP",
-     "SectorNeutral",
-     "MarketNotBearish",
-     "PositiveRelativeStrength"
-    ],
-    "rqg_buckets": {
-     "location": 0,
-     "divergence": 4,
-     "volume": 0,
-     "reclaim": 16,
-     "context": 12,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 135.17,
-     "vwap": 134.45,
-     "vwap_z": 0.78,
-     "rsi2": 100.0,
-     "rsi14": 76.2,
-     "macd_hist": 0.2143,
-     "macd_hist_prev": 0.1729,
-     "vol_ratio": 0.65,
-     "rr": 0.0,
-     "vwap_slope_8bars_pct": -0.005,
-     "ema20_slope_8bars_pct": 0.193,
-     "source": "yfinance",
-     "latest": "2026-07-29 12:00:00 PM ET",
-     "age_min": 5.1
-    }
-   },
-   {
-    "ticker": "UPST",
-    "signal": "TOP",
-    "sector": "SPY",
-    "price": 26.74,
-    "confidence": 80,
-    "mtf_status": "5m+15m+30m",
-    "rqg_score": 29,
-    "rqg_label": "REJECT_LOW_QUALITY",
-    "rqg_reasons": [
-     "MACDHistWeakening",
-     "CloseBelowPriorLow",
-     "LostEMA8",
-     "LostVWAP",
-     "SectorNeutral",
-     "MarketNotBullish"
-    ],
-    "rqg_buckets": {
-     "location": 0,
-     "divergence": 4,
-     "volume": 0,
-     "reclaim": 16,
-     "context": 9,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 26.73,
-     "vwap": 27.36,
-     "vwap_z": -1.48,
-     "rsi2": 0.0,
-     "rsi14": 54.7,
-     "macd_hist": 0.0335,
-     "macd_hist_prev": 0.0432,
-     "vol_ratio": 0.0,
-     "rr": 0.07,
-     "vwap_slope_8bars_pct": -0.035,
-     "ema20_slope_8bars_pct": 0.112,
-     "source": "yfinance",
-     "latest": "2026-07-29 12:05:00 PM ET",
-     "age_min": 0.2
-    }
-   },
-   {
-    "ticker": "ENPH",
-    "signal": "TOP",
-    "sector": "SPY",
-    "price": 36.33,
-    "confidence": 83,
-    "mtf_status": "5m+15m+30m+60m",
-    "rqg_score": 37,
-    "rqg_label": "WATCH_ONLY",
-    "rqg_reasons": [
-     "MACDHistWeakening",
-     "SellVolumeImproving",
-     "CloseBelowPriorLow",
-     "LostEMA8",
-     "LostVWAP",
-     "SectorNeutral",
-     "MarketNotBullish",
-     "NegativeRelativeStrength"
-    ],
-    "rqg_buckets": {
-     "location": 0,
-     "divergence": 4,
-     "volume": 5,
-     "reclaim": 16,
-     "context": 12,
-     "risk_reward": 0
-    },
-    "rqg_details": {
-     "price": 36.33,
-     "vwap": 37.15,
-     "vwap_z": -1.92,
-     "rsi2": 0.0,
-     "rsi14": 47.0,
-     "macd_hist": -0.0129,
-     "macd_hist_prev": 0.0038,
-     "vol_ratio": 0.0,
-     "rr": 0.0,
-     "vwap_slope_8bars_pct": -0.033,
-     "ema20_slope_8bars_pct": -0.176,
-     "source": "yfinance",
-     "latest": "2026-07-29 12:05:00 PM ET",
-     "age_min": 0.9
-    }
-   }
-  ],
-  "sectors": [
-   {
-    "sector": "XLE",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +3.310%; sector recent=+2.442%, SPY recent=-0.868%; whole-day sector=-0.523% vs SPY=-0.770%",
-    "diff": 3.31,
-    "sector_return": 2.442,
-    "spy_return": -0.868,
-    "session_return": -0.523,
-    "session_spy_return": -0.77,
-    "close": 58.95000076293945,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLP",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +1.625%; sector recent=+0.764%, SPY recent=-0.861%; whole-day sector=+0.955% vs SPY=-0.763%",
-    "diff": 1.625,
-    "sector_return": 0.764,
-    "spy_return": -0.861,
-    "session_return": 0.955,
-    "session_spy_return": -0.763,
-    "close": 87.70500183105469,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLV",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +1.227%; sector recent=+0.359%, SPY recent=-0.868%; whole-day sector=+0.575% vs SPY=-0.770%",
-    "diff": 1.227,
-    "sector_return": 0.359,
-    "spy_return": -0.868,
-    "session_return": 0.575,
-    "session_spy_return": -0.77,
-    "close": 167.89999389648438,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLC",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +0.704%; sector recent=-0.164%, SPY recent=-0.868%; whole-day sector=+0.403% vs SPY=-0.770%",
-    "diff": 0.704,
-    "sector_return": -0.164,
-    "spy_return": -0.868,
-    "session_return": 0.403,
-    "session_spy_return": -0.77,
-    "close": 109.5,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLY",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +0.662%; sector recent=-0.204%, SPY recent=-0.867%; whole-day sector=+0.393% vs SPY=-0.769%",
-    "diff": 0.662,
-    "sector_return": -0.204,
-    "spy_return": -0.867,
-    "session_return": 0.393,
-    "session_spy_return": -0.769,
-    "close": 112.2699966430664,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 0.9,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLRE",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +0.498%; sector recent=-0.370%, SPY recent=-0.868%; whole-day sector=-0.261% vs SPY=-0.770%",
-    "diff": 0.498,
-    "sector_return": -0.37,
-    "spy_return": -0.868,
-    "session_return": -0.261,
-    "session_spy_return": -0.77,
-    "close": 45.83000183105469,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLU",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +0.400%; sector recent=-0.461%, SPY recent=-0.861%; whole-day sector=-0.777% vs SPY=-0.763%",
-    "diff": 0.4,
-    "sector_return": -0.461,
-    "spy_return": -0.861,
-    "session_return": -0.777,
-    "session_spy_return": -0.763,
-    "close": 45.30500030517578,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLF",
-    "strength": "NEUTRAL",
-    "reason": "NEUTRAL because recent 30-bar relative strength vs SPY is +0.001%; sector recent=-0.868%, SPY recent=-0.869%; whole-day sector=-0.436% vs SPY=-0.772%",
-    "diff": 0.001,
-    "sector_return": -0.868,
-    "spy_return": -0.869,
-    "session_return": -0.436,
-    "session_spy_return": -0.772,
-    "close": 57.09000015258789,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 0.9,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLK",
-    "strength": "WEAK",
-    "reason": "WEAK because recent 30-bar relative strength vs SPY is -0.729%; sector recent=-1.597%, SPY recent=-0.868%; whole-day sector=-2.009% vs SPY=-0.770%",
-    "diff": -0.729,
-    "sector_return": -1.597,
-    "spy_return": -0.868,
-    "session_return": -2.009,
-    "session_spy_return": -0.77,
-    "close": 168.25999450683594,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLB",
-    "strength": "WEAK",
-    "reason": "WEAK because recent 30-bar relative strength vs SPY is -0.814%; sector recent=-1.682%, SPY recent=-0.868%; whole-day sector=-0.771% vs SPY=-0.770%",
-    "diff": -0.814,
-    "sector_return": -1.682,
-    "spy_return": -0.868,
-    "session_return": -0.771,
-    "session_spy_return": -0.77,
-    "close": 51.45000076293945,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLI",
-    "strength": "WEAK",
-    "reason": "WEAK because recent 30-bar relative strength vs SPY is -1.964%; sector recent=-2.832%, SPY recent=-0.868%; whole-day sector=-1.794% vs SPY=-0.770%",
-    "diff": -1.964,
-    "sector_return": -2.832,
-    "spy_return": -0.868,
-    "session_return": -1.794,
-    "session_spy_return": -0.77,
-    "close": 177.360107421875,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   }
-  ],
-  "rqg_gate": true,
-  "rqg_threshold": 40,
-  "leaders_recent": [
-   {
-    "sector": "XLE",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +3.310%; sector recent=+2.442%, SPY recent=-0.868%; whole-day sector=-0.523% vs SPY=-0.770%",
-    "diff": 3.31,
-    "sector_return": 2.442,
-    "spy_return": -0.868,
-    "session_return": -0.523,
-    "session_spy_return": -0.77,
-    "close": 58.95000076293945,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLP",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +1.625%; sector recent=+0.764%, SPY recent=-0.861%; whole-day sector=+0.955% vs SPY=-0.763%",
-    "diff": 1.625,
-    "sector_return": 0.764,
-    "spy_return": -0.861,
-    "session_return": 0.955,
-    "session_spy_return": -0.763,
-    "close": 87.70500183105469,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLV",
-    "strength": "STRONG",
-    "reason": "STRONG because recent 30-bar relative strength vs SPY is +1.227%; sector recent=+0.359%, SPY recent=-0.868%; whole-day sector=+0.575% vs SPY=-0.770%",
-    "diff": 1.227,
-    "sector_return": 0.359,
-    "spy_return": -0.868,
-    "session_return": 0.575,
-    "session_spy_return": -0.77,
-    "close": 167.89999389648438,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   }
-  ],
-  "laggards_recent": [
-   {
-    "sector": "XLK",
-    "strength": "WEAK",
-    "reason": "WEAK because recent 30-bar relative strength vs SPY is -0.729%; sector recent=-1.597%, SPY recent=-0.868%; whole-day sector=-2.009% vs SPY=-0.770%",
-    "diff": -0.729,
-    "sector_return": -1.597,
-    "spy_return": -0.868,
-    "session_return": -2.009,
-    "session_spy_return": -0.77,
-    "close": 168.25999450683594,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLB",
-    "strength": "WEAK",
-    "reason": "WEAK because recent 30-bar relative strength vs SPY is -0.814%; sector recent=-1.682%, SPY recent=-0.868%; whole-day sector=-0.771% vs SPY=-0.770%",
-    "diff": -0.814,
-    "sector_return": -1.682,
-    "spy_return": -0.868,
-    "session_return": -0.771,
-    "session_spy_return": -0.77,
-    "close": 51.45000076293945,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   },
-   {
-    "sector": "XLI",
-    "strength": "WEAK",
-    "reason": "WEAK because recent 30-bar relative strength vs SPY is -1.964%; sector recent=-2.832%, SPY recent=-0.868%; whole-day sector=-1.794% vs SPY=-0.770%",
-    "diff": -1.964,
-    "sector_return": -2.832,
-    "spy_return": -0.868,
-    "session_return": -1.794,
-    "session_spy_return": -0.77,
-    "close": 177.360107421875,
-    "latest": "2026-07-29 11:50:00 AM ET",
-    "age_min": 1.0,
-    "source": "yfinance"
-   }
-  ],
-  "previous_scan_time": "2026-07-29 11:13:06 AM ET",
-  "near_miss": [
-   {
-    "ticker": "VRTX",
-    "signal": "BOTTOM",
-    "c5": 100,
-    "sector": "XLV",
-    "sector_strength": "STRONG",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 491.11,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "**",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "PLUG",
-    "signal": "BOTTOM",
-    "c5": 100,
-    "sector": "SPY",
-    "sector_strength": "?",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 1.88,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "**",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "CL",
-    "signal": "BOTTOM",
-    "c5": 99,
-    "sector": "XLP",
-    "sector_strength": "STRONG",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 93.17,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "**",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "XLI",
-    "signal": "BOTTOM",
-    "c5": 95,
-    "sector": "SPY",
-    "sector_strength": "?",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 177.09,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "**",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "FICO",
-    "signal": "TOP",
-    "c5": 93,
-    "sector": "XLK",
-    "sector_strength": "WEAK",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 1396.69,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "**",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "UPS",
-    "signal": "TOP",
-    "c5": 90,
-    "sector": "XLI",
-    "sector_strength": "WEAK",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 105.2,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "**",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "ROP",
-    "signal": "TOP",
-    "c5": 83,
-    "sector": "XLI",
-    "sector_strength": "WEAK",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 406.2,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "*",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "TAN",
-    "signal": "BOTTOM",
-    "c5": 82,
-    "sector": "SPY",
-    "sector_strength": "?",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 47.62,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "*",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "REGN",
-    "signal": "BOTTOM",
-    "c5": 78,
-    "sector": "XLV",
-    "sector_strength": "STRONG",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 696.37,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "*",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "CASY",
-    "signal": "TOP",
-    "c5": 77,
-    "sector": "SPY",
-    "sector_strength": "?",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 880.33,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "*",
-    "mtf_status": "partial"
-   },
-   {
-    "ticker": "META",
-    "signal": "TOP",
-    "c5": 76,
-    "sector": "XLC",
-    "sector_strength": "STRONG",
-    "stage": "5m+15m_30m_NO_MATCH",
-    "price": 588.3,
-    "rqg_score": 0,
-    "rqg_label": "NOT_REACHED",
-    "quality": "*",
-    "mtf_status": "partial"
-   }
-  ],
-  "near_miss_count": 11
- },
- {
   "scan_time": "2026-07-29 12:40:35 PM ET",
   "date": "2026-07-29",
   "regime": "NEUTRAL",
@@ -14154,5 +12562,2129 @@
    }
   ],
   "near_miss_count": 2
+ },
+ {
+  "scan_time": "2026-07-30 11:53:12 AM ET",
+  "date": "2026-07-30",
+  "regime": "NEUTRAL",
+  "spy_rsi": 44.9,
+  "time_quality": "PRIME",
+  "stocks_scanned": 386,
+  "filtered": 223,
+  "alerts": 45,
+  "blocked": 27,
+  "candidates": [
+   {
+    "ticker": "NVDA",
+    "signal": "BOTTOM",
+    "sector": "XLK",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 83,
+    "price": 193.13
+   },
+   {
+    "ticker": "UNH",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 83,
+    "price": 424.53
+   },
+   {
+    "ticker": "JNJ",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 82,
+    "price": 255.86
+   },
+   {
+    "ticker": "PG",
+    "signal": "TOP",
+    "sector": "XLP",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 72,
+    "price": 143.35
+   },
+   {
+    "ticker": "MA",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 85,
+    "price": 572.48
+   },
+   {
+    "ticker": "MRK",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m+15m_30m_NO_MATCH",
+    "c5": 89,
+    "c15": 88,
+    "price": 128.97
+   },
+   {
+    "ticker": "KO",
+    "signal": "TOP",
+    "sector": "XLP",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 86,
+    "price": 88.23
+   },
+   {
+    "ticker": "DIS",
+    "signal": "TOP",
+    "sector": "XLC",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 55,
+    "price": 95.53
+   },
+   {
+    "ticker": "MCD",
+    "signal": "TOP",
+    "sector": "XLY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 79,
+    "price": 268.17
+   },
+   {
+    "ticker": "ABT",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 61,
+    "price": 105.38
+   },
+   {
+    "ticker": "VZ",
+    "signal": "TOP",
+    "sector": "XLC",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 89,
+    "price": 46.1
+   },
+   {
+    "ticker": "NKE",
+    "signal": "TOP",
+    "sector": "XLY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 88,
+    "price": 41.83
+   },
+   {
+    "ticker": "MMM",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 49,
+    "price": 174.77
+   },
+   {
+    "ticker": "TRV",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 44,
+    "price": 372.59
+   },
+   {
+    "ticker": "AXP",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 60,
+    "price": 335.21
+   },
+   {
+    "ticker": "BRK-B",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 80,
+    "price": 504.77
+   },
+   {
+    "ticker": "XOM",
+    "signal": "TOP",
+    "sector": "XLE",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 69,
+    "price": 155.19
+   },
+   {
+    "ticker": "LLY",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 100,
+    "price": 1160.73
+   },
+   {
+    "ticker": "ABBV",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 86,
+    "price": 257.66
+   },
+   {
+    "ticker": "PEP",
+    "signal": "TOP",
+    "sector": "XLP",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 98,
+    "price": 140.49
+   },
+   {
+    "ticker": "COST",
+    "signal": "TOP",
+    "sector": "XLP",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 92,
+    "price": 956.27
+   },
+   {
+    "ticker": "TMO",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 75,
+    "price": 566.9
+   },
+   {
+    "ticker": "DHR",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 75,
+    "price": 195.9
+   },
+   {
+    "ticker": "ADBE",
+    "signal": "TOP",
+    "sector": "XLK",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 62,
+    "price": 247.07
+   },
+   {
+    "ticker": "CRM",
+    "signal": "TOP",
+    "sector": "XLK",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 55,
+    "price": 179.38
+   },
+   {
+    "ticker": "AMD",
+    "signal": "BOTTOM",
+    "sector": "XLK",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 100,
+    "price": 484.55
+   },
+   {
+    "ticker": "PFE",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 100,
+    "price": 24.69
+   },
+   {
+    "ticker": "HON",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 77,
+    "price": 238.72
+   },
+   {
+    "ticker": "QCOM",
+    "signal": "TOP",
+    "sector": "XLK",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 63,
+    "price": 151.59
+   },
+   {
+    "ticker": "SPGI",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 94,
+    "price": 409.18
+   },
+   {
+    "ticker": "ISRG",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 67,
+    "price": 350.56
+   },
+   {
+    "ticker": "AMAT",
+    "signal": "BOTTOM",
+    "sector": "XLK",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 50,
+    "price": 497.5
+   },
+   {
+    "ticker": "SYK",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 54,
+    "price": 347.05
+   },
+   {
+    "ticker": "GILD",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 60,
+    "price": 129.62
+   },
+   {
+    "ticker": "VRTX",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 60,
+    "price": 474.58
+   },
+   {
+    "ticker": "LRCX",
+    "signal": "BOTTOM",
+    "sector": "XLK",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 100,
+    "price": 299.45
+   },
+   {
+    "ticker": "AMT",
+    "signal": "TOP",
+    "sector": "XLRE",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 50,
+    "price": 174.12
+   },
+   {
+    "ticker": "SCHW",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 88,
+    "price": 103.63
+   },
+   {
+    "ticker": "ZTS",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 48,
+    "price": 75.74
+   },
+   {
+    "ticker": "PGR",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 58,
+    "price": 212.88
+   },
+   {
+    "ticker": "CB",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 55,
+    "price": 349.62
+   },
+   {
+    "ticker": "CME",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 68,
+    "price": 264.77
+   },
+   {
+    "ticker": "CL",
+    "signal": "TOP",
+    "sector": "XLP",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 89,
+    "price": 91.59
+   },
+   {
+    "ticker": "CTAS",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 69,
+    "price": 206.86
+   },
+   {
+    "ticker": "WELL",
+    "signal": "TOP",
+    "sector": "XLRE",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 82,
+    "price": 236.06
+   },
+   {
+    "ticker": "EMR",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 54,
+    "price": 148.21
+   },
+   {
+    "ticker": "AJG",
+    "signal": "TOP",
+    "sector": "XLF",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 83,
+    "price": 257.3
+   },
+   {
+    "ticker": "TDG",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 69,
+    "price": 1247.67
+   },
+   {
+    "ticker": "PAYX",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 71,
+    "price": 114.84
+   },
+   {
+    "ticker": "HCA",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 92,
+    "price": 398.9
+   },
+   {
+    "ticker": "FAST",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 47,
+    "price": 46.65
+   },
+   {
+    "ticker": "KMB",
+    "signal": "TOP",
+    "sector": "XLP",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 55,
+    "price": 110.12
+   },
+   {
+    "ticker": "ODFL",
+    "signal": "BOTTOM",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 41,
+    "price": 206.76
+   },
+   {
+    "ticker": "CPRT",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 69,
+    "price": 29.17
+   },
+   {
+    "ticker": "VRSK",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 99,
+    "price": 201.45
+   },
+   {
+    "ticker": "EW",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 63,
+    "price": 86.11
+   },
+   {
+    "ticker": "IDXX",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 54,
+    "price": 557.97
+   },
+   {
+    "ticker": "LNG",
+    "signal": "TOP",
+    "sector": "XLE",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 49,
+    "price": 256.9
+   },
+   {
+    "ticker": "OTIS",
+    "signal": "TOP",
+    "sector": "XLRE",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 52,
+    "price": 71.21
+   },
+   {
+    "ticker": "MPWR",
+    "signal": "TOP",
+    "sector": "XLK",
+    "stage": "5m+15m_30m_NO_MATCH",
+    "c5": 40,
+    "c15": 48,
+    "price": 1327.8
+   },
+   {
+    "ticker": "AXON",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 69,
+    "price": 517.03
+   },
+   {
+    "ticker": "GEHC",
+    "signal": "TOP",
+    "sector": "XLV",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 67,
+    "price": 68.99
+   },
+   {
+    "ticker": "HUBB",
+    "signal": "BOTTOM",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 38,
+    "price": 469.0
+   },
+   {
+    "ticker": "TRGP",
+    "signal": "TOP",
+    "sector": "XLE",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 88,
+    "price": 263.93
+   },
+   {
+    "ticker": "FSLR",
+    "signal": "TOP",
+    "sector": "XLK",
+    "stage": "5m+15m_30m_NO_MATCH",
+    "c5": 48,
+    "c15": 52,
+    "price": 202.86
+   },
+   {
+    "ticker": "XYL",
+    "signal": "TOP",
+    "sector": "XLI",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 56,
+    "price": 117.33
+   },
+   {
+    "ticker": "IWM",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 58,
+    "price": 290.65
+   },
+   {
+    "ticker": "DIA",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 99,
+    "price": 518.69
+   },
+   {
+    "ticker": "XLF",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 77,
+    "price": 56.56
+   },
+   {
+    "ticker": "XLV",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 74,
+    "price": 163.13
+   },
+   {
+    "ticker": "XLB",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 71,
+    "price": 51.52
+   },
+   {
+    "ticker": "XLY",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 67,
+    "price": 112.11
+   },
+   {
+    "ticker": "XLP",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 60,
+    "price": 85.39
+   },
+   {
+    "ticker": "XLRE",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 47,
+    "price": 45.17
+   },
+   {
+    "ticker": "XLC",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 44,
+    "price": 105.91
+   },
+   {
+    "ticker": "BOTZ",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m+15m_30m_NO_MATCH",
+    "c5": 60,
+    "c15": 74,
+    "price": 34.59
+   },
+   {
+    "ticker": "ITA",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 55,
+    "price": 234.79
+   },
+   {
+    "ticker": "COPX",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 63,
+    "price": 79.08
+   },
+   {
+    "ticker": "SIL",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 69,
+    "price": 75.07
+   },
+   {
+    "ticker": "GDX",
+    "signal": "TOP",
+    "sector": "SPY",
+    "stage": "5m_ONLY_15m_NO_MATCH",
+    "c5": 52,
+    "price": 75.66
+   }
+  ],
+  "blocked_alerts": [
+   {
+    "ticker": "SHW",
+    "signal": "BOTTOM",
+    "sector": "XLB",
+    "price": 342.0,
+    "confidence": 64,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 37,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "LowerBandLocation",
+     "MACDHistImproving",
+     "ReclaimEMA8",
+     "BackInsideLowerBand",
+     "ReclaimedVWAP",
+     "WeakSectorButStockOverride",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 8,
+     "divergence": 4,
+     "volume": 0,
+     "reclaim": 12,
+     "context": 13,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 342.0,
+     "vwap": 338.79,
+     "vwap_z": 2.6,
+     "rsi2": 100.0,
+     "rsi14": 70.9,
+     "macd_hist": 0.1314,
+     "macd_hist_prev": 0.1236,
+     "vol_ratio": 0.0,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": 0.004,
+     "ema20_slope_8bars_pct": 0.001,
+     "source": "yfinance",
+     "latest": "2026-07-30 11:55:00 AM ET",
+     "age_min": 0.7
+    }
+   },
+   {
+    "ticker": "BA",
+    "signal": "BOTTOM",
+    "sector": "XLI",
+    "price": 218.97,
+    "confidence": 100,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 30,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "MACDHistImproving",
+     "BuyVolumeImproving",
+     "ReclaimEMA8",
+     "ReclaimedVWAP",
+     "WeakSectorButStockOverride",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 4,
+     "volume": 5,
+     "reclaim": 8,
+     "context": 13,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 218.97,
+     "vwap": 215.61,
+     "vwap_z": 1.92,
+     "rsi2": 100.0,
+     "rsi14": 48.7,
+     "macd_hist": -0.0597,
+     "macd_hist_prev": -0.1043,
+     "vol_ratio": 0.0,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": 0.007,
+     "ema20_slope_8bars_pct": 0.049,
+     "source": "yfinance",
+     "latest": "2026-07-30 11:55:00 AM ET",
+     "age_min": 1.0
+    }
+   },
+   {
+    "ticker": "CAT",
+    "signal": "TOP",
+    "sector": "XLI",
+    "price": 807.09,
+    "confidence": 100,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 25,
+    "rqg_label": "REJECT_LOW_QUALITY",
+    "rqg_reasons": [
+     "RSI2ExhaustedHigh",
+     "LostVWAP",
+     "SectorWeak",
+     "MarketNotBullish",
+     "NegativeRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 6,
+     "volume": 0,
+     "reclaim": 4,
+     "context": 15,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 807.09,
+     "vwap": 828.03,
+     "vwap_z": -1.45,
+     "rsi2": 100.0,
+     "rsi14": 38.6,
+     "macd_hist": -1.0075,
+     "macd_hist_prev": -1.2311,
+     "vol_ratio": 0.0,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": -0.019,
+     "ema20_slope_8bars_pct": -0.116,
+     "source": "yfinance",
+     "latest": "2026-07-30 11:55:00 AM ET",
+     "age_min": 1.1
+    }
+   },
+   {
+    "ticker": "NFLX",
+    "signal": "BOTTOM",
+    "sector": "XLC",
+    "price": 72.03,
+    "confidence": 79,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 38,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "MACDHistImproving",
+     "BuyVolumeImproving",
+     "CloseAbovePriorHigh",
+     "ReclaimEMA8",
+     "ReclaimedVWAP",
+     "WeakSectorButStockOverride",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 4,
+     "volume": 5,
+     "reclaim": 16,
+     "context": 13,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 72.01,
+     "vwap": 71.7,
+     "vwap_z": 0.28,
+     "rsi2": 99.9,
+     "rsi14": 78.0,
+     "macd_hist": 0.1393,
+     "macd_hist_prev": 0.1329,
+     "vol_ratio": 0.16,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": -0.001,
+     "ema20_slope_8bars_pct": 0.236,
+     "source": "yfinance",
+     "latest": "2026-07-30 11:55:00 AM ET",
+     "age_min": 2.0
+    }
+   },
+   {
+    "ticker": "EOG",
+    "signal": "BOTTOM",
+    "sector": "XLE",
+    "price": 143.47,
+    "confidence": 74,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 26,
+    "rqg_label": "REJECT_LOW_QUALITY",
+    "rqg_reasons": [
+     "BuyVolumeImproving",
+     "ReclaimEMA8",
+     "ReclaimedVWAP",
+     "WeakSectorButStockOverride",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 0,
+     "volume": 5,
+     "reclaim": 8,
+     "context": 13,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 143.47,
+     "vwap": 143.15,
+     "vwap_z": 0.27,
+     "rsi2": 60.5,
+     "rsi14": 55.7,
+     "macd_hist": 0.1036,
+     "macd_hist_prev": 0.1086,
+     "vol_ratio": 0.32,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": 0.002,
+     "ema20_slope_8bars_pct": -0.019,
+     "source": "yfinance",
+     "latest": "2026-07-30 11:55:00 AM ET",
+     "age_min": 3.2
+    }
+   },
+   {
+    "ticker": "SMH",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 535.39,
+    "confidence": 60,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 25,
+    "rqg_label": "REJECT_LOW_QUALITY",
+    "rqg_reasons": [
+     "SellVolumeImproving",
+     "LostEMA8",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 0,
+     "volume": 5,
+     "reclaim": 8,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 535.28,
+     "vwap": 539.85,
+     "vwap_z": -0.41,
+     "rsi2": 0.0,
+     "rsi14": 48.6,
+     "macd_hist": -0.9178,
+     "macd_hist_prev": -0.9288,
+     "vol_ratio": 0.0,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": -0.005,
+     "ema20_slope_8bars_pct": 0.042,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 0.5
+    }
+   },
+   {
+    "ticker": "ARKK",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 72.15,
+    "confidence": 70,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 37,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "AboveVWAP",
+     "MACDHistWeakening",
+     "SellVolumeImproving",
+     "CloseBelowPriorLow",
+     "LostEMA8",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 4,
+     "divergence": 4,
+     "volume": 5,
+     "reclaim": 12,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 72.15,
+     "vwap": 71.91,
+     "vwap_z": 0.43,
+     "rsi2": 0.0,
+     "rsi14": 55.8,
+     "macd_hist": -0.0121,
+     "macd_hist_prev": -0.0103,
+     "vol_ratio": 0.0,
+     "rr": 0.93,
+     "vwap_slope_8bars_pct": 0.005,
+     "ema20_slope_8bars_pct": 0.082,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 1.1
+    }
+   },
+   {
+    "ticker": "XBI",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 149.29,
+    "confidence": 65,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 38,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "UpperBandLocation",
+     "BackInsideUpperBand",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength",
+     "RR>=2"
+    ],
+    "rqg_buckets": {
+     "location": 8,
+     "divergence": 0,
+     "volume": 0,
+     "reclaim": 8,
+     "context": 12,
+     "risk_reward": 10
+    },
+    "rqg_details": {
+     "price": 149.28,
+     "vwap": 149.97,
+     "vwap_z": -0.8,
+     "rsi2": 84.3,
+     "rsi14": 60.3,
+     "macd_hist": 0.0728,
+     "macd_hist_prev": 0.0713,
+     "vol_ratio": 0.06,
+     "rr": 2.09,
+     "vwap_slope_8bars_pct": -0.003,
+     "ema20_slope_8bars_pct": 0.169,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 1.3
+    }
+   },
+   {
+    "ticker": "TZA",
+    "signal": "BOTTOM",
+    "sector": "SPY",
+    "price": 42.02,
+    "confidence": 84,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 32,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "RSI2Exhausted",
+     "ReclaimedVWAP",
+     "SectorNeutral",
+     "MarketNotBearish",
+     "PositiveRelativeStrength",
+     "RR>=2"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 6,
+     "volume": 0,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 10
+    },
+    "rqg_details": {
+     "price": 42.02,
+     "vwap": 41.54,
+     "vwap_z": 1.04,
+     "rsi2": 0.0,
+     "rsi14": 34.3,
+     "macd_hist": -0.0559,
+     "macd_hist_prev": -0.051,
+     "vol_ratio": 0.34,
+     "rr": 3.7,
+     "vwap_slope_8bars_pct": 0.016,
+     "ema20_slope_8bars_pct": -0.253,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 2.8
+    }
+   },
+   {
+    "ticker": "LABU",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 239.06,
+    "confidence": 85,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 34,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "UpperBandLocation",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength",
+     "RR>=2"
+    ],
+    "rqg_buckets": {
+     "location": 8,
+     "divergence": 0,
+     "volume": 0,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 10
+    },
+    "rqg_details": {
+     "price": 239.06,
+     "vwap": 243.49,
+     "vwap_z": -1.07,
+     "rsi2": 40.8,
+     "rsi14": 61.1,
+     "macd_hist": 0.3673,
+     "macd_hist_prev": 0.3396,
+     "vol_ratio": 0.19,
+     "rr": 4.33,
+     "vwap_slope_8bars_pct": -0.019,
+     "ema20_slope_8bars_pct": 0.504,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 2.9
+    }
+   },
+   {
+    "ticker": "TECL",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 171.49,
+    "confidence": 60,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 32,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "AboveVWAP",
+     "RSI2ExhaustedHigh",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength",
+     "RR>=2"
+    ],
+    "rqg_buckets": {
+     "location": 4,
+     "divergence": 6,
+     "volume": 0,
+     "reclaim": 0,
+     "context": 12,
+     "risk_reward": 10
+    },
+    "rqg_details": {
+     "price": 171.76,
+     "vwap": 164.7,
+     "vwap_z": 0.99,
+     "rsi2": 100.0,
+     "rsi14": 55.3,
+     "macd_hist": -0.435,
+     "macd_hist_prev": -0.5151,
+     "vol_ratio": 1.02,
+     "rr": 6.47,
+     "vwap_slope_8bars_pct": 0.038,
+     "ema20_slope_8bars_pct": 0.258,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 3.2
+    }
+   },
+   {
+    "ticker": "BLOK",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 59.59,
+    "confidence": 81,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 34,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "UpperBandLocation",
+     "BackInsideUpperBand",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength",
+     "RR>=2"
+    ],
+    "rqg_buckets": {
+     "location": 8,
+     "divergence": 0,
+     "volume": 0,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 10
+    },
+    "rqg_details": {
+     "price": 59.59,
+     "vwap": 58.94,
+     "vwap_z": 0.55,
+     "rsi2": 36.4,
+     "rsi14": 53.5,
+     "macd_hist": -0.0507,
+     "macd_hist_prev": -0.0556,
+     "vol_ratio": 0.14,
+     "rr": 8.4,
+     "vwap_slope_8bars_pct": 0.009,
+     "ema20_slope_8bars_pct": 0.289,
+     "source": "yfinance",
+     "latest": "2026-07-30 11:55:00 AM ET",
+     "age_min": 8.7
+    }
+   },
+   {
+    "ticker": "SOFI",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 16.08,
+    "confidence": 71,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 51,
+    "rqg_label": "REJECT_TREND_DANGER",
+    "rqg_reasons": [
+     "UpperBandLocation",
+     "BearishDivergence",
+     "RSI2ExhaustedHigh",
+     "VolumeExpansion",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength",
+     "RR>=2",
+     "BuyingStillExpanding"
+    ],
+    "rqg_buckets": {
+     "location": 8,
+     "divergence": 16,
+     "volume": 5,
+     "reclaim": 0,
+     "context": 12,
+     "risk_reward": 10
+    },
+    "rqg_details": {
+     "price": 16.08,
+     "vwap": 16.04,
+     "vwap_z": 0.18,
+     "rsi2": 100.0,
+     "rsi14": 68.9,
+     "macd_hist": 0.01,
+     "macd_hist_prev": 0.004,
+     "vol_ratio": 2.07,
+     "rr": 10.93,
+     "vwap_slope_8bars_pct": -0.006,
+     "ema20_slope_8bars_pct": 0.641,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 4.2
+    }
+   },
+   {
+    "ticker": "NET",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 283.48,
+    "confidence": 66,
+    "mtf_status": "5m+15m+30m",
+    "rqg_score": 35,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "DeepAboveVWAP2\u03c3",
+     "AboveVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "RR>=2"
+    ],
+    "rqg_buckets": {
+     "location": 16,
+     "divergence": 0,
+     "volume": 0,
+     "reclaim": 0,
+     "context": 9,
+     "risk_reward": 10
+    },
+    "rqg_details": {
+     "price": 283.65,
+     "vwap": 267.47,
+     "vwap_z": 5.31,
+     "rsi2": 61.8,
+     "rsi14": 74.1,
+     "macd_hist": -0.0743,
+     "macd_hist_prev": -0.075,
+     "vol_ratio": 0.4,
+     "rr": 15.8,
+     "vwap_slope_8bars_pct": 0.077,
+     "ema20_slope_8bars_pct": 0.588,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 4.6
+    }
+   },
+   {
+    "ticker": "DASH",
+    "signal": "BOTTOM",
+    "sector": "SPY",
+    "price": 192.0,
+    "confidence": 88,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 39,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "BullishDivergence",
+     "MACDHistImproving",
+     "BuyVolumeImproving",
+     "ReclaimEMA8",
+     "ReclaimedVWAP",
+     "SectorNeutral",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 14,
+     "volume": 5,
+     "reclaim": 8,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 192.0,
+     "vwap": 186.29,
+     "vwap_z": 1.71,
+     "rsi2": 65.4,
+     "rsi14": 60.4,
+     "macd_hist": 0.2459,
+     "macd_hist_prev": 0.2303,
+     "vol_ratio": 1.15,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": 0.08,
+     "ema20_slope_8bars_pct": 0.047,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 4.9
+    }
+   },
+   {
+    "ticker": "HUBS",
+    "signal": "BOTTOM",
+    "sector": "SPY",
+    "price": 232.34,
+    "confidence": 74,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 27,
+    "rqg_label": "REJECT_LOW_QUALITY",
+    "rqg_reasons": [
+     "RSI2Exhausted",
+     "BuyVolumeImproving",
+     "ReclaimedVWAP",
+     "SectorNeutral",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 6,
+     "volume": 5,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 232.21,
+     "vwap": 230.2,
+     "vwap_z": 0.18,
+     "rsi2": 0.0,
+     "rsi14": 58.1,
+     "macd_hist": 0.789,
+     "macd_hist_prev": 0.8802,
+     "vol_ratio": 0.0,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": 0.008,
+     "ema20_slope_8bars_pct": 0.019,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 0.2
+    }
+   },
+   {
+    "ticker": "TWLO",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 190.21,
+    "confidence": 69,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 36,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "RSI2ExhaustedHigh",
+     "MACDHistWeakening",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength",
+     "RR>=2"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 10,
+     "volume": 0,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 10
+    },
+    "rqg_details": {
+     "price": 190.21,
+     "vwap": 190.95,
+     "vwap_z": -0.28,
+     "rsi2": 100.0,
+     "rsi14": 91.9,
+     "macd_hist": 0.3521,
+     "macd_hist_prev": 0.3861,
+     "vol_ratio": 0.3,
+     "rr": 5.17,
+     "vwap_slope_8bars_pct": -0.003,
+     "ema20_slope_8bars_pct": 0.62,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 5.3
+    }
+   },
+   {
+    "ticker": "AR",
+    "signal": "BOTTOM",
+    "sector": "SPY",
+    "price": 34.97,
+    "confidence": 67,
+    "mtf_status": "5m+15m+30m",
+    "rqg_score": 35,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "LowerBandLocation",
+     "RSI2Exhausted",
+     "BuyVolumeImproving",
+     "ReclaimedVWAP",
+     "SectorNeutral",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 8,
+     "divergence": 6,
+     "volume": 5,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 34.97,
+     "vwap": 34.59,
+     "vwap_z": 3.19,
+     "rsi2": 0.0,
+     "rsi14": 51.6,
+     "macd_hist": 0.0124,
+     "macd_hist_prev": 0.0157,
+     "vol_ratio": 0.0,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": 0.015,
+     "ema20_slope_8bars_pct": 0.075,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 0.6
+    }
+   },
+   {
+    "ticker": "ALGN",
+    "signal": "BOTTOM",
+    "sector": "SPY",
+    "price": 174.04,
+    "confidence": 78,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 32,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "BullishDivergence",
+     "RSI2Exhausted",
+     "ReclaimedVWAP",
+     "SectorNeutral",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 16,
+     "volume": 0,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 174.04,
+     "vwap": 173.99,
+     "vwap_z": 0.01,
+     "rsi2": 0.0,
+     "rsi14": 50.2,
+     "macd_hist": 0.2734,
+     "macd_hist_prev": 0.3495,
+     "vol_ratio": 0.0,
+     "rr": 0.18,
+     "vwap_slope_8bars_pct": 0.013,
+     "ema20_slope_8bars_pct": 0.04,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 0.9
+    }
+   },
+   {
+    "ticker": "JAZZ",
+    "signal": "BOTTOM",
+    "sector": "SPY",
+    "price": 257.63,
+    "confidence": 84,
+    "mtf_status": "5m+15m+30m",
+    "rqg_score": 37,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "MACDHistImproving",
+     "BuyVolumeImproving",
+     "CloseAbovePriorHigh",
+     "ReclaimEMA8",
+     "ReclaimedVWAP",
+     "SectorNeutral",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 4,
+     "volume": 5,
+     "reclaim": 16,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 257.63,
+     "vwap": 256.21,
+     "vwap_z": 1.06,
+     "rsi2": 100.0,
+     "rsi14": 71.2,
+     "macd_hist": 0.2513,
+     "macd_hist_prev": 0.2172,
+     "vol_ratio": 0.31,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": 0.001,
+     "ema20_slope_8bars_pct": 0.221,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:00:00 PM ET",
+     "age_min": 6.0
+    }
+   },
+   {
+    "ticker": "RMBS",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 89.6,
+    "confidence": 88,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 27,
+    "rqg_label": "REJECT_LOW_QUALITY",
+    "rqg_reasons": [
+     "RSI2ExhaustedHigh",
+     "SellVolumeImproving",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 6,
+     "volume": 5,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 89.6,
+     "vwap": 90.38,
+     "vwap_z": -0.4,
+     "rsi2": 100.0,
+     "rsi14": 53.7,
+     "macd_hist": -0.1152,
+     "macd_hist_prev": -0.15,
+     "vol_ratio": 0.16,
+     "rr": 0.18,
+     "vwap_slope_8bars_pct": -0.01,
+     "ema20_slope_8bars_pct": 0.096,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 1.5
+    }
+   },
+   {
+    "ticker": "GFS",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 49.9,
+    "confidence": 73,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 27,
+    "rqg_label": "REJECT_LOW_QUALITY",
+    "rqg_reasons": [
+     "RSI2ExhaustedHigh",
+     "SellVolumeImproving",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 6,
+     "volume": 5,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 49.9,
+     "vwap": 50.52,
+     "vwap_z": -0.59,
+     "rsi2": 100.0,
+     "rsi14": 56.5,
+     "macd_hist": -0.0532,
+     "macd_hist_prev": -0.0728,
+     "vol_ratio": 0.06,
+     "rr": 0.16,
+     "vwap_slope_8bars_pct": -0.008,
+     "ema20_slope_8bars_pct": -0.06,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 1.7
+    }
+   },
+   {
+    "ticker": "SEDG",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 40.58,
+    "confidence": 100,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 22,
+    "rqg_label": "REJECT_LOW_QUALITY",
+    "rqg_reasons": [
+     "RSI2ExhaustedHigh",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 6,
+     "volume": 0,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 40.58,
+     "vwap": 40.61,
+     "vwap_z": -0.05,
+     "rsi2": 100.0,
+     "rsi14": 54.8,
+     "macd_hist": -0.0111,
+     "macd_hist_prev": -0.0229,
+     "vol_ratio": 0.16,
+     "rr": 0.09,
+     "vwap_slope_8bars_pct": -0.003,
+     "ema20_slope_8bars_pct": -0.16,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 2.5
+    }
+   },
+   {
+    "ticker": "RUN",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 9.6,
+    "confidence": 99,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 23,
+    "rqg_label": "REJECT_LOW_QUALITY",
+    "rqg_reasons": [
+     "SellVolumeImproving",
+     "UpthrustAttempt",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 0,
+     "volume": 7,
+     "reclaim": 4,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 9.6,
+     "vwap": 9.77,
+     "vwap_z": -1.75,
+     "rsi2": 85.7,
+     "rsi14": 41.5,
+     "macd_hist": -0.0016,
+     "macd_hist_prev": -0.005,
+     "vol_ratio": 0.64,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": -0.02,
+     "ema20_slope_8bars_pct": -0.36,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 2.6
+    }
+   },
+   {
+    "ticker": "ARRY",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 5.12,
+    "confidence": 83,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 25,
+    "rqg_label": "REJECT_LOW_QUALITY",
+    "rqg_reasons": [
+     "SellVolumeImproving",
+     "LostEMA8",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 0,
+     "divergence": 0,
+     "volume": 5,
+     "reclaim": 8,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 5.12,
+     "vwap": 5.19,
+     "vwap_z": -0.48,
+     "rsi2": 66.7,
+     "rsi14": 51.2,
+     "macd_hist": -0.0096,
+     "macd_hist_prev": -0.0102,
+     "vol_ratio": 0.29,
+     "rr": 0.0,
+     "vwap_slope_8bars_pct": -0.008,
+     "ema20_slope_8bars_pct": 0.052,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 2.7
+    }
+   },
+   {
+    "ticker": "NIO",
+    "signal": "BOTTOM",
+    "sector": "SPY",
+    "price": 4.76,
+    "confidence": 79,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 38,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "LowerBandLocation",
+     "BullishDivergence",
+     "BackInsideLowerBand",
+     "ReclaimedVWAP",
+     "SectorNeutral",
+     "MarketNotBearish",
+     "PositiveRelativeStrength"
+    ],
+    "rqg_buckets": {
+     "location": 8,
+     "divergence": 10,
+     "volume": 0,
+     "reclaim": 8,
+     "context": 12,
+     "risk_reward": 0
+    },
+    "rqg_details": {
+     "price": 4.76,
+     "vwap": 4.68,
+     "vwap_z": 2.33,
+     "rsi2": 25.5,
+     "rsi14": 44.3,
+     "macd_hist": -0.0003,
+     "macd_hist_prev": -0.0001,
+     "vol_ratio": 0.15,
+     "rr": 0.39,
+     "vwap_slope_8bars_pct": 0.018,
+     "ema20_slope_8bars_pct": -0.045,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 2.9
+    }
+   },
+   {
+    "ticker": "HBAN",
+    "signal": "TOP",
+    "sector": "SPY",
+    "price": 16.98,
+    "confidence": 81,
+    "mtf_status": "5m+15m+30m+60m",
+    "rqg_score": 39,
+    "rqg_label": "WATCH_ONLY",
+    "rqg_reasons": [
+     "UpperBandLocation",
+     "MACDHistWeakening",
+     "BackInsideUpperBand",
+     "LostVWAP",
+     "SectorNeutral",
+     "MarketNotBullish",
+     "NegativeRelativeStrength",
+     "RR>=1.5"
+    ],
+    "rqg_buckets": {
+     "location": 8,
+     "divergence": 4,
+     "volume": 0,
+     "reclaim": 8,
+     "context": 12,
+     "risk_reward": 7
+    },
+    "rqg_details": {
+     "price": 16.98,
+     "vwap": 17.18,
+     "vwap_z": -3.82,
+     "rsi2": 50.0,
+     "rsi14": 69.7,
+     "macd_hist": 0.0091,
+     "macd_hist_prev": 0.01,
+     "vol_ratio": 0.39,
+     "rr": 1.57,
+     "vwap_slope_8bars_pct": -0.015,
+     "ema20_slope_8bars_pct": 0.178,
+     "source": "yfinance",
+     "latest": "2026-07-30 12:05:00 PM ET",
+     "age_min": 3.4
+    }
+   }
+  ],
+  "sectors": [
+   {
+    "sector": "XLK",
+    "strength": "STRONG",
+    "reason": "STRONG because recent 30-bar relative strength vs SPY is +3.703%; sector recent=+4.729%, SPY recent=+1.027%; whole-day sector=+1.011% vs SPY=+0.216%",
+    "diff": 3.703,
+    "sector_return": 4.729,
+    "spy_return": 1.027,
+    "session_return": 1.011,
+    "session_spy_return": 0.216,
+    "close": 174.40589904785156,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLY",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -0.477%; sector recent=+0.547%, SPY recent=+1.024%; whole-day sector=+0.430% vs SPY=+0.213%",
+    "diff": -0.477,
+    "sector_return": 0.547,
+    "spy_return": 1.024,
+    "session_return": 0.43,
+    "session_spy_return": 0.213,
+    "close": 112.18000030517578,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLI",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -1.120%; sector recent=-0.088%, SPY recent=+1.032%; whole-day sector=-0.645% vs SPY=+0.221%",
+    "diff": -1.12,
+    "sector_return": -0.088,
+    "spy_return": 1.032,
+    "session_return": -0.645,
+    "session_spy_return": 0.221,
+    "close": 176.47500610351562,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.9,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLF",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -1.309%; sector recent=-0.282%, SPY recent=+1.027%; whole-day sector=-0.177% vs SPY=+0.216%",
+    "diff": -1.309,
+    "sector_return": -0.282,
+    "spy_return": 1.027,
+    "session_return": -0.177,
+    "session_spy_return": 0.216,
+    "close": 56.52000045776367,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLB",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -1.411%; sector recent=-0.387%, SPY recent=+1.024%; whole-day sector=-0.425% vs SPY=+0.213%",
+    "diff": -1.411,
+    "sector_return": -0.387,
+    "spy_return": 1.024,
+    "session_return": -0.425,
+    "session_spy_return": 0.213,
+    "close": 51.529998779296875,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLE",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -1.642%; sector recent=-0.605%, SPY recent=+1.037%; whole-day sector=-0.325% vs SPY=+0.226%",
+    "diff": -1.642,
+    "sector_return": -0.605,
+    "spy_return": 1.037,
+    "session_return": -0.325,
+    "session_spy_return": 0.226,
+    "close": 58.290000915527344,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.9,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLRE",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -2.926%; sector recent=-1.893%, SPY recent=+1.032%; whole-day sector=-1.357% vs SPY=+0.221%",
+    "diff": -2.926,
+    "sector_return": -1.893,
+    "spy_return": 1.032,
+    "session_return": -1.357,
+    "session_spy_return": 0.221,
+    "close": 45.08000183105469,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.9,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLV",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -2.961%; sector recent=-1.937%, SPY recent=+1.024%; whole-day sector=-0.245% vs SPY=+0.213%",
+    "diff": -2.961,
+    "sector_return": -1.937,
+    "spy_return": 1.024,
+    "session_return": -0.245,
+    "session_spy_return": 0.213,
+    "close": 163.02999877929688,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLP",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -3.223%; sector recent=-2.199%, SPY recent=+1.024%; whole-day sector=-0.245% vs SPY=+0.213%",
+    "diff": -3.223,
+    "sector_return": -2.199,
+    "spy_return": 1.024,
+    "session_return": -0.245,
+    "session_spy_return": 0.213,
+    "close": 85.4000015258789,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLC",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -4.156%; sector recent=-3.132%, SPY recent=+1.024%; whole-day sector=-0.104% vs SPY=+0.213%",
+    "diff": -4.156,
+    "sector_return": -3.132,
+    "spy_return": 1.024,
+    "session_return": -0.104,
+    "session_spy_return": 0.213,
+    "close": 106.08999633789062,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   }
+  ],
+  "rqg_gate": true,
+  "rqg_threshold": 40,
+  "leaders_recent": [
+   {
+    "sector": "XLK",
+    "strength": "STRONG",
+    "reason": "STRONG because recent 30-bar relative strength vs SPY is +3.703%; sector recent=+4.729%, SPY recent=+1.027%; whole-day sector=+1.011% vs SPY=+0.216%",
+    "diff": 3.703,
+    "sector_return": 4.729,
+    "spy_return": 1.027,
+    "session_return": 1.011,
+    "session_spy_return": 0.216,
+    "close": 174.40589904785156,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLY",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -0.477%; sector recent=+0.547%, SPY recent=+1.024%; whole-day sector=+0.430% vs SPY=+0.213%",
+    "diff": -0.477,
+    "sector_return": 0.547,
+    "spy_return": 1.024,
+    "session_return": 0.43,
+    "session_spy_return": 0.213,
+    "close": 112.18000030517578,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLI",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -1.120%; sector recent=-0.088%, SPY recent=+1.032%; whole-day sector=-0.645% vs SPY=+0.221%",
+    "diff": -1.12,
+    "sector_return": -0.088,
+    "spy_return": 1.032,
+    "session_return": -0.645,
+    "session_spy_return": 0.221,
+    "close": 176.47500610351562,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.9,
+    "source": "yfinance"
+   }
+  ],
+  "laggards_recent": [
+   {
+    "sector": "XLV",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -2.961%; sector recent=-1.937%, SPY recent=+1.024%; whole-day sector=-0.245% vs SPY=+0.213%",
+    "diff": -2.961,
+    "sector_return": -1.937,
+    "spy_return": 1.024,
+    "session_return": -0.245,
+    "session_spy_return": 0.213,
+    "close": 163.02999877929688,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLP",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -3.223%; sector recent=-2.199%, SPY recent=+1.024%; whole-day sector=-0.245% vs SPY=+0.213%",
+    "diff": -3.223,
+    "sector_return": -2.199,
+    "spy_return": 1.024,
+    "session_return": -0.245,
+    "session_spy_return": 0.213,
+    "close": 85.4000015258789,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   },
+   {
+    "sector": "XLC",
+    "strength": "WEAK",
+    "reason": "WEAK because recent 30-bar relative strength vs SPY is -4.156%; sector recent=-3.132%, SPY recent=+1.024%; whole-day sector=-0.104% vs SPY=+0.213%",
+    "diff": -4.156,
+    "sector_return": -3.132,
+    "spy_return": 1.024,
+    "session_return": -0.104,
+    "session_spy_return": 0.213,
+    "close": 106.08999633789062,
+    "latest": "2026-07-30 11:50:00 AM ET",
+    "age_min": 4.8,
+    "source": "yfinance"
+   }
+  ],
+  "previous_scan_time": "2026-07-30 11:17:26 AM ET",
+  "near_miss": [
+   {
+    "ticker": "ARM",
+    "signal": "TOP",
+    "c5": 100,
+    "sector": "SPY",
+    "sector_strength": "?",
+    "stage": "5m+15m_30m_NO_MATCH",
+    "price": 240.82,
+    "rqg_score": 0,
+    "rqg_label": "NOT_REACHED",
+    "quality": "**",
+    "mtf_status": "partial"
+   },
+   {
+    "ticker": "ENPH",
+    "signal": "TOP",
+    "c5": 100,
+    "sector": "SPY",
+    "sector_strength": "?",
+    "stage": "5m+15m_30m_NO_MATCH",
+    "price": 35.72,
+    "rqg_score": 0,
+    "rqg_label": "NOT_REACHED",
+    "quality": "**",
+    "mtf_status": "partial"
+   },
+   {
+    "ticker": "MRK",
+    "signal": "TOP",
+    "c5": 89,
+    "sector": "XLV",
+    "sector_strength": "WEAK",
+    "stage": "5m+15m_30m_NO_MATCH",
+    "price": 128.97,
+    "rqg_score": 0,
+    "rqg_label": "NOT_REACHED",
+    "quality": "**",
+    "mtf_status": "partial"
+   },
+   {
+    "ticker": "CROX",
+    "signal": "TOP",
+    "c5": 85,
+    "sector": "SPY",
+    "sector_strength": "?",
+    "stage": "5m+15m_30m_NO_MATCH",
+    "price": 119.32,
+    "rqg_score": 0,
+    "rqg_label": "NOT_REACHED",
+    "quality": "**",
+    "mtf_status": "partial"
+   },
+   {
+    "ticker": "EWC",
+    "signal": "BOTTOM",
+    "c5": 78,
+    "sector": "SPY",
+    "sector_strength": "?",
+    "stage": "5m+15m_30m_NO_MATCH",
+    "price": 59.61,
+    "rqg_score": 0,
+    "rqg_label": "NOT_REACHED",
+    "quality": "*",
+    "mtf_status": "partial"
+   },
+   {
+    "ticker": "SOFI",
+    "signal": "TOP",
+    "c5": 71,
+    "sector": "SPY",
+    "sector_strength": "?",
+    "stage": "RQG_BLOCKED_REJECT_TREND_DANGER",
+    "price": 16.08,
+    "rqg_score": 51,
+    "rqg_label": "REJECT_TREND_DANGER",
+    "quality": "*",
+    "mtf_status": "5m+15m+30m+60m"
+   }
+  ],
+  "near_miss_count": 6
  }
 ]
