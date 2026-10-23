@@ -1,2113 +1,5 @@
 [
  {
-  "ticker": "AMZN",
-  "signal": "BOTTOM",
-  "confidence": 59,
-  "alert_price": 254.0,
-  "rsi": 41.3,
-  "mfi": 27.6,
-  "cmf": 0.03,
-  "pcr": 0.4,
-  "regime": "BULLISH",
-  "sector": "XLY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": 1.12,
-  "trend_5d": 2.25,
-  "volume_expansion": 1.16,
-  "signals": [
-   "BullDiv",
-   "Stoch=16",
-   "VWAP+",
-   "WR=-84",
-   "RQG=50/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_RSI2Exhausted",
-   "RQG_SpringAttempt"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 60,
-  "c15": 75,
-  "c30": 43,
-  "c60": 0,
-  "rqg_score": 50,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "BullishDivergence",
-   "RSI2Exhausted",
-   "SpringAttempt",
-   "BackInsideLowerBand",
-   "ReclaimedVWAP",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "PositiveRelativeStrength",
-   "RR>=1"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 16,
-   "volume": 2,
-   "reclaim": 8,
-   "context": 12,
-   "risk_reward": 4
-  },
-  "rqg_details": {
-   "price": 254.08,
-   "vwap": 253.0,
-   "vwap_z": 0.78,
-   "rsi2": 4.9,
-   "rsi14": 43.1,
-   "macd_hist": 0.0519,
-   "macd_hist_prev": 0.066,
-   "vol_ratio": 0.65,
-   "rr": 1.3,
-   "vwap_slope_8bars_pct": 0.009,
-   "ema20_slope_8bars_pct": -0.097,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:35:00 PM ET",
-   "age_min": 3.5
-  },
-  "time": "2026-09-22 01:38:29 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 250.0,
-  "pnl": -4.0,
-  "pnl_pct": -1.57,
-  "change_pct": -1.57
- },
- {
-  "ticker": "CAT",
-  "signal": "BOTTOM",
-  "confidence": 61,
-  "alert_price": 804.33,
-  "rsi": 42.4,
-  "mfi": 31.8,
-  "cmf": -0.176,
-  "pcr": 0.95,
-  "regime": "BULLISH",
-  "sector": "XLI",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "HYBRID",
-  "trend_3d": 0.72,
-  "trend_5d": 2.65,
-  "volume_expansion": 1.11,
-  "signals": [
-   "Stoch=0",
-   "VWAP+",
-   "BBBounce",
-   "WR=-100",
-   "RQG=40/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_RSI2Exhausted",
-   "RQG_ReclaimedVWAP",
-   "RQG_SectorNeutral"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 43,
-  "c15": 64,
-  "c30": 65,
-  "c60": 72,
-  "rqg_score": 40,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "RSI2Exhausted",
-   "ReclaimedVWAP",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "PositiveRelativeStrength",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 6,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 12,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 804.2,
-   "vwap": 802.26,
-   "vwap_z": 1.11,
-   "rsi2": 0.0,
-   "rsi14": 41.8,
-   "macd_hist": -0.1185,
-   "macd_hist_prev": -0.0523,
-   "vol_ratio": 1.06,
-   "rr": 19.99,
-   "vwap_slope_8bars_pct": 0.004,
-   "ema20_slope_8bars_pct": -0.11,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:35:00 PM ET",
-   "age_min": 3.8
-  },
-  "time": "2026-09-22 01:38:50 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 701.11,
-  "pnl": -103.22,
-  "pnl_pct": -12.83,
-  "change_pct": -12.83
- },
- {
-  "ticker": "META",
-  "signal": "BOTTOM",
-  "confidence": 75,
-  "alert_price": 742.64,
-  "rsi": 27.6,
-  "mfi": 26.1,
-  "cmf": -0.181,
-  "pcr": 0.32,
-  "regime": "BULLISH",
-  "sector": "XLC",
-  "sector_strength": "WEAK",
-  "setup_type": "HYBRID",
-  "trend_3d": 8.93,
-  "trend_5d": 10.89,
-  "volume_expansion": 1.32,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "RSI=27.6",
-   "WR=-85",
-   "HL",
-   "LEADER_IN_WEAK_SECTOR",
-   "RQG=40/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_MACDHistImproving",
-   "RQG_BackInsideLowerBand",
-   "RQG_ReclaimedVWAP"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 79,
-  "c15": 48,
-  "c30": 100,
-  "c60": 0,
-  "rqg_score": 40,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "ReclaimedVWAP",
-   "WeakSectorButStockOverride",
-   "MarketNotBearish",
-   "PositiveRelativeStrength",
-   "RR>=1.5"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 4,
-   "volume": 0,
-   "reclaim": 8,
-   "context": 13,
-   "risk_reward": 7
-  },
-  "rqg_details": {
-   "price": 742.75,
-   "vwap": 708.82,
-   "vwap_z": 8.28,
-   "rsi2": 61.2,
-   "rsi14": 28.1,
-   "macd_hist": -0.2672,
-   "macd_hist_prev": -0.2988,
-   "vol_ratio": 0.22,
-   "rr": 1.71,
-   "vwap_slope_8bars_pct": 0.049,
-   "ema20_slope_8bars_pct": -0.183,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:35:00 PM ET",
-   "age_min": 3.9
-  },
-  "time": "2026-09-22 01:38:54 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 644.68,
-  "pnl": -97.96,
-  "pnl_pct": -13.19,
-  "change_pct": -13.19
- },
- {
-  "ticker": "ADBE",
-  "signal": "BOTTOM",
-  "confidence": 54,
-  "alert_price": 238.88,
-  "rsi": 28.6,
-  "mfi": 19.4,
-  "cmf": -0.157,
-  "pcr": 1.11,
-  "regime": "BULLISH",
-  "sector": "XLK",
-  "sector_strength": "STRONG",
-  "setup_type": "REVERSAL",
-  "trend_3d": -5.46,
-  "trend_5d": -7.33,
-  "volume_expansion": 0.97,
-  "signals": [
-   "Stoch=6",
-   "RSI=28.6",
-   "WR=-94",
-   "HL",
-   "MFI=19",
-   "RQG=58/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_RSI2Exhausted"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 64,
-  "c15": 57,
-  "c30": 50,
-  "c60": 46,
-  "rqg_score": 58,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "BullishDivergence",
-   "RSI2Exhausted",
-   "SectorStrong",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 16,
-   "volume": 0,
-   "reclaim": 0,
-   "context": 12,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 238.81,
-   "vwap": 248.55,
-   "vwap_z": -4.11,
-   "rsi2": 0.0,
-   "rsi14": 28.2,
-   "macd_hist": -0.0227,
-   "macd_hist_prev": 0.0105,
-   "vol_ratio": 0.66,
-   "rr": 58.53,
-   "vwap_slope_8bars_pct": -0.118,
-   "ema20_slope_8bars_pct": -0.331,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:35:00 PM ET",
-   "age_min": 4.1
-  },
-  "time": "2026-09-22 01:39:07 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 268.96,
-  "pnl": 30.08,
-  "pnl_pct": 12.59,
-  "change_pct": 12.59
- },
- {
-  "ticker": "TXN",
-  "signal": "BOTTOM",
-  "confidence": 78,
-  "alert_price": 269.02,
-  "rsi": 47.0,
-  "mfi": 59.6,
-  "cmf": -0.175,
-  "pcr": 0.66,
-  "regime": "BULLISH",
-  "sector": "XLK",
-  "sector_strength": "STRONG",
-  "setup_type": "HYBRID",
-  "trend_3d": 4.22,
-  "trend_5d": 2.12,
-  "volume_expansion": 1.47,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "BBBounce",
-   "WR=-83",
-   "HL",
-   "RQG=45/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_MACDHistImproving",
-   "RQG_BackInsideLowerBand",
-   "RQG_ReclaimedVWAP"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 76,
-  "c15": 73,
-  "c30": 86,
-  "c60": 0,
-  "rqg_score": 45,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "ReclaimedVWAP",
-   "SectorStrong",
-   "MarketNotBearish",
-   "PositiveRelativeStrength",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 4,
-   "volume": 0,
-   "reclaim": 8,
-   "context": 15,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 269.02,
-   "vwap": 264.47,
-   "vwap_z": 5.7,
-   "rsi2": 36.6,
-   "rsi14": 47.0,
-   "macd_hist": -0.148,
-   "macd_hist_prev": -0.153,
-   "vol_ratio": 0.66,
-   "rr": 2.15,
-   "vwap_slope_8bars_pct": 0.015,
-   "ema20_slope_8bars_pct": -0.138,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:35:00 PM ET",
-   "age_min": 4.2
-  },
-  "time": "2026-09-22 01:39:12 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 287.9,
-  "pnl": 18.88,
-  "pnl_pct": 7.02,
-  "change_pct": 7.02
- },
- {
-  "ticker": "PSA",
-  "signal": "BOTTOM",
-  "confidence": 51,
-  "alert_price": 293.22,
-  "rsi": 14.8,
-  "mfi": 27.5,
-  "cmf": -0.363,
-  "pcr": 2.78,
-  "regime": "BULLISH",
-  "sector": "XLRE",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -2.51,
-  "trend_5d": -1.17,
-  "volume_expansion": 1.09,
-  "signals": [
-   "Stoch=0",
-   "RSI=14.8",
-   "BBBounce",
-   "WR=-100",
-   "RQG=49/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_RSI2Exhausted",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 44,
-  "c15": 48,
-  "c30": 65,
-  "c60": 49,
-  "rqg_score": 49,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "RSI2Exhausted",
-   "BackInsideLowerBand",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 6,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 293.22,
-   "vwap": 297.65,
-   "vwap_z": -5.1,
-   "rsi2": 0.0,
-   "rsi14": 14.8,
-   "macd_hist": -0.2217,
-   "macd_hist_prev": -0.212,
-   "vol_ratio": 0.5,
-   "rr": 103.19,
-   "vwap_slope_8bars_pct": -0.016,
-   "ema20_slope_8bars_pct": -0.336,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:35:00 PM ET",
-   "age_min": 5.1
-  },
-  "time": "2026-09-22 01:40:05 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 298.83,
-  "pnl": 5.61,
-  "pnl_pct": 1.91,
-  "change_pct": 1.91
- },
- {
-  "ticker": "MCHP",
-  "signal": "BOTTOM",
-  "confidence": 74,
-  "alert_price": 75.2,
-  "rsi": 52.4,
-  "mfi": 72.5,
-  "cmf": -0.242,
-  "pcr": 0.13,
-  "regime": "BULLISH",
-  "sector": "XLK",
-  "sector_strength": "STRONG",
-  "setup_type": "LEADERSHIP",
-  "trend_3d": 6.18,
-  "trend_5d": 5.19,
-  "volume_expansion": 1.14,
-  "signals": [
-   "Trend3d+",
-   "StrongTrend3d",
-   "Trend5d+",
-   "StrongTrend5d",
-   "RS3d+",
-   "RSI_Trend",
-   "AboveVWAP",
-   "OBV_Up",
-   "RQG=51/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_RSI2Exhausted",
-   "RQG_MACDHistImproving",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 86,
-  "c15": 50,
-  "c30": 86,
-  "c60": 0,
-  "rqg_score": 51,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "RSI2Exhausted",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "ReclaimedVWAP",
-   "SectorStrong",
-   "MarketNotBearish",
-   "PositiveRelativeStrength",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 10,
-   "volume": 0,
-   "reclaim": 8,
-   "context": 15,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 75.17,
-   "vwap": 72.45,
-   "vwap_z": 7.86,
-   "rsi2": 0.0,
-   "rsi14": 44.7,
-   "macd_hist": -0.0524,
-   "macd_hist_prev": -0.053,
-   "vol_ratio": 0.0,
-   "rr": 4.28,
-   "vwap_slope_8bars_pct": 0.031,
-   "ema20_slope_8bars_pct": -0.22,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:40:00 PM ET",
-   "age_min": 0.3
-  },
-  "time": "2026-09-22 01:40:15 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 73.85,
-  "pnl": -1.35,
-  "pnl_pct": -1.8,
-  "change_pct": -1.8
- },
- {
-  "ticker": "PWR",
-  "signal": "BOTTOM",
-  "confidence": 79,
-  "alert_price": 643.67,
-  "rsi": 34.5,
-  "mfi": 31.0,
-  "cmf": 0,
-  "pcr": 0.59,
-  "regime": "BULLISH",
-  "sector": "XLI",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "LEADERSHIP",
-  "trend_3d": 4.4,
-  "trend_5d": 4.94,
-  "volume_expansion": 1.01,
-  "signals": [
-   "Trend3d+",
-   "StrongTrend3d",
-   "Trend5d+",
-   "StrongTrend5d",
-   "RS3d+",
-   "RS5d+",
-   "AboveVWAP",
-   "RQG=44/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_RSI2Exhausted",
-   "RQG_BackInsideLowerBand",
-   "RQG_ReclaimedVWAP"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 69,
-  "c15": 82,
-  "c30": 82,
-  "c60": 85,
-  "rqg_score": 44,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "RSI2Exhausted",
-   "BackInsideLowerBand",
-   "ReclaimedVWAP",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "PositiveRelativeStrength",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 6,
-   "volume": 0,
-   "reclaim": 8,
-   "context": 12,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 643.67,
-   "vwap": 629.19,
-   "vwap_z": 10.38,
-   "rsi2": 0.0,
-   "rsi14": 34.5,
-   "macd_hist": -0.312,
-   "macd_hist_prev": -0.2996,
-   "vol_ratio": 0.0,
-   "rr": 15.86,
-   "vwap_slope_8bars_pct": 0.02,
-   "ema20_slope_8bars_pct": -0.129,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:40:00 PM ET",
-   "age_min": 0.9
-  },
-  "time": "2026-09-22 01:40:54 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 632.65,
-  "pnl": -11.02,
-  "pnl_pct": -1.71,
-  "change_pct": -1.71
- },
- {
-  "ticker": "EME",
-  "signal": "BOTTOM",
-  "confidence": 71,
-  "alert_price": 753.88,
-  "rsi": 38.5,
-  "mfi": 42.5,
-  "cmf": 0,
-  "pcr": 1.2,
-  "regime": "BULLISH",
-  "sector": "XLI",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "HYBRID",
-  "trend_3d": 3.38,
-  "trend_5d": 2.5,
-  "volume_expansion": 1.24,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "BBBounce",
-   "WR=-82",
-   "RQG=49/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_MACDHistImproving",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 51,
-  "c15": 84,
-  "c30": 79,
-  "c60": 0,
-  "rqg_score": 49,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "BullishDivergence",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "ReclaimedVWAP",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "PositiveRelativeStrength",
-   "RR>=1.5"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 14,
-   "volume": 0,
-   "reclaim": 8,
-   "context": 12,
-   "risk_reward": 7
-  },
-  "rqg_details": {
-   "price": 753.88,
-   "vwap": 743.54,
-   "vwap_z": 4.79,
-   "rsi2": 39.0,
-   "rsi14": 38.5,
-   "macd_hist": -0.1891,
-   "macd_hist_prev": -0.2352,
-   "vol_ratio": 0.0,
-   "rr": 1.64,
-   "vwap_slope_8bars_pct": 0.009,
-   "ema20_slope_8bars_pct": -0.158,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:40:00 PM ET",
-   "age_min": 1.1
-  },
-  "time": "2026-09-22 01:41:03 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 656.0,
-  "pnl": -97.88,
-  "pnl_pct": -12.98,
-  "change_pct": -12.98
- },
- {
-  "ticker": "TECS",
-  "signal": "BOTTOM",
-  "confidence": 72,
-  "alert_price": 52.0,
-  "rsi": 32.6,
-  "mfi": 35.0,
-  "cmf": 0,
-  "pcr": 0.3,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -12.37,
-  "trend_5d": -18.53,
-  "volume_expansion": 1.02,
-  "signals": [
-   "BullDiv",
-   "BuyVol=55%",
-   "OBV+",
-   "RQG=74/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_MACDHistImproving"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 51,
-  "c15": 71,
-  "c30": 87,
-  "c60": 81,
-  "rqg_score": 74,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "BullishDivergence",
-   "MACDHistImproving",
-   "BuyVolumeImproving",
-   "CloseAbovePriorHigh",
-   "ReclaimEMA8",
-   "BackInsideLowerBand",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 14,
-   "volume": 5,
-   "reclaim": 16,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 52.0,
-   "vwap": 57.4,
-   "vwap_z": -23.87,
-   "rsi2": 50.0,
-   "rsi14": 32.6,
-   "macd_hist": 0.0105,
-   "macd_hist_prev": 0.0046,
-   "vol_ratio": 0.0,
-   "rr": 41.9,
-   "vwap_slope_8bars_pct": -0.057,
-   "ema20_slope_8bars_pct": -0.17,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:40:00 PM ET",
-   "age_min": 2.3
-  },
-  "time": "2026-09-22 01:42:17 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 63.28,
-  "pnl": 11.28,
-  "pnl_pct": 21.69,
-  "change_pct": 21.69
- },
- {
-  "ticker": "WOLF",
-  "signal": "BOTTOM",
-  "confidence": 75,
-  "alert_price": 27.87,
-  "rsi": 30.8,
-  "mfi": 37.5,
-  "cmf": -0.361,
-  "pcr": 0.96,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "HYBRID",
-  "trend_3d": 17.4,
-  "trend_5d": 16.03,
-  "volume_expansion": 1.12,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "WR=-83",
-   "RQG=49/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_MACDHistImproving",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 45,
-  "c15": 82,
-  "c30": 98,
-  "c60": 0,
-  "rqg_score": 49,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "BullishDivergence",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "ReclaimedVWAP",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "PositiveRelativeStrength",
-   "RR>=1.5"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 14,
-   "volume": 0,
-   "reclaim": 8,
-   "context": 12,
-   "risk_reward": 7
-  },
-  "rqg_details": {
-   "price": 27.87,
-   "vwap": 25.74,
-   "vwap_z": 8.5,
-   "rsi2": 100.0,
-   "rsi14": 30.8,
-   "macd_hist": -0.0545,
-   "macd_hist_prev": -0.0588,
-   "vol_ratio": 0.59,
-   "rr": 1.83,
-   "vwap_slope_8bars_pct": 0.101,
-   "ema20_slope_8bars_pct": -0.477,
-   "source": "yfinance",
-   "latest": "2026-09-22 01:40:00 PM ET",
-   "age_min": 3.9
-  },
-  "time": "2026-09-22 01:43:56 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 22.14,
-  "pnl": -5.73,
-  "pnl_pct": -20.56,
-  "change_pct": -20.56
- },
- {
-  "ticker": "AMZN",
-  "signal": "BOTTOM",
-  "confidence": 86,
-  "alert_price": 255.82,
-  "rsi": 69.5,
-  "mfi": 55.7,
-  "cmf": 0,
-  "pcr": 0.39,
-  "regime": "BULLISH",
-  "sector": "XLY",
-  "sector_strength": "STRONG",
-  "setup_type": "LEADERSHIP",
-  "trend_3d": 1.83,
-  "trend_5d": 2.97,
-  "volume_expansion": 1.17,
-  "signals": [
-   "Trend3d+",
-   "StrongTrend3d",
-   "Trend5d+",
-   "StrongTrend5d",
-   "RS3d+",
-   "RS5d+",
-   "MACD_Momentum",
-   "AboveVWAP",
-   "BuyFlow",
-   "OBV_Up",
-   "MFI_Healthy",
-   "RQG=42/VALID_REVERSAL",
-   "RQG_BullishDivergence",
-   "RQG_MACDHistImproving",
-   "RQG_BuyVolumeImproving",
-   "RQG_ReclaimEMA8"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 100,
-  "c15": 100,
-  "c30": 58,
-  "c60": 0,
-  "rqg_score": 42,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "BullishDivergence",
-   "MACDHistImproving",
-   "BuyVolumeImproving",
-   "ReclaimEMA8",
-   "ReclaimedVWAP",
-   "SectorStrong",
-   "MarketNotBearish",
-   "PositiveRelativeStrength"
-  ],
-  "rqg_buckets": {
-   "location": 0,
-   "divergence": 14,
-   "volume": 5,
-   "reclaim": 8,
-   "context": 15,
-   "risk_reward": 0
-  },
-  "rqg_details": {
-   "price": 255.8,
-   "vwap": 253.02,
-   "vwap_z": 2.52,
-   "rsi2": 100.0,
-   "rsi14": 69.3,
-   "macd_hist": 0.2413,
-   "macd_hist_prev": 0.2197,
-   "vol_ratio": 0.0,
-   "rr": 0.0,
-   "vwap_slope_8bars_pct": 0.011,
-   "ema20_slope_8bars_pct": 0.084,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:00:00 PM ET",
-   "age_min": 0.5
-  },
-  "time": "2026-09-22 02:00:28 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 250.0,
-  "pnl": -5.82,
-  "pnl_pct": -2.28,
-  "change_pct": -2.28
- },
- {
-  "ticker": "TXN",
-  "signal": "BOTTOM",
-  "confidence": 94,
-  "alert_price": 269.98,
-  "rsi": 46.9,
-  "mfi": 56.1,
-  "cmf": 0.182,
-  "pcr": 0.68,
-  "regime": "BULLISH",
-  "sector": "XLK",
-  "sector_strength": "STRONG",
-  "setup_type": "LEADERSHIP",
-  "trend_3d": 4.59,
-  "trend_5d": 2.49,
-  "volume_expansion": 1.47,
-  "signals": [
-   "Trend3d+",
-   "StrongTrend3d",
-   "Trend5d+",
-   "VolExp=1.5x",
-   "RS3d+",
-   "RSI_Trend",
-   "MACD_Momentum",
-   "AboveVWAP",
-   "BuyFlow",
-   "OBV_Up",
-   "CMF_Positive",
-   "MFI_Healthy",
-   "RQG=43/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_RSI2Low",
-   "RQG_MACDHistImproving",
-   "RQG_BuyVolumeImproving"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 100,
-  "c15": 95,
-  "c30": 89,
-  "c60": 0,
-  "rqg_score": 43,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "RSI2Low",
-   "MACDHistImproving",
-   "BuyVolumeImproving",
-   "ReclaimEMA8",
-   "ReclaimedVWAP",
-   "SectorStrong",
-   "MarketNotBearish",
-   "PositiveRelativeStrength"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 7,
-   "volume": 5,
-   "reclaim": 8,
-   "context": 15,
-   "risk_reward": 0
-  },
-  "rqg_details": {
-   "price": 269.92,
-   "vwap": 264.5,
-   "vwap_z": 7.38,
-   "rsi2": 5.7,
-   "rsi14": 46.3,
-   "macd_hist": 0.0567,
-   "macd_hist_prev": 0.0541,
-   "vol_ratio": 0.25,
-   "rr": 0.0,
-   "vwap_slope_8bars_pct": 0.015,
-   "ema20_slope_8bars_pct": -0.011,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:00:00 PM ET",
-   "age_min": 1.2
-  },
-  "time": "2026-09-22 02:01:12 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 287.9,
-  "pnl": 17.92,
-  "pnl_pct": 6.64,
-  "change_pct": 6.64
- },
- {
-  "ticker": "HUBB",
-  "signal": "BOTTOM",
-  "confidence": 97,
-  "alert_price": 457.39,
-  "rsi": 48.5,
-  "mfi": 54.1,
-  "cmf": 0.089,
-  "pcr": 0.26,
-  "regime": "BULLISH",
-  "sector": "XLI",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "LEADERSHIP",
-  "trend_3d": 3.19,
-  "trend_5d": 4.3,
-  "volume_expansion": 1.02,
-  "signals": [
-   "Trend3d+",
-   "StrongTrend3d",
-   "Trend5d+",
-   "StrongTrend5d",
-   "RS3d+",
-   "RS5d+",
-   "RSI_Trend",
-   "MACD_Momentum",
-   "AboveVWAP",
-   "BuyFlow",
-   "OBV_Up",
-   "CMF_Positive",
-   "MFI_Healthy",
-   "RQG=47/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_MACDHistImproving",
-   "RQG_BuyVolumeImproving"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 100,
-  "c15": 100,
-  "c30": 93,
-  "c60": 0,
-  "rqg_score": 47,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "BullishDivergence",
-   "MACDHistImproving",
-   "BuyVolumeImproving",
-   "ReclaimEMA8",
-   "ReclaimedVWAP",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "PositiveRelativeStrength"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 14,
-   "volume": 5,
-   "reclaim": 8,
-   "context": 12,
-   "risk_reward": 0
-  },
-  "rqg_details": {
-   "price": 457.39,
-   "vwap": 446.97,
-   "vwap_z": 10.0,
-   "rsi2": 37.6,
-   "rsi14": 48.5,
-   "macd_hist": 0.0928,
-   "macd_hist_prev": 0.0867,
-   "vol_ratio": 0.36,
-   "rr": 0.0,
-   "vwap_slope_8bars_pct": 0.029,
-   "ema20_slope_8bars_pct": -0.008,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:00:00 PM ET",
-   "age_min": 3.1
-  },
-  "time": "2026-09-22 02:03:05 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 461.1,
-  "pnl": 3.71,
-  "pnl_pct": 0.81,
-  "change_pct": 0.81
- },
- {
-  "ticker": "TRGP",
-  "signal": "BOTTOM",
-  "confidence": 53,
-  "alert_price": 286.26,
-  "rsi": 21.4,
-  "mfi": 11.4,
-  "cmf": -0.381,
-  "pcr": 0.21,
-  "regime": "BULLISH",
-  "sector": "XLE",
-  "sector_strength": "WEAK",
-  "setup_type": "REVERSAL",
-  "trend_3d": 0.42,
-  "trend_5d": 0.2,
-  "volume_expansion": 1.57,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "RSI=21.4",
-   "HL",
-   "MFI=11",
-   "SECTOR_NEUTRAL_OVERRIDE",
-   "RQG=47/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_MACDHistImproving",
-   "RQG_CloseAbovePriorHigh",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 68,
-  "c15": 57,
-  "c30": 46,
-  "c60": 42,
-  "rqg_score": 47,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "MACDHistImproving",
-   "CloseAbovePriorHigh",
-   "BackInsideLowerBand",
-   "WeakSectorButStockOverride",
-   "MarketNotBearish",
-   "PositiveRelativeStrength",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 4,
-   "volume": 0,
-   "reclaim": 12,
-   "context": 13,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 286.26,
-   "vwap": 288.97,
-   "vwap_z": -1.23,
-   "rsi2": 69.0,
-   "rsi14": 21.4,
-   "macd_hist": -0.2588,
-   "macd_hist_prev": -0.3007,
-   "vol_ratio": 0.45,
-   "rr": 2.11,
-   "vwap_slope_8bars_pct": -0.013,
-   "ema20_slope_8bars_pct": -0.541,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:00:00 PM ET",
-   "age_min": 3.2
-  },
-  "time": "2026-09-22 02:03:11 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 288.63,
-  "pnl": 2.37,
-  "pnl_pct": 0.83,
-  "change_pct": 0.83
- },
- {
-  "ticker": "EME",
-  "signal": "BOTTOM",
-  "confidence": 65,
-  "alert_price": 754.09,
-  "rsi": 40.1,
-  "mfi": 59.1,
-  "cmf": 0.075,
-  "pcr": 1.2,
-  "regime": "BULLISH",
-  "sector": "XLI",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "HYBRID",
-  "trend_3d": 3.4,
-  "trend_5d": 2.52,
-  "volume_expansion": 1.25,
-  "signals": [
-   "BullDiv",
-   "BBBounce",
-   "BuyVol=73%",
-   "RQG=43/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_BuyVolumeImproving",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 40,
-  "c15": 64,
-  "c30": 92,
-  "c60": 0,
-  "rqg_score": 43,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "BullishDivergence",
-   "BuyVolumeImproving",
-   "BackInsideLowerBand",
-   "ReclaimedVWAP",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "PositiveRelativeStrength"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 10,
-   "volume": 5,
-   "reclaim": 8,
-   "context": 12,
-   "risk_reward": 0
-  },
-  "rqg_details": {
-   "price": 754.09,
-   "vwap": 743.63,
-   "vwap_z": 5.21,
-   "rsi2": 26.1,
-   "rsi14": 40.1,
-   "macd_hist": 0.0672,
-   "macd_hist_prev": 0.1043,
-   "vol_ratio": 0.37,
-   "rr": 0.85,
-   "vwap_slope_8bars_pct": 0.014,
-   "ema20_slope_8bars_pct": -0.058,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:00:00 PM ET",
-   "age_min": 3.3
-  },
-  "time": "2026-09-22 02:03:15 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 656.0,
-  "pnl": -98.09,
-  "pnl_pct": -13.01,
-  "change_pct": -13.01
- },
- {
-  "ticker": "SPY",
-  "signal": "BOTTOM",
-  "confidence": 64,
-  "alert_price": 773.86,
-  "rsi": 56.8,
-  "mfi": 50.7,
-  "cmf": 0.165,
-  "pcr": 0.91,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "LEADERSHIP",
-  "trend_3d": 1.73,
-  "trend_5d": 2.43,
-  "volume_expansion": 0.99,
-  "signals": [
-   "Trend3d+",
-   "StrongTrend3d",
-   "Trend5d+",
-   "RSI_Trend",
-   "AboveVWAP",
-   "CMF_Positive",
-   "MFI_Healthy",
-   "RQG=40/VALID_REVERSAL",
-   "RQG_LowerBandLocation",
-   "RQG_RSI2Exhausted",
-   "RQG_VolumeExpansion",
-   "RQG_ReclaimEMA8"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 62,
-  "c15": 70,
-  "c30": 62,
-  "c60": 0,
-  "rqg_score": 40,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "LowerBandLocation",
-   "RSI2Exhausted",
-   "VolumeExpansion",
-   "ReclaimEMA8",
-   "BackInsideLowerBand",
-   "ReclaimedVWAP",
-   "SectorNeutral",
-   "MarketNotBearish"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 6,
-   "volume": 5,
-   "reclaim": 12,
-   "context": 9,
-   "risk_reward": 0
-  },
-  "rqg_details": {
-   "price": 773.85,
-   "vwap": 763.21,
-   "vwap_z": 21.2,
-   "rsi2": 0.0,
-   "rsi14": 56.6,
-   "macd_hist": 0.0834,
-   "macd_hist_prev": 0.0914,
-   "vol_ratio": 1.47,
-   "rr": 0.0,
-   "vwap_slope_8bars_pct": 0.013,
-   "ema20_slope_8bars_pct": 0.026,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:00:00 PM ET",
-   "age_min": 3.7
-  },
-  "time": "2026-09-22 02:03:39 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 761.94,
-  "pnl": -11.92,
-  "pnl_pct": -1.54,
-  "change_pct": -1.54
- },
- {
-  "ticker": "AMLP",
-  "signal": "BOTTOM",
-  "confidence": 61,
-  "alert_price": 53.94,
-  "rsi": 17.6,
-  "mfi": 10.0,
-  "cmf": -0.415,
-  "pcr": 5.0,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -1.95,
-  "trend_5d": -2.46,
-  "volume_expansion": 0.83,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "RSI=17.6",
-   "BBBounce",
-   "WR=-81",
-   "MFI=10",
-   "RQG=47/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_MACDHistImproving",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 73,
-  "c15": 61,
-  "c30": 64,
-  "c60": 49,
-  "rqg_score": 47,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 4,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 53.94,
-   "vwap": 54.79,
-   "vwap_z": -5.01,
-   "rsi2": 62.7,
-   "rsi14": 17.6,
-   "macd_hist": -0.0237,
-   "macd_hist_prev": -0.0256,
-   "vol_ratio": 0.15,
-   "rr": 9.83,
-   "vwap_slope_8bars_pct": -0.028,
-   "ema20_slope_8bars_pct": -0.272,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 1.7
-  },
-  "time": "2026-09-22 02:06:42 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 52.42,
-  "pnl": -1.52,
-  "pnl_pct": -2.82,
-  "change_pct": -2.82
- },
- {
-  "ticker": "WEAT",
-  "signal": "BOTTOM",
-  "confidence": 59,
-  "alert_price": 26.09,
-  "rsi": 39.5,
-  "mfi": 4.7,
-  "cmf": 0,
-  "pcr": 0.51,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -0.55,
-  "trend_5d": -0.85,
-  "volume_expansion": 0.7,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "BBBounce",
-   "WR=-83",
-   "HL",
-   "MFI=5",
-   "RQG=47/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_MACDHistImproving",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 78,
-  "c15": 40,
-  "c30": 59,
-  "c60": 0,
-  "rqg_score": 47,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 4,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 26.09,
-   "vwap": 26.2,
-   "vwap_z": -3.55,
-   "rsi2": 65.8,
-   "rsi14": 39.5,
-   "macd_hist": -0.0079,
-   "macd_hist_prev": -0.0086,
-   "vol_ratio": 0.0,
-   "rr": 4.67,
-   "vwap_slope_8bars_pct": -0.002,
-   "ema20_slope_8bars_pct": -0.102,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 1.8
-  },
-  "time": "2026-09-22 02:06:46 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 23.57,
-  "pnl": -2.52,
-  "pnl_pct": -9.66,
-  "change_pct": -9.66
- },
- {
-  "ticker": "USO",
-  "signal": "BOTTOM",
-  "confidence": 60,
-  "alert_price": 144.31,
-  "rsi": 15.8,
-  "mfi": 17.3,
-  "cmf": -0.392,
-  "pcr": 0.96,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -7.08,
-  "trend_5d": -10.84,
-  "volume_expansion": 0.82,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "RSI=15.8",
-   "BBBounce",
-   "WR=-86",
-   "MFI=17",
-   "RQG=47/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_MACDHistImproving",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 73,
-  "c15": 43,
-  "c30": 64,
-  "c60": 0,
-  "rqg_score": 47,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 4,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 144.31,
-   "vwap": 152.06,
-   "vwap_z": -9.0,
-   "rsi2": 70.5,
-   "rsi14": 15.8,
-   "macd_hist": -0.265,
-   "macd_hist_prev": -0.2653,
-   "vol_ratio": 0.63,
-   "rr": 15.69,
-   "vwap_slope_8bars_pct": -0.2,
-   "ema20_slope_8bars_pct": -0.632,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 1.9
-  },
-  "time": "2026-09-22 02:06:55 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 158.88,
-  "pnl": 14.57,
-  "pnl_pct": 10.1,
-  "change_pct": 10.1
- },
- {
-  "ticker": "DVN",
-  "signal": "BOTTOM",
-  "confidence": 58,
-  "alert_price": 46.98,
-  "rsi": 12.8,
-  "mfi": 24.4,
-  "cmf": -0.289,
-  "pcr": 0.8,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -3.57,
-  "trend_5d": -8.47,
-  "volume_expansion": 1.3,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "RSI=12.8",
-   "BBBounce",
-   "WR=-80",
-   "Hammer",
-   "RQG=47/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_MACDHistImproving",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 77,
-  "c15": 59,
-  "c30": 56,
-  "c60": 40,
-  "rqg_score": 47,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 4,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 46.98,
-   "vwap": 48.36,
-   "vwap_z": -6.72,
-   "rsi2": 77.3,
-   "rsi14": 12.8,
-   "macd_hist": -0.0604,
-   "macd_hist_prev": -0.0618,
-   "vol_ratio": 0.64,
-   "rr": 9.53,
-   "vwap_slope_8bars_pct": -0.03,
-   "ema20_slope_8bars_pct": -0.413,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 2.5
-  },
-  "time": "2026-09-22 02:07:27 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 49.38,
-  "pnl": 2.4,
-  "pnl_pct": 5.11,
-  "change_pct": 5.11
- },
- {
-  "ticker": "APA",
-  "signal": "BOTTOM",
-  "confidence": 53,
-  "alert_price": 42.62,
-  "rsi": 34.4,
-  "mfi": 34.0,
-  "cmf": -0.043,
-  "pcr": 1.18,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -6.26,
-  "trend_5d": -10.11,
-  "volume_expansion": 1.11,
-  "signals": [
-   "BullDiv",
-   "StochX",
-   "BBBounce",
-   "WR=-85",
-   "Hammer",
-   "RQG=51/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_SpringAttempt"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 76,
-  "c15": 43,
-  "c30": 54,
-  "c60": 40,
-  "rqg_score": 51,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "BullishDivergence",
-   "SpringAttempt",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 10,
-   "volume": 2,
-   "reclaim": 0,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 42.59,
-   "vwap": 44.58,
-   "vwap_z": -14.03,
-   "rsi2": 30.0,
-   "rsi14": 33.5,
-   "macd_hist": -0.031,
-   "macd_hist_prev": -0.0238,
-   "vol_ratio": 0.87,
-   "rr": 24.44,
-   "vwap_slope_8bars_pct": -0.169,
-   "ema20_slope_8bars_pct": -0.259,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 3.1
-  },
-  "time": "2026-09-22 02:08:05 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 48.81,
-  "pnl": 6.19,
-  "pnl_pct": 14.52,
-  "change_pct": 14.52
- },
- {
-  "ticker": "MTDR",
-  "signal": "BOTTOM",
-  "confidence": 64,
-  "alert_price": 52.73,
-  "rsi": 28.7,
-  "mfi": 48.4,
-  "cmf": 0.07,
-  "pcr": 0.03,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -8.57,
-  "trend_5d": -16.53,
-  "volume_expansion": 0.96,
-  "signals": [
-   "StochX",
-   "RSI=28.7",
-   "BBBounce",
-   "CMF+",
-   "Hammer",
-   "RQG=53/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_BackInsideLowerBand"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 56,
-  "c15": 71,
-  "c30": 90,
-  "c60": 40,
-  "rqg_score": 53,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "BullishDivergence",
-   "BackInsideLowerBand",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 10,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 52.73,
-   "vwap": 56.38,
-   "vwap_z": -16.85,
-   "rsi2": 71.0,
-   "rsi14": 28.7,
-   "macd_hist": -0.0402,
-   "macd_hist_prev": -0.0389,
-   "vol_ratio": 0.61,
-   "rr": 17.05,
-   "vwap_slope_8bars_pct": -0.147,
-   "ema20_slope_8bars_pct": -0.4,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 3.2
-  },
-  "time": "2026-09-22 02:08:13 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 57.01,
-  "pnl": 4.28,
-  "pnl_pct": 8.12,
-  "change_pct": 8.12
- },
- {
-  "ticker": "CHRD",
-  "signal": "BOTTOM",
-  "confidence": 60,
-  "alert_price": 137.05,
-  "rsi": 37.7,
-  "mfi": 32.1,
-  "cmf": 0,
-  "pcr": 1.84,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -6.3,
-  "trend_5d": -12.7,
-  "volume_expansion": 1.32,
-  "signals": [
-   "BullDiv",
-   "MACD+",
-   "StochX",
-   "BBBounce",
-   "Hammer",
-   "RQG=57/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_BullishDivergence",
-   "RQG_MACDHistImproving"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 71,
-  "c15": 54,
-  "c30": 75,
-  "c60": 43,
-  "rqg_score": 57,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "BullishDivergence",
-   "MACDHistImproving",
-   "BackInsideLowerBand",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 14,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 137.05,
-   "vwap": 144.06,
-   "vwap_z": -14.9,
-   "rsi2": 100.0,
-   "rsi14": 37.7,
-   "macd_hist": -0.1142,
-   "macd_hist_prev": -0.1154,
-   "vol_ratio": 0.29,
-   "rr": 12.78,
-   "vwap_slope_8bars_pct": -0.099,
-   "ema20_slope_8bars_pct": -0.292,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 3.3
-  },
-  "time": "2026-09-22 02:08:18 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 150.76,
-  "pnl": 13.71,
-  "pnl_pct": 10.0,
-  "change_pct": 10.0
- },
- {
-  "ticker": "ARRY",
-  "signal": "BOTTOM",
-  "confidence": 65,
-  "alert_price": 3.98,
-  "rsi": 17.6,
-  "mfi": 13.7,
-  "cmf": -0.198,
-  "pcr": 0.45,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -6.13,
-  "trend_5d": -9.13,
-  "volume_expansion": 1.32,
-  "signals": [
-   "MACD+",
-   "StochX",
-   "RSI=17.6",
-   "MFI=14",
-   "OBV+",
-   "RQG=43/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_BelowVWAP",
-   "RQG_MACDHistImproving",
-   "RQG_ReclaimEMA8"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 63,
-  "c15": 78,
-  "c30": 56,
-  "c60": 0,
-  "rqg_score": 43,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "BelowVWAP",
-   "MACDHistImproving",
-   "ReclaimEMA8",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 16,
-   "divergence": 4,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 3.98,
-   "vwap": 4.08,
-   "vwap_z": -2.76,
-   "rsi2": 100.0,
-   "rsi14": 17.6,
-   "macd_hist": -0.0004,
-   "macd_hist_prev": -0.0017,
-   "vol_ratio": 0.39,
-   "rr": 4.55,
-   "vwap_slope_8bars_pct": -0.032,
-   "ema20_slope_8bars_pct": -0.556,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 4.4
-  },
-  "time": "2026-09-22 02:09:25 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 3.43,
-  "pnl": -0.55,
-  "pnl_pct": -13.82,
-  "change_pct": -13.82
- },
- {
-  "ticker": "KEY",
-  "signal": "TOP",
-  "confidence": 38,
-  "alert_price": 20.56,
-  "rsi": 50.9,
-  "mfi": 39.8,
-  "cmf": -0.12,
-  "pcr": 0.24,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "LEADERSHIP",
-  "trend_3d": -1.89,
-  "trend_5d": -5.28,
-  "volume_expansion": 0.88,
-  "signals": [
-   "Trend3d-",
-   "StrongTrend3d",
-   "Trend5d-",
-   "StrongTrend5d",
-   "RS3d-",
-   "RS5d-",
-   "RSI_Trend",
-   "BelowVWAP",
-   "OBV_Down",
-   "CMF_Negative",
-   "MFI_Healthy",
-   "RQG=52/VALID_REVERSAL",
-   "RQG_UpperBandLocation",
-   "RQG_BearishDivergence",
-   "RQG_MACDHistWeakening",
-   "RQG_CloseBelowPriorLow"
-  ],
-  "mtf_status": "5m+15m+30m",
-  "c5": 41,
-  "c15": 37,
-  "c30": 37,
-  "c60": 0,
-  "rqg_score": 52,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "UpperBandLocation",
-   "BearishDivergence",
-   "MACDHistWeakening",
-   "CloseBelowPriorLow",
-   "LostEMA8",
-   "BackInsideUpperBand",
-   "LostVWAP",
-   "SectorNeutral",
-   "BullMarketButMicroTop",
-   "NegativeRelativeStrength"
-  ],
-  "rqg_buckets": {
-   "location": 8,
-   "divergence": 14,
-   "volume": 0,
-   "reclaim": 20,
-   "context": 10,
-   "risk_reward": 0
-  },
-  "rqg_details": {
-   "price": 20.56,
-   "vwap": 20.92,
-   "vwap_z": -4.23,
-   "rsi2": 0.0,
-   "rsi14": 50.9,
-   "macd_hist": 0.0093,
-   "macd_hist_prev": 0.0127,
-   "vol_ratio": 0.6,
-   "rr": 0.01,
-   "vwap_slope_8bars_pct": -0.029,
-   "ema20_slope_8bars_pct": 0.073,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 4.8
-  },
-  "time": "2026-09-22 02:09:47 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 19.91,
-  "pnl": -0.65,
-  "pnl_pct": -3.16,
-  "change_pct": -3.16
- },
- {
-  "ticker": "TMUS",
-  "signal": "BOTTOM",
-  "confidence": 55,
-  "alert_price": 162.57,
-  "rsi": 29.5,
-  "mfi": 28.1,
-  "cmf": -0.298,
-  "pcr": 0.61,
-  "regime": "BULLISH",
-  "sector": "SPY",
-  "sector_strength": "NEUTRAL",
-  "setup_type": "REVERSAL",
-  "trend_3d": -2.33,
-  "trend_5d": -9.92,
-  "volume_expansion": 1.43,
-  "signals": [
-   "Stoch=4",
-   "RSI=29.5",
-   "BBBounce",
-   "WR=-96",
-   "RQG=43/VALID_REVERSAL",
-   "RQG_DeepBelowVWAP2\u03c3",
-   "RQG_LowerBandLocation",
-   "RQG_BackInsideLowerBand",
-   "RQG_SectorNeutral"
-  ],
-  "mtf_status": "5m+15m+30m+60m",
-  "c5": 44,
-  "c15": 60,
-  "c30": 56,
-  "c60": 61,
-  "rqg_score": 43,
-  "rqg_label": "VALID_REVERSAL",
-  "rqg_reasons": [
-   "DeepBelowVWAP2\u03c3",
-   "LowerBandLocation",
-   "BackInsideLowerBand",
-   "SectorNeutral",
-   "MarketNotBearish",
-   "RR>=2"
-  ],
-  "rqg_buckets": {
-   "location": 20,
-   "divergence": 0,
-   "volume": 0,
-   "reclaim": 4,
-   "context": 9,
-   "risk_reward": 10
-  },
-  "rqg_details": {
-   "price": 162.57,
-   "vwap": 168.36,
-   "vwap_z": -10.44,
-   "rsi2": 12.5,
-   "rsi14": 29.5,
-   "macd_hist": -0.0564,
-   "macd_hist_prev": -0.0458,
-   "vol_ratio": 0.69,
-   "rr": 73.33,
-   "vwap_slope_8bars_pct": -0.043,
-   "ema20_slope_8bars_pct": -0.269,
-   "source": "yfinance",
-   "latest": "2026-09-22 02:05:00 PM ET",
-   "age_min": 4.9
-  },
-  "time": "2026-09-22 02:09:55 PM ET",
-  "date": "2026-09-22",
-  "result": "PENDING",
-  "current_price": 158.21,
-  "pnl": -4.36,
-  "pnl_pct": -2.68,
-  "change_pct": -2.68
- },
- {
   "ticker": "VZ",
   "signal": "TOP",
   "confidence": 58,
@@ -2256,10 +148,10 @@
   "time": "2026-09-23 01:51:20 PM ET",
   "date": "2026-09-23",
   "result": "PENDING",
-  "current_price": 22.23,
-  "pnl": -0.58,
-  "pnl_pct": -2.54,
-  "change_pct": -2.54
+  "current_price": 22.75,
+  "pnl": -0.06,
+  "pnl_pct": -0.26,
+  "change_pct": -0.26
  },
  {
   "ticker": "PFE",
@@ -2579,10 +471,10 @@
   "time": "2026-09-23 01:51:45 PM ET",
   "date": "2026-09-23",
   "result": "PENDING",
-  "current_price": 440.43,
-  "pnl": 43.84,
-  "pnl_pct": 11.05,
-  "change_pct": 11.05
+  "current_price": 454.8,
+  "pnl": 58.21,
+  "pnl_pct": 14.68,
+  "change_pct": 14.68
  },
  {
   "ticker": "ADI",
@@ -2663,10 +555,10 @@
   "time": "2026-09-23 01:52:03 PM ET",
   "date": "2026-09-23",
   "result": "PENDING",
-  "current_price": 389.47,
-  "pnl": 6.32,
-  "pnl_pct": 1.65,
-  "change_pct": 1.65
+  "current_price": 390.26,
+  "pnl": 7.11,
+  "pnl_pct": 1.86,
+  "change_pct": 1.86
  },
  {
   "ticker": "AMT",
@@ -3058,10 +950,10 @@
   "time": "2026-09-23 01:53:09 PM ET",
   "date": "2026-09-23",
   "result": "PENDING",
-  "current_price": 1141.15,
-  "pnl": 31.09,
-  "pnl_pct": 2.8,
-  "change_pct": 2.8
+  "current_price": 1097.27,
+  "pnl": -12.79,
+  "pnl_pct": -1.15,
+  "change_pct": -1.15
  },
  {
   "ticker": "FAST",
@@ -3382,10 +1274,10 @@
   "time": "2026-09-23 01:55:08 PM ET",
   "date": "2026-09-23",
   "result": "PENDING",
-  "current_price": 23.18,
-  "pnl": -1.67,
-  "pnl_pct": -6.72,
-  "change_pct": -6.72
+  "current_price": 23.17,
+  "pnl": -1.68,
+  "pnl_pct": -6.76,
+  "change_pct": -6.76
  },
  {
   "ticker": "EWT",
@@ -3545,10 +1437,10 @@
   "time": "2026-09-23 01:55:44 PM ET",
   "date": "2026-09-23",
   "result": "PENDING",
-  "current_price": 75.74,
-  "pnl": 2.45,
-  "pnl_pct": 3.34,
-  "change_pct": 3.34
+  "current_price": 75.33,
+  "pnl": 2.04,
+  "pnl_pct": 2.78,
+  "change_pct": 2.78
  },
  {
   "ticker": "FNGD",
@@ -4744,10 +2636,10 @@
   "time": "2026-09-23 02:20:21 PM ET",
   "date": "2026-09-23",
   "result": "PENDING",
-  "current_price": 440.43,
-  "pnl": 44.16,
-  "pnl_pct": 11.14,
-  "change_pct": 11.14
+  "current_price": 454.8,
+  "pnl": 58.53,
+  "pnl_pct": 14.77,
+  "change_pct": 14.77
  },
  {
   "ticker": "SRE",
@@ -5920,10 +3812,10 @@
   "time": "2026-09-24 01:53:12 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 343.13,
-  "pnl": 6.23,
-  "pnl_pct": 1.85,
-  "change_pct": 1.85
+  "current_price": 319.1,
+  "pnl": -17.8,
+  "pnl_pct": -5.28,
+  "change_pct": -5.28
  },
  {
   "ticker": "SCHW",
@@ -6165,10 +4057,10 @@
   "time": "2026-09-24 01:56:23 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 197.17,
-  "pnl": 12.09,
-  "pnl_pct": 6.53,
-  "change_pct": 6.53
+  "current_price": 202.04,
+  "pnl": 16.96,
+  "pnl_pct": 9.16,
+  "change_pct": 9.16
  },
  {
   "ticker": "ERX",
@@ -6240,10 +4132,10 @@
   "time": "2026-09-24 01:57:47 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 120.87,
-  "pnl": 15.58,
-  "pnl_pct": 14.8,
-  "change_pct": 14.8
+  "current_price": 126.52,
+  "pnl": 21.23,
+  "pnl_pct": 20.16,
+  "change_pct": 20.16
  },
  {
   "ticker": "VLO",
@@ -6548,10 +4440,10 @@
   "time": "2026-09-24 01:59:54 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 57.01,
-  "pnl": 4.24,
-  "pnl_pct": 8.03,
-  "change_pct": 8.03
+  "current_price": 60.24,
+  "pnl": 7.47,
+  "pnl_pct": 14.16,
+  "change_pct": 14.16
  },
  {
   "ticker": "KEY",
@@ -6708,10 +4600,10 @@
   "time": "2026-09-24 02:17:22 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 107.36,
-  "pnl": 1.41,
-  "pnl_pct": 1.33,
-  "change_pct": 1.33
+  "current_price": 106.27,
+  "pnl": 0.32,
+  "pnl_pct": 0.3,
+  "change_pct": 0.3
  },
  {
   "ticker": "GOOG",
@@ -6789,10 +4681,10 @@
   "time": "2026-09-24 02:17:36 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 343.13,
-  "pnl": 4.77,
-  "pnl_pct": 1.41,
-  "change_pct": 1.41
+  "current_price": 319.1,
+  "pnl": -19.26,
+  "pnl_pct": -5.69,
+  "change_pct": -5.69
  },
  {
   "ticker": "NFLX",
@@ -7102,10 +4994,10 @@
   "time": "2026-09-24 02:19:49 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 147.16,
-  "pnl": 11.58,
-  "pnl_pct": 8.54,
-  "change_pct": 8.54
+  "current_price": 148.52,
+  "pnl": 12.94,
+  "pnl_pct": 9.54,
+  "change_pct": 9.54
  },
  {
   "ticker": "XLF",
@@ -7178,10 +5070,10 @@
   "time": "2026-09-24 02:20:01 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 55.64,
-  "pnl": 1.15,
-  "pnl_pct": 2.11,
-  "change_pct": 2.11
+  "current_price": 55.92,
+  "pnl": 1.43,
+  "pnl_pct": 2.62,
+  "change_pct": 2.62
  },
  {
   "ticker": "LABU",
@@ -7407,10 +5299,10 @@
   "time": "2026-09-24 02:21:28 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 14.74,
-  "pnl": -1.98,
-  "pnl_pct": -11.84,
-  "change_pct": -11.84
+  "current_price": 14.59,
+  "pnl": -2.13,
+  "pnl_pct": -12.74,
+  "change_pct": -12.74
  },
  {
   "ticker": "RIVN",
@@ -7717,10 +5609,10 @@
   "time": "2026-09-24 02:22:56 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 23.61,
-  "pnl": -1.01,
-  "pnl_pct": -4.1,
-  "change_pct": -4.1
+  "current_price": 23.5,
+  "pnl": -1.12,
+  "pnl_pct": -4.55,
+  "change_pct": -4.55
  },
  {
   "ticker": "CBOE",
@@ -8035,10 +5927,10 @@
   "time": "2026-09-24 02:23:41 PM ET",
   "date": "2026-09-24",
   "result": "PENDING",
-  "current_price": 47.71,
-  "pnl": 0.65,
-  "pnl_pct": 1.38,
-  "change_pct": 1.38
+  "current_price": 48.4,
+  "pnl": 1.34,
+  "pnl_pct": 2.85,
+  "change_pct": 2.85
  },
  {
   "ticker": "HBAN",
@@ -8354,10 +6246,10 @@
   "time": "2026-09-25 01:56:25 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 161.84,
-  "pnl": -0.77,
-  "pnl_pct": -0.47,
-  "change_pct": -0.47
+  "current_price": 156.93,
+  "pnl": -5.68,
+  "pnl_pct": -3.49,
+  "change_pct": -3.49
  },
  {
   "ticker": "GILD",
@@ -8431,10 +6323,10 @@
   "time": "2026-09-25 01:56:34 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 153.04,
-  "pnl": 3.54,
-  "pnl_pct": 2.37,
-  "change_pct": 2.37
+  "current_price": 157.08,
+  "pnl": 7.58,
+  "pnl_pct": 5.07,
+  "change_pct": 5.07
  },
  {
   "ticker": "SCHW",
@@ -8667,10 +6559,10 @@
   "time": "2026-09-25 01:56:52 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 305.34,
-  "pnl": 42.17,
-  "pnl_pct": 16.02,
-  "change_pct": 16.02
+  "current_price": 306.36,
+  "pnl": 43.19,
+  "pnl_pct": 16.41,
+  "change_pct": 16.41
  },
  {
   "ticker": "DUK",
@@ -8901,10 +6793,10 @@
   "time": "2026-09-25 01:57:18 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 212.02,
-  "pnl": 12.03,
-  "pnl_pct": 6.02,
-  "change_pct": 6.02
+  "current_price": 224.17,
+  "pnl": 24.18,
+  "pnl_pct": 12.09,
+  "change_pct": 12.09
  },
  {
   "ticker": "PSA",
@@ -10316,10 +8208,10 @@
   "time": "2026-09-25 02:18:54 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 153.04,
-  "pnl": 3.22,
-  "pnl_pct": 2.15,
-  "change_pct": 2.15
+  "current_price": 157.08,
+  "pnl": 7.26,
+  "pnl_pct": 4.85,
+  "change_pct": 4.85
  },
  {
   "ticker": "VRTX",
@@ -10547,10 +8439,10 @@
   "time": "2026-09-25 02:19:42 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 212.02,
-  "pnl": 11.75,
-  "pnl_pct": 5.87,
-  "change_pct": 5.87
+  "current_price": 224.17,
+  "pnl": 23.9,
+  "pnl_pct": 11.93,
+  "change_pct": 11.93
  },
  {
   "ticker": "FDX",
@@ -10702,10 +8594,10 @@
   "time": "2026-09-25 02:20:10 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 27.95,
-  "pnl": 0.23,
-  "pnl_pct": 0.83,
-  "change_pct": 0.83
+  "current_price": 28.84,
+  "pnl": 1.12,
+  "pnl_pct": 4.04,
+  "change_pct": 4.04
  },
  {
   "ticker": "AXON",
@@ -10864,10 +8756,10 @@
   "time": "2026-09-25 02:20:37 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 461.1,
-  "pnl": -3.28,
-  "pnl_pct": -0.71,
-  "change_pct": -0.71
+  "current_price": 449.96,
+  "pnl": -14.42,
+  "pnl_pct": -3.11,
+  "change_pct": -3.11
  },
  {
   "ticker": "SPY",
@@ -11015,10 +8907,10 @@
   "time": "2026-09-25 02:21:02 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 704.37,
-  "pnl": -40.86,
-  "pnl_pct": -5.48,
-  "change_pct": -5.48
+  "current_price": 705.92,
+  "pnl": -39.31,
+  "pnl_pct": -5.27,
+  "change_pct": -5.27
  },
  {
   "ticker": "DIA",
@@ -11168,10 +9060,10 @@
   "time": "2026-09-25 02:21:19 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 55.64,
-  "pnl": 0.85,
-  "pnl_pct": 1.55,
-  "change_pct": 1.55
+  "current_price": 55.92,
+  "pnl": 1.13,
+  "pnl_pct": 2.06,
+  "change_pct": 2.06
  },
  {
   "ticker": "GDX",
@@ -11492,10 +9384,10 @@
   "time": "2026-09-25 02:22:17 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 149.42,
-  "pnl": -37.78,
-  "pnl_pct": -20.18,
-  "change_pct": -20.18
+  "current_price": 151.66,
+  "pnl": -35.54,
+  "pnl_pct": -18.99,
+  "change_pct": -18.99
  },
  {
   "ticker": "SPXS",
@@ -11876,10 +9768,10 @@
   "time": "2026-09-25 02:23:11 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 69.41,
-  "pnl": 3.22,
-  "pnl_pct": 4.86,
-  "change_pct": 4.86
+  "current_price": 67.43,
+  "pnl": 1.24,
+  "pnl_pct": 1.87,
+  "change_pct": 1.87
  },
  {
   "ticker": "SDOW",
@@ -12265,10 +10157,10 @@
   "time": "2026-09-25 02:23:56 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 7.97,
-  "pnl": -4.48,
-  "pnl_pct": -35.98,
-  "change_pct": -35.98
+  "current_price": 7.18,
+  "pnl": -5.27,
+  "pnl_pct": -42.33,
+  "change_pct": -42.33
  },
  {
   "ticker": "DOCU",
@@ -12733,10 +10625,10 @@
   "time": "2026-09-25 02:26:30 PM ET",
   "date": "2026-09-25",
   "result": "PENDING",
-  "current_price": 123.78,
-  "pnl": -10.51,
-  "pnl_pct": -7.83,
-  "change_pct": -7.83
+  "current_price": 120.81,
+  "pnl": -13.48,
+  "pnl_pct": -10.04,
+  "change_pct": -10.04
  },
  {
   "ticker": "KEY",
@@ -13208,10 +11100,10 @@
   "time": "2026-09-28 04:12:57 PM ET",
   "date": "2026-09-28",
   "result": "PENDING",
-  "current_price": 192.03,
-  "pnl": 24.25,
-  "pnl_pct": 14.45,
-  "change_pct": 14.45
+  "current_price": 196.4,
+  "pnl": 28.62,
+  "pnl_pct": 17.06,
+  "change_pct": 17.06
  },
  {
   "ticker": "IDXX",
@@ -13289,10 +11181,10 @@
   "time": "2026-09-28 04:13:02 PM ET",
   "date": "2026-09-28",
   "result": "PENDING",
-  "current_price": 555.91,
-  "pnl": 27.06,
-  "pnl_pct": 5.12,
-  "change_pct": 5.12
+  "current_price": 560.72,
+  "pnl": 31.87,
+  "pnl_pct": 6.03,
+  "change_pct": 6.03
  },
  {
   "ticker": "LNG",
@@ -13458,10 +11350,10 @@
   "time": "2026-09-28 04:13:13 PM ET",
   "date": "2026-09-28",
   "result": "PENDING",
-  "current_price": 656.0,
-  "pnl": -109.53,
-  "pnl_pct": -14.31,
-  "change_pct": -14.31
+  "current_price": 653.02,
+  "pnl": -112.51,
+  "pnl_pct": -14.7,
+  "change_pct": -14.7
  },
  {
   "ticker": "AME",
@@ -13706,10 +11598,10 @@
   "time": "2026-09-28 04:13:39 PM ET",
   "date": "2026-09-28",
   "result": "PENDING",
-  "current_price": 89.45,
-  "pnl": 7.16,
-  "pnl_pct": 8.7,
-  "change_pct": 8.7
+  "current_price": 88.1,
+  "pnl": 5.81,
+  "pnl_pct": 7.06,
+  "change_pct": 7.06
  },
  {
   "ticker": "DUST",
@@ -13861,10 +11753,10 @@
   "time": "2026-09-28 04:14:52 PM ET",
   "date": "2026-09-28",
   "result": "PENDING",
-  "current_price": 52.42,
-  "pnl": -0.52,
-  "pnl_pct": -0.98,
-  "change_pct": -0.98
+  "current_price": 53.27,
+  "pnl": 0.33,
+  "pnl_pct": 0.62,
+  "change_pct": 0.62
  },
  {
   "ticker": "NET",
@@ -14258,10 +12150,10 @@
   "time": "2026-09-29 02:35:30 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 111.36,
-  "pnl": 6.43,
-  "pnl_pct": 6.13,
-  "change_pct": 6.13
+  "current_price": 112.61,
+  "pnl": 7.68,
+  "pnl_pct": 7.32,
+  "change_pct": 7.32
  },
  {
   "ticker": "VZ",
@@ -14715,10 +12607,10 @@
   "time": "2026-09-29 02:37:04 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 118.06,
-  "pnl": 18.84,
-  "pnl_pct": 18.99,
-  "change_pct": 18.99
+  "current_price": 117.8,
+  "pnl": 18.58,
+  "pnl_pct": 18.73,
+  "change_pct": 18.73
  },
  {
   "ticker": "OTIS",
@@ -15401,10 +13293,10 @@
   "time": "2026-09-29 02:40:56 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 57.01,
-  "pnl": 6.35,
-  "pnl_pct": 12.53,
-  "change_pct": 12.53
+  "current_price": 60.24,
+  "pnl": 9.58,
+  "pnl_pct": 18.91,
+  "change_pct": 18.91
  },
  {
   "ticker": "ON",
@@ -15557,10 +13449,10 @@
   "time": "2026-09-29 02:41:14 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 82.06,
-  "pnl": -4.45,
-  "pnl_pct": -5.14,
-  "change_pct": -5.14
+  "current_price": 83.01,
+  "pnl": -3.5,
+  "pnl_pct": -4.05,
+  "change_pct": -4.05
  },
  {
   "ticker": "GFS",
@@ -15797,10 +13689,10 @@
   "time": "2026-09-29 02:41:33 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 48.5,
-  "pnl": -2.63,
-  "pnl_pct": -5.14,
-  "change_pct": -5.14
+  "current_price": 46.9,
+  "pnl": -4.23,
+  "pnl_pct": -8.27,
+  "change_pct": -8.27
  },
  {
   "ticker": "PYPL",
@@ -16814,10 +14706,10 @@
   "time": "2026-09-29 03:12:53 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 288.63,
-  "pnl": 16.49,
-  "pnl_pct": 6.06,
-  "change_pct": 6.06
+  "current_price": 302.17,
+  "pnl": 30.03,
+  "pnl_pct": 11.03,
+  "change_pct": 11.03
  },
  {
   "ticker": "XLE",
@@ -17127,10 +15019,10 @@
   "time": "2026-09-29 03:13:58 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 197.17,
-  "pnl": 18.98,
-  "pnl_pct": 10.65,
-  "change_pct": 10.65
+  "current_price": 202.04,
+  "pnl": 23.85,
+  "pnl_pct": 13.38,
+  "change_pct": 13.38
  },
  {
   "ticker": "PBW",
@@ -17286,10 +15178,10 @@
   "time": "2026-09-29 03:14:49 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 39.65,
-  "pnl": 5.03,
-  "pnl_pct": 14.53,
-  "change_pct": 14.53
+  "current_price": 39.43,
+  "pnl": 4.81,
+  "pnl_pct": 13.89,
+  "change_pct": 13.89
  },
  {
   "ticker": "SPXS",
@@ -17680,10 +15572,10 @@
   "time": "2026-09-29 03:15:27 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 120.87,
-  "pnl": 21.07,
-  "pnl_pct": 21.11,
-  "change_pct": 21.11
+  "current_price": 126.52,
+  "pnl": 26.72,
+  "pnl_pct": 26.77,
+  "change_pct": 26.77
  },
  {
   "ticker": "DUST",
@@ -18384,10 +16276,10 @@
   "time": "2026-09-29 03:17:03 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 33.15,
-  "pnl": 1.55,
-  "pnl_pct": 4.91,
-  "change_pct": 4.91
+  "current_price": 34.96,
+  "pnl": 3.36,
+  "pnl_pct": 10.63,
+  "change_pct": 10.63
  },
  {
   "ticker": "BKR",
@@ -18618,10 +16510,10 @@
   "time": "2026-09-29 03:17:23 PM ET",
   "date": "2026-09-29",
   "result": "PENDING",
-  "current_price": 57.01,
-  "pnl": 6.35,
-  "pnl_pct": 12.53,
-  "change_pct": 12.53
+  "current_price": 60.24,
+  "pnl": 9.58,
+  "pnl_pct": 18.91,
+  "change_pct": 18.91
  },
  {
   "ticker": "ON",
@@ -19487,10 +17379,10 @@
   "time": "2026-09-30 02:26:02 PM ET",
   "date": "2026-09-30",
   "result": "PENDING",
-  "current_price": 461.1,
-  "pnl": 3.89,
-  "pnl_pct": 0.85,
-  "change_pct": 0.85
+  "current_price": 449.96,
+  "pnl": -7.25,
+  "pnl_pct": -1.59,
+  "change_pct": -1.59
  },
  {
   "ticker": "XYL",
@@ -20441,10 +18333,10 @@
   "time": "2026-09-30 02:29:55 PM ET",
   "date": "2026-09-30",
   "result": "PENDING",
-  "current_price": 3.43,
-  "pnl": -0.64,
-  "pnl_pct": -15.72,
-  "change_pct": -15.72
+  "current_price": 3.18,
+  "pnl": -0.89,
+  "pnl_pct": -21.87,
+  "change_pct": -21.87
  },
  {
   "ticker": "JPM",
@@ -20753,10 +18645,10 @@
   "time": "2026-09-30 02:53:57 PM ET",
   "date": "2026-09-30",
   "result": "PENDING",
-  "current_price": 296.77,
-  "pnl": -16.79,
-  "pnl_pct": -5.35,
-  "change_pct": -5.35
+  "current_price": 286.7,
+  "pnl": -26.86,
+  "pnl_pct": -8.57,
+  "change_pct": -8.57
  },
  {
   "ticker": "WMS",
@@ -20835,10 +18727,10 @@
   "time": "2026-09-30 02:55:24 PM ET",
   "date": "2026-09-30",
   "result": "PENDING",
-  "current_price": 128.24,
-  "pnl": 0.3,
-  "pnl_pct": 0.23,
-  "change_pct": 0.23
+  "current_price": 130.02,
+  "pnl": 2.08,
+  "pnl_pct": 1.63,
+  "change_pct": 1.63
  },
  {
   "ticker": "EEM",
@@ -22010,10 +19902,10 @@
   "time": "2026-10-01 02:51:37 PM ET",
   "date": "2026-10-01",
   "result": "PENDING",
-  "current_price": 189.9,
-  "pnl": 5.38,
-  "pnl_pct": 2.92,
-  "change_pct": 2.92
+  "current_price": 191.55,
+  "pnl": 7.03,
+  "pnl_pct": 3.81,
+  "change_pct": 3.81
  },
  {
   "ticker": "LRCX",
@@ -22617,10 +20509,10 @@
   "time": "2026-10-01 02:53:30 PM ET",
   "date": "2026-10-01",
   "result": "PENDING",
-  "current_price": 461.1,
-  "pnl": -4.1,
-  "pnl_pct": -0.88,
-  "change_pct": -0.88
+  "current_price": 449.96,
+  "pnl": -15.24,
+  "pnl_pct": -3.28,
+  "change_pct": -3.28
  },
  {
   "ticker": "TRGP",
@@ -22692,10 +20584,10 @@
   "time": "2026-10-01 02:53:35 PM ET",
   "date": "2026-10-01",
   "result": "PENDING",
-  "current_price": 288.63,
-  "pnl": 11.61,
-  "pnl_pct": 4.19,
-  "change_pct": 4.19
+  "current_price": 302.17,
+  "pnl": 25.15,
+  "pnl_pct": 9.08,
+  "change_pct": 9.08
  },
  {
   "ticker": "ARKF",
@@ -23077,10 +20969,10 @@
   "time": "2026-10-01 02:55:04 PM ET",
   "date": "2026-10-01",
   "result": "PENDING",
-  "current_price": 40.6,
-  "pnl": -3.09,
-  "pnl_pct": -7.07,
-  "change_pct": -7.07
+  "current_price": 41.3,
+  "pnl": -2.39,
+  "pnl_pct": -5.47,
+  "change_pct": -5.47
  },
  {
   "ticker": "PATH",
@@ -23681,10 +21573,10 @@
   "time": "2026-10-01 02:56:10 PM ET",
   "date": "2026-10-01",
   "result": "PENDING",
-  "current_price": 22.14,
-  "pnl": -8.68,
-  "pnl_pct": -28.16,
-  "change_pct": -28.16
+  "current_price": 22.72,
+  "pnl": -8.1,
+  "pnl_pct": -26.28,
+  "change_pct": -26.28
  },
  {
   "ticker": "TJX",
@@ -24083,10 +21975,10 @@
   "time": "2026-10-01 02:57:16 PM ET",
   "date": "2026-10-01",
   "result": "PENDING",
-  "current_price": 47.71,
-  "pnl": 1.81,
-  "pnl_pct": 3.94,
-  "change_pct": 3.94
+  "current_price": 48.4,
+  "pnl": 2.5,
+  "pnl_pct": 5.45,
+  "change_pct": 5.45
  },
  {
   "ticker": "AMZN",
@@ -24240,10 +22132,10 @@
   "time": "2026-10-01 03:20:40 PM ET",
   "date": "2026-10-01",
   "result": "PENDING",
-  "current_price": 164.12,
-  "pnl": 0.94,
-  "pnl_pct": 0.58,
-  "change_pct": 0.58
+  "current_price": 173.29,
+  "pnl": 10.11,
+  "pnl_pct": 6.2,
+  "change_pct": 6.2
  },
  {
   "ticker": "VRTX",
@@ -25105,10 +22997,10 @@
   "time": "2026-10-01 03:24:21 PM ET",
   "date": "2026-10-01",
   "result": "PENDING",
-  "current_price": 69.41,
-  "pnl": 6.53,
-  "pnl_pct": 10.38,
-  "change_pct": 10.38
+  "current_price": 67.43,
+  "pnl": 4.55,
+  "pnl_pct": 7.24,
+  "change_pct": 7.24
  },
  {
   "ticker": "CRWD",
@@ -25267,10 +23159,10 @@
   "time": "2026-10-01 03:26:12 PM ET",
   "date": "2026-10-01",
   "result": "PENDING",
-  "current_price": 2.33,
-  "pnl": 0.12,
-  "pnl_pct": 5.43,
-  "change_pct": 5.43
+  "current_price": 2.45,
+  "pnl": 0.24,
+  "pnl_pct": 10.86,
+  "change_pct": 10.86
  },
  {
   "ticker": "ENPH",
@@ -25593,10 +23485,10 @@
   "time": "2026-10-02 02:22:22 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 111.36,
-  "pnl": 9.18,
-  "pnl_pct": 8.98,
-  "change_pct": 8.98
+  "current_price": 112.61,
+  "pnl": 10.43,
+  "pnl_pct": 10.21,
+  "change_pct": 10.21
  },
  {
   "ticker": "MCD",
@@ -25755,10 +23647,10 @@
   "time": "2026-10-02 02:22:32 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 107.36,
-  "pnl": -4.43,
-  "pnl_pct": -3.96,
-  "change_pct": -3.96
+  "current_price": 106.27,
+  "pnl": -5.52,
+  "pnl_pct": -4.94,
+  "change_pct": -4.94
  },
  {
   "ticker": "DHR",
@@ -25833,10 +23725,10 @@
   "time": "2026-10-02 02:23:11 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 229.86,
-  "pnl": 14.23,
-  "pnl_pct": 6.6,
-  "change_pct": 6.6
+  "current_price": 227.93,
+  "pnl": 12.3,
+  "pnl_pct": 5.7,
+  "change_pct": 5.7
  },
  {
   "ticker": "GE",
@@ -25918,10 +23810,10 @@
   "time": "2026-10-02 02:23:36 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 296.77,
-  "pnl": -14.42,
-  "pnl_pct": -4.63,
-  "change_pct": -4.63
+  "current_price": 286.7,
+  "pnl": -24.49,
+  "pnl_pct": -7.87,
+  "change_pct": -7.87
  },
  {
   "ticker": "REGN",
@@ -26170,10 +24062,10 @@
   "time": "2026-10-02 02:23:59 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 322.64,
-  "pnl": -26.1,
-  "pnl_pct": -7.48,
-  "change_pct": -7.48
+  "current_price": 315.79,
+  "pnl": -32.95,
+  "pnl_pct": -9.45,
+  "change_pct": -9.45
  },
  {
   "ticker": "WELL",
@@ -26337,10 +24229,10 @@
   "time": "2026-10-02 02:24:29 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 1141.15,
-  "pnl": 48.6,
-  "pnl_pct": 4.45,
-  "change_pct": 4.45
+  "current_price": 1097.27,
+  "pnl": 4.72,
+  "pnl_pct": 0.43,
+  "change_pct": 0.43
  },
  {
   "ticker": "RSG",
@@ -26669,10 +24561,10 @@
   "time": "2026-10-02 02:25:18 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 147.16,
-  "pnl": 15.84,
-  "pnl_pct": 12.06,
-  "change_pct": 12.06
+  "current_price": 148.52,
+  "pnl": 17.2,
+  "pnl_pct": 13.1,
+  "change_pct": 13.1
  },
  {
   "ticker": "IGF",
@@ -26985,10 +24877,10 @@
   "time": "2026-10-02 02:26:18 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 75.74,
-  "pnl": 5.39,
-  "pnl_pct": 7.66,
-  "change_pct": 7.66
+  "current_price": 75.33,
+  "pnl": 4.98,
+  "pnl_pct": 7.08,
+  "change_pct": 7.08
  },
  {
   "ticker": "NUGT",
@@ -27305,10 +25197,10 @@
   "time": "2026-10-02 02:28:22 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 123.78,
-  "pnl": -4.49,
-  "pnl_pct": -3.5,
-  "change_pct": -3.5
+  "current_price": 120.81,
+  "pnl": -7.46,
+  "pnl_pct": -5.82,
+  "change_pct": -5.82
  },
  {
   "ticker": "UNH",
@@ -27783,10 +25675,10 @@
   "time": "2026-10-02 03:03:59 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 291.51,
-  "pnl": 7.91,
-  "pnl_pct": 2.79,
-  "change_pct": 2.79
+  "current_price": 317.63,
+  "pnl": 34.03,
+  "pnl_pct": 12.0,
+  "change_pct": 12.0
  },
  {
   "ticker": "DOW",
@@ -27938,10 +25830,10 @@
   "time": "2026-10-02 03:04:40 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 1273.0,
-  "pnl": 125.79,
-  "pnl_pct": 10.96,
-  "change_pct": 10.96
+  "current_price": 1268.04,
+  "pnl": 120.83,
+  "pnl_pct": 10.53,
+  "change_pct": 10.53
  },
  {
   "ticker": "PEP",
@@ -28172,10 +26064,10 @@
   "time": "2026-10-02 03:05:36 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 440.43,
-  "pnl": 48.27,
-  "pnl_pct": 12.31,
-  "change_pct": 12.31
+  "current_price": 454.8,
+  "pnl": 62.64,
+  "pnl_pct": 15.97,
+  "change_pct": 15.97
  },
  {
   "ticker": "ADI",
@@ -28260,10 +26152,10 @@
   "time": "2026-10-02 03:05:45 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 389.47,
-  "pnl": -27.57,
-  "pnl_pct": -6.61,
-  "change_pct": -6.61
+  "current_price": 390.26,
+  "pnl": -26.78,
+  "pnl_pct": -6.42,
+  "change_pct": -6.42
  },
  {
   "ticker": "ICE",
@@ -28576,10 +26468,10 @@
   "time": "2026-10-02 03:07:03 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 1141.15,
-  "pnl": 53.77,
-  "pnl_pct": 4.94,
-  "change_pct": 4.94
+  "current_price": 1097.27,
+  "pnl": 9.89,
+  "pnl_pct": 0.91,
+  "change_pct": 0.91
  },
  {
   "ticker": "RSG",
@@ -28731,10 +26623,10 @@
   "time": "2026-10-02 03:07:40 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 70.93,
-  "pnl": 6.5,
-  "pnl_pct": 10.09,
-  "change_pct": 10.09
+  "current_price": 71.37,
+  "pnl": 6.94,
+  "pnl_pct": 10.77,
+  "change_pct": 10.77
  },
  {
   "ticker": "PWR",
@@ -28883,10 +26775,10 @@
   "time": "2026-10-02 03:08:01 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 440.25,
-  "pnl": -13.01,
-  "pnl_pct": -2.87,
-  "change_pct": -2.87
+  "current_price": 427.3,
+  "pnl": -25.96,
+  "pnl_pct": -5.73,
+  "change_pct": -5.73
  },
  {
   "ticker": "QQQ",
@@ -28962,10 +26854,10 @@
   "time": "2026-10-02 03:08:24 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 704.37,
-  "pnl": -44.29,
-  "pnl_pct": -5.92,
-  "change_pct": -5.92
+  "current_price": 705.92,
+  "pnl": -42.74,
+  "pnl_pct": -5.71,
+  "change_pct": -5.71
  },
  {
   "ticker": "XLE",
@@ -29901,10 +27793,10 @@
   "time": "2026-10-02 03:10:36 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 75.74,
-  "pnl": 4.8,
-  "pnl_pct": 6.77,
-  "change_pct": 6.77
+  "current_price": 75.33,
+  "pnl": 4.39,
+  "pnl_pct": 6.19,
+  "change_pct": 6.19
  },
  {
   "ticker": "SOXL",
@@ -29977,10 +27869,10 @@
   "time": "2026-10-02 03:10:58 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 83.42,
-  "pnl": -80.07,
-  "pnl_pct": -48.98,
-  "change_pct": -48.98
+  "current_price": 84.55,
+  "pnl": -78.94,
+  "pnl_pct": -48.28,
+  "change_pct": -48.28
  },
  {
   "ticker": "ERX",
@@ -30056,10 +27948,10 @@
   "time": "2026-10-02 03:11:16 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 120.87,
-  "pnl": 16.15,
-  "pnl_pct": 15.42,
-  "change_pct": 15.42
+  "current_price": 126.52,
+  "pnl": 21.8,
+  "pnl_pct": 20.82,
+  "change_pct": 20.82
  },
  {
   "ticker": "ERY",
@@ -30600,10 +28492,10 @@
   "time": "2026-10-02 03:12:34 PM ET",
   "date": "2026-10-02",
   "result": "PENDING",
-  "current_price": 193.88,
-  "pnl": 5.64,
-  "pnl_pct": 3.0,
-  "change_pct": 3.0
+  "current_price": 183.5,
+  "pnl": -4.74,
+  "pnl_pct": -2.52,
+  "change_pct": -2.52
  },
  {
   "ticker": "OXY",
@@ -31544,10 +29436,10 @@
   "time": "2026-10-06 02:55:46 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 111.36,
-  "pnl": 7.34,
-  "pnl_pct": 7.06,
-  "change_pct": 7.06
+  "current_price": 112.61,
+  "pnl": 8.59,
+  "pnl_pct": 8.26,
+  "change_pct": 8.26
  },
  {
   "ticker": "CSCO",
@@ -31621,10 +29513,10 @@
   "time": "2026-10-06 02:55:52 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 107.36,
-  "pnl": -9.93,
-  "pnl_pct": -8.47,
-  "change_pct": -8.47
+  "current_price": 106.27,
+  "pnl": -11.02,
+  "pnl_pct": -9.4,
+  "change_pct": -9.4
  },
  {
   "ticker": "COST",
@@ -32017,10 +29909,10 @@
   "time": "2026-10-06 02:57:49 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 164.71,
-  "pnl": 1.86,
-  "pnl_pct": 1.14,
-  "change_pct": 1.14
+  "current_price": 161.6,
+  "pnl": -1.25,
+  "pnl_pct": -0.77,
+  "change_pct": -0.77
  },
  {
   "ticker": "KEYS",
@@ -32334,10 +30226,10 @@
   "time": "2026-10-06 02:58:53 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 70.93,
-  "pnl": 6.15,
-  "pnl_pct": 9.49,
-  "change_pct": 9.49
+  "current_price": 71.37,
+  "pnl": 6.59,
+  "pnl_pct": 10.17,
+  "change_pct": 10.17
  },
  {
   "ticker": "HUBB",
@@ -32411,10 +30303,10 @@
   "time": "2026-10-06 02:58:58 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 461.1,
-  "pnl": -25.63,
-  "pnl_pct": -5.27,
-  "change_pct": -5.27
+  "current_price": 449.96,
+  "pnl": -36.77,
+  "pnl_pct": -7.55,
+  "change_pct": -7.55
  },
  {
   "ticker": "XYL",
@@ -32567,10 +30459,10 @@
   "time": "2026-10-06 02:59:08 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 440.25,
-  "pnl": -13.41,
-  "pnl_pct": -2.96,
-  "change_pct": -2.96
+  "current_price": 427.3,
+  "pnl": -26.36,
+  "pnl_pct": -5.81,
+  "change_pct": -5.81
  },
  {
   "ticker": "XLI",
@@ -32881,10 +30773,10 @@
   "time": "2026-10-06 03:00:24 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 197.17,
-  "pnl": 8.05,
-  "pnl_pct": 4.26,
-  "change_pct": 4.26
+  "current_price": 202.04,
+  "pnl": 12.92,
+  "pnl_pct": 6.83,
+  "change_pct": 6.83
  },
  {
   "ticker": "ARKK",
@@ -33039,10 +30931,10 @@
   "time": "2026-10-06 03:00:34 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 50.17,
-  "pnl": -1.98,
-  "pnl_pct": -3.8,
-  "change_pct": -3.8
+  "current_price": 48.04,
+  "pnl": -4.11,
+  "pnl_pct": -7.88,
+  "change_pct": -7.88
  },
  {
   "ticker": "ARKF",
@@ -33191,10 +31083,10 @@
   "time": "2026-10-06 03:01:02 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 379.77,
-  "pnl": -3.16,
-  "pnl_pct": -0.83,
-  "change_pct": -0.83
+  "current_price": 366.28,
+  "pnl": -16.65,
+  "pnl_pct": -4.35,
+  "change_pct": -4.35
  },
  {
   "ticker": "EWJ",
@@ -33424,10 +31316,10 @@
   "time": "2026-10-06 03:01:36 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 33.62,
-  "pnl": -3.35,
-  "pnl_pct": -9.06,
-  "change_pct": -9.06
+  "current_price": 33.67,
+  "pnl": -3.3,
+  "pnl_pct": -8.93,
+  "change_pct": -8.93
  },
  {
   "ticker": "TECL",
@@ -33583,10 +31475,10 @@
   "time": "2026-10-06 03:02:17 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 121.81,
-  "pnl": 10.03,
-  "pnl_pct": 8.97,
-  "change_pct": 8.97
+  "current_price": 123.11,
+  "pnl": 11.33,
+  "pnl_pct": 10.14,
+  "change_pct": 10.14
  },
  {
   "ticker": "DRIP",
@@ -33732,10 +31624,10 @@
   "time": "2026-10-06 03:02:49 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 52.42,
-  "pnl": -1.03,
-  "pnl_pct": -1.93,
-  "change_pct": -1.93
+  "current_price": 53.27,
+  "pnl": -0.18,
+  "pnl_pct": -0.34,
+  "change_pct": -0.34
  },
  {
   "ticker": "WEAT",
@@ -34356,10 +32248,10 @@
   "time": "2026-10-06 03:04:28 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 14.54,
-  "pnl": -0.08,
-  "pnl_pct": -0.55,
-  "change_pct": -0.55
+  "current_price": 15.69,
+  "pnl": 1.07,
+  "pnl_pct": 7.32,
+  "change_pct": 7.32
  },
  {
   "ticker": "SRPT",
@@ -34515,10 +32407,10 @@
   "time": "2026-10-06 03:04:53 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 93.14,
-  "pnl": -21.62,
-  "pnl_pct": -18.84,
-  "change_pct": -18.84
+  "current_price": 87.61,
+  "pnl": -27.15,
+  "pnl_pct": -23.66,
+  "change_pct": -23.66
  },
  {
   "ticker": "DIOD",
@@ -34600,10 +32492,10 @@
   "time": "2026-10-06 03:05:02 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 81.22,
-  "pnl": -27.59,
-  "pnl_pct": -25.36,
-  "change_pct": -25.36
+  "current_price": 81.94,
+  "pnl": -26.87,
+  "pnl_pct": -24.69,
+  "change_pct": -24.69
  },
  {
   "ticker": "GFS",
@@ -34915,10 +32807,10 @@
   "time": "2026-10-06 03:05:44 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 71.58,
-  "pnl": -3.49,
-  "pnl_pct": -4.65,
-  "change_pct": -4.65
+  "current_price": 70.76,
+  "pnl": -4.31,
+  "pnl_pct": -5.74,
+  "change_pct": -5.74
  },
  {
   "ticker": "LPLA",
@@ -35697,10 +33589,10 @@
   "time": "2026-10-06 03:23:35 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 153.04,
-  "pnl": 9.0,
-  "pnl_pct": 6.25,
-  "change_pct": 6.25
+  "current_price": 157.08,
+  "pnl": 13.04,
+  "pnl_pct": 9.05,
+  "change_pct": 9.05
  },
  {
   "ticker": "CI",
@@ -35928,10 +33820,10 @@
   "time": "2026-10-06 03:24:47 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 818.59,
-  "pnl": 125.2,
-  "pnl_pct": 18.06,
-  "change_pct": 18.06
+  "current_price": 814.16,
+  "pnl": 120.77,
+  "pnl_pct": 17.42,
+  "change_pct": 17.42
  },
  {
   "ticker": "TT",
@@ -36088,10 +33980,10 @@
   "time": "2026-10-06 03:25:14 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 461.1,
-  "pnl": -25.45,
-  "pnl_pct": -5.23,
-  "change_pct": -5.23
+  "current_price": 449.96,
+  "pnl": -36.59,
+  "pnl_pct": -7.52,
+  "change_pct": -7.52
  },
  {
   "ticker": "XOP",
@@ -36165,10 +34057,10 @@
   "time": "2026-10-06 03:26:16 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 197.17,
-  "pnl": 8.33,
-  "pnl_pct": 4.41,
-  "change_pct": 4.41
+  "current_price": 202.04,
+  "pnl": 13.2,
+  "pnl_pct": 6.99,
+  "change_pct": 6.99
  },
  {
   "ticker": "SOXS",
@@ -36558,10 +34450,10 @@
   "time": "2026-10-06 03:29:39 PM ET",
   "date": "2026-10-06",
   "result": "PENDING",
-  "current_price": 14.54,
-  "pnl": 0.01,
-  "pnl_pct": 0.07,
-  "change_pct": 0.07
+  "current_price": 15.69,
+  "pnl": 1.16,
+  "pnl_pct": 7.98,
+  "change_pct": 7.98
  },
  {
   "ticker": "AAPL",
@@ -36945,10 +34837,10 @@
   "time": "2026-10-07 03:24:40 PM ET",
   "date": "2026-10-07",
   "result": "PENDING",
-  "current_price": 53.17,
-  "pnl": 6.6,
-  "pnl_pct": 14.17,
-  "change_pct": 14.17
+  "current_price": 53.05,
+  "pnl": 6.48,
+  "pnl_pct": 13.91,
+  "change_pct": 13.91
  },
  {
   "ticker": "SMCI",
@@ -37023,10 +34915,10 @@
   "time": "2026-10-07 03:25:32 PM ET",
   "date": "2026-10-07",
   "result": "PENDING",
-  "current_price": 32.15,
-  "pnl": -13.43,
-  "pnl_pct": -29.46,
-  "change_pct": -29.46
+  "current_price": 33.6,
+  "pnl": -11.98,
+  "pnl_pct": -26.28,
+  "change_pct": -26.28
  },
  {
   "ticker": "PDD",
@@ -37407,10 +35299,10 @@
   "time": "2026-10-07 03:49:36 PM ET",
   "date": "2026-10-07",
   "result": "PENDING",
-  "current_price": 343.13,
-  "pnl": -3.93,
-  "pnl_pct": -1.13,
-  "change_pct": -1.13
+  "current_price": 319.1,
+  "pnl": -27.96,
+  "pnl_pct": -8.06,
+  "change_pct": -8.06
  },
  {
   "ticker": "ACN",
@@ -37896,10 +35788,10 @@
   "time": "2026-10-07 03:53:46 PM ET",
   "date": "2026-10-07",
   "result": "PENDING",
-  "current_price": 47.3,
-  "pnl": 1.2,
-  "pnl_pct": 2.6,
-  "change_pct": 2.6
+  "current_price": 46.46,
+  "pnl": 0.36,
+  "pnl_pct": 0.78,
+  "change_pct": 0.78
  },
  {
   "ticker": "SPXS",
@@ -38058,10 +35950,10 @@
   "time": "2026-10-07 03:54:54 PM ET",
   "date": "2026-10-07",
   "result": "PENDING",
-  "current_price": 200.11,
-  "pnl": 6.66,
-  "pnl_pct": 3.44,
-  "change_pct": 3.44
+  "current_price": 195.63,
+  "pnl": 2.18,
+  "pnl_pct": 1.13,
+  "change_pct": 1.13
  },
  {
   "ticker": "NXPI",
@@ -38136,10 +36028,10 @@
   "time": "2026-10-07 03:56:11 PM ET",
   "date": "2026-10-07",
   "result": "PENDING",
-  "current_price": 238.96,
-  "pnl": 3.61,
-  "pnl_pct": 1.53,
-  "change_pct": 1.53
+  "current_price": 236.82,
+  "pnl": 1.47,
+  "pnl_pct": 0.62,
+  "change_pct": 0.62
  },
  {
   "ticker": "C",
@@ -38213,10 +36105,10 @@
   "time": "2026-10-07 03:57:22 PM ET",
   "date": "2026-10-07",
   "result": "PENDING",
-  "current_price": 123.78,
-  "pnl": -3.36,
-  "pnl_pct": -2.64,
-  "change_pct": -2.64
+  "current_price": 120.81,
+  "pnl": -6.33,
+  "pnl_pct": -4.98,
+  "change_pct": -4.98
  },
  {
   "ticker": "AAPL",
@@ -38516,10 +36408,10 @@
   "time": "2026-10-08 03:17:26 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 107.36,
-  "pnl": -7.89,
-  "pnl_pct": -6.85,
-  "change_pct": -6.85
+  "current_price": 106.27,
+  "pnl": -8.98,
+  "pnl_pct": -7.79,
+  "change_pct": -7.79
  },
  {
   "ticker": "CAT",
@@ -38904,10 +36796,10 @@
   "time": "2026-10-08 03:19:14 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 342.25,
-  "pnl": -56.01,
-  "pnl_pct": -14.06,
-  "change_pct": -14.06
+  "current_price": 377.86,
+  "pnl": -20.4,
+  "pnl_pct": -5.12,
+  "change_pct": -5.12
  },
  {
   "ticker": "MCHP",
@@ -39058,10 +36950,10 @@
   "time": "2026-10-08 03:20:13 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 818.59,
-  "pnl": 110.84,
-  "pnl_pct": 15.66,
-  "change_pct": 15.66
+  "current_price": 814.16,
+  "pnl": 106.41,
+  "pnl_pct": 15.03,
+  "change_pct": 15.03
  },
  {
   "ticker": "MPWR",
@@ -39361,10 +37253,10 @@
   "time": "2026-10-08 03:21:10 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 704.37,
-  "pnl": -41.6,
-  "pnl_pct": -5.58,
-  "change_pct": -5.58
+  "current_price": 705.92,
+  "pnl": -40.05,
+  "pnl_pct": -5.37,
+  "change_pct": -5.37
  },
  {
   "ticker": "XLK",
@@ -40048,10 +37940,10 @@
   "time": "2026-10-08 03:25:41 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 82.06,
-  "pnl": 0.76,
-  "pnl_pct": 0.93,
-  "change_pct": 0.93
+  "current_price": 83.01,
+  "pnl": 1.71,
+  "pnl_pct": 2.1,
+  "change_pct": 2.1
  },
  {
   "ticker": "RMBS",
@@ -40122,10 +38014,10 @@
   "time": "2026-10-08 03:25:50 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 93.14,
-  "pnl": -14.72,
-  "pnl_pct": -13.65,
-  "change_pct": -13.65
+  "current_price": 87.61,
+  "pnl": -20.25,
+  "pnl_pct": -18.77,
+  "change_pct": -18.77
  },
  {
   "ticker": "SITM",
@@ -41358,10 +39250,10 @@
   "time": "2026-10-08 03:47:54 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 165.97,
-  "pnl": 1.42,
-  "pnl_pct": 0.86,
-  "change_pct": 0.86
+  "current_price": 169.68,
+  "pnl": 5.13,
+  "pnl_pct": 3.12,
+  "change_pct": 3.12
  },
  {
   "ticker": "MDB",
@@ -41443,10 +39335,10 @@
   "time": "2026-10-08 03:48:04 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 358.33,
-  "pnl": -10.38,
-  "pnl_pct": -2.82,
-  "change_pct": -2.82
+  "current_price": 372.86,
+  "pnl": 4.15,
+  "pnl_pct": 1.13,
+  "change_pct": 1.13
  },
  {
   "ticker": "RBLX",
@@ -41518,10 +39410,10 @@
   "time": "2026-10-08 03:48:16 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 53.17,
-  "pnl": 7.68,
-  "pnl_pct": 16.88,
-  "change_pct": 16.88
+  "current_price": 53.05,
+  "pnl": 7.56,
+  "pnl_pct": 16.62,
+  "change_pct": 16.62
  },
  {
   "ticker": "AR",
@@ -41823,10 +39715,10 @@
   "time": "2026-10-08 03:49:13 PM ET",
   "date": "2026-10-08",
   "result": "PENDING",
-  "current_price": 81.22,
-  "pnl": -14.63,
-  "pnl_pct": -15.26,
-  "change_pct": -15.26
+  "current_price": 81.94,
+  "pnl": -13.91,
+  "pnl_pct": -14.51,
+  "change_pct": -14.51
  },
  {
   "ticker": "GFS",
@@ -42521,10 +40413,10 @@
   "time": "2026-10-09 02:48:45 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 229.86,
-  "pnl": 9.39,
-  "pnl_pct": 4.26,
-  "change_pct": 4.26
+  "current_price": 227.93,
+  "pnl": 7.46,
+  "pnl_pct": 3.38,
+  "change_pct": 3.38
  },
  {
   "ticker": "RTX",
@@ -42599,10 +40491,10 @@
   "time": "2026-10-09 02:48:56 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 189.9,
-  "pnl": 4.71,
-  "pnl_pct": 2.54,
-  "change_pct": 2.54
+  "current_price": 191.55,
+  "pnl": 6.36,
+  "pnl_pct": 3.43,
+  "change_pct": 3.43
  },
  {
   "ticker": "HON",
@@ -43068,10 +40960,10 @@
   "time": "2026-10-09 02:49:59 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 212.02,
-  "pnl": 9.58,
-  "pnl_pct": 4.73,
-  "change_pct": 4.73
+  "current_price": 224.17,
+  "pnl": 21.73,
+  "pnl_pct": 10.73,
+  "change_pct": 10.73
  },
  {
   "ticker": "EMR",
@@ -43145,10 +41037,10 @@
   "time": "2026-10-09 02:50:11 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 164.71,
-  "pnl": 2.54,
-  "pnl_pct": 1.57,
-  "change_pct": 1.57
+  "current_price": 161.6,
+  "pnl": -0.57,
+  "pnl_pct": -0.35,
+  "change_pct": -0.35
  },
  {
   "ticker": "PAYX",
@@ -43221,10 +41113,10 @@
   "time": "2026-10-09 02:50:21 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 118.06,
-  "pnl": 13.96,
-  "pnl_pct": 13.41,
-  "change_pct": 13.41
+  "current_price": 117.8,
+  "pnl": 13.7,
+  "pnl_pct": 13.16,
+  "change_pct": 13.16
  },
  {
   "ticker": "HCA",
@@ -43452,10 +41344,10 @@
   "time": "2026-10-09 02:50:47 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 818.59,
-  "pnl": 143.76,
-  "pnl_pct": 21.3,
-  "change_pct": 21.3
+  "current_price": 814.16,
+  "pnl": 139.33,
+  "pnl_pct": 20.65,
+  "change_pct": 20.65
  },
  {
   "ticker": "GWW",
@@ -43531,10 +41423,10 @@
   "time": "2026-10-09 02:51:02 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 1334.33,
-  "pnl": 41.94,
-  "pnl_pct": 3.25,
-  "change_pct": 3.25
+  "current_price": 1353.62,
+  "pnl": 61.23,
+  "pnl_pct": 4.74,
+  "change_pct": 4.74
  },
  {
   "ticker": "MPWR",
@@ -43686,10 +41578,10 @@
   "time": "2026-10-09 02:51:33 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 440.25,
-  "pnl": 6.44,
-  "pnl_pct": 1.48,
-  "change_pct": 1.48
+  "current_price": 427.3,
+  "pnl": -6.51,
+  "pnl_pct": -1.5,
+  "change_pct": -1.5
  },
  {
   "ticker": "WST",
@@ -43763,10 +41655,10 @@
   "time": "2026-10-09 02:51:39 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 381.23,
-  "pnl": 11.79,
-  "pnl_pct": 3.19,
-  "change_pct": 3.19
+  "current_price": 391.07,
+  "pnl": 21.63,
+  "pnl_pct": 5.85,
+  "change_pct": 5.85
  },
  {
   "ticker": "LSCC",
@@ -43922,10 +41814,10 @@
   "time": "2026-10-09 02:52:02 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 128.24,
-  "pnl": 2.57,
-  "pnl_pct": 2.05,
-  "change_pct": 2.05
+  "current_price": 130.02,
+  "pnl": 4.35,
+  "pnl_pct": 3.46,
+  "change_pct": 3.46
  },
  {
   "ticker": "XLY",
@@ -44309,10 +42201,10 @@
   "time": "2026-10-09 02:53:06 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 197.17,
-  "pnl": 5.33,
-  "pnl_pct": 2.78,
-  "change_pct": 2.78
+  "current_price": 202.04,
+  "pnl": 10.2,
+  "pnl_pct": 5.32,
+  "change_pct": 5.32
  },
  {
   "ticker": "EWU",
@@ -44547,10 +42439,10 @@
   "time": "2026-10-09 02:53:36 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 149.42,
-  "pnl": -27.74,
-  "pnl_pct": -15.66,
-  "change_pct": -15.66
+  "current_price": 151.66,
+  "pnl": -25.5,
+  "pnl_pct": -14.39,
+  "change_pct": -14.39
  },
  {
   "ticker": "EWW",
@@ -44624,10 +42516,10 @@
   "time": "2026-10-09 02:53:41 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 75.74,
-  "pnl": 4.06,
-  "pnl_pct": 5.66,
-  "change_pct": 5.66
+  "current_price": 75.33,
+  "pnl": 3.65,
+  "pnl_pct": 5.09,
+  "change_pct": 5.09
  },
  {
   "ticker": "EPI",
@@ -44776,10 +42668,10 @@
   "time": "2026-10-09 02:53:59 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 29.4,
-  "pnl": -7.38,
-  "pnl_pct": -20.07,
-  "change_pct": -20.07
+  "current_price": 29.34,
+  "pnl": -7.44,
+  "pnl_pct": -20.23,
+  "change_pct": -20.23
  },
  {
   "ticker": "FNGD",
@@ -45005,10 +42897,10 @@
   "time": "2026-10-09 02:54:35 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 69.41,
-  "pnl": 3.73,
-  "pnl_pct": 5.68,
-  "change_pct": 5.68
+  "current_price": 67.43,
+  "pnl": 1.75,
+  "pnl_pct": 2.66,
+  "change_pct": 2.66
  },
  {
   "ticker": "SDOW",
@@ -45619,10 +43511,10 @@
   "time": "2026-10-09 02:55:31 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 52.42,
-  "pnl": -0.12,
-  "pnl_pct": -0.23,
-  "change_pct": -0.23
+  "current_price": 53.27,
+  "pnl": 0.73,
+  "pnl_pct": 1.39,
+  "change_pct": 1.39
  },
  {
   "ticker": "UNG",
@@ -45773,10 +43665,10 @@
   "time": "2026-10-09 02:55:58 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 358.33,
-  "pnl": -28.26,
-  "pnl_pct": -7.31,
-  "change_pct": -7.31
+  "current_price": 372.86,
+  "pnl": -13.73,
+  "pnl_pct": -3.55,
+  "change_pct": -3.55
  },
  {
   "ticker": "HUBS",
@@ -46321,10 +44213,10 @@
   "time": "2026-10-09 02:58:46 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 123.78,
-  "pnl": -5.83,
-  "pnl_pct": -4.5,
-  "change_pct": -4.5
+  "current_price": 120.81,
+  "pnl": -8.8,
+  "pnl_pct": -6.79,
+  "change_pct": -6.79
  },
  {
   "ticker": "CVX",
@@ -46478,10 +44370,10 @@
   "time": "2026-10-09 03:20:28 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 102.33,
-  "pnl": 2.76,
-  "pnl_pct": 2.77,
-  "change_pct": 2.77
+  "current_price": 103.2,
+  "pnl": 3.63,
+  "pnl_pct": 3.65,
+  "change_pct": 3.65
  },
  {
   "ticker": "GOOGL",
@@ -46633,10 +44525,10 @@
   "time": "2026-10-09 03:20:53 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 343.13,
-  "pnl": -4.45,
-  "pnl_pct": -1.28,
-  "change_pct": -1.28
+  "current_price": 319.1,
+  "pnl": -28.48,
+  "pnl_pct": -8.19,
+  "change_pct": -8.19
  },
  {
   "ticker": "NFLX",
@@ -46797,10 +44689,10 @@
   "time": "2026-10-09 03:21:18 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 189.9,
-  "pnl": 4.33,
-  "pnl_pct": 2.33,
-  "change_pct": 2.33
+  "current_price": 191.55,
+  "pnl": 5.98,
+  "pnl_pct": 3.22,
+  "change_pct": 3.22
  },
  {
   "ticker": "PGR",
@@ -46952,10 +44844,10 @@
   "time": "2026-10-09 03:21:45 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 364.49,
-  "pnl": 22.55,
-  "pnl_pct": 6.59,
-  "change_pct": 6.59
+  "current_price": 357.43,
+  "pnl": 15.49,
+  "pnl_pct": 4.53,
+  "change_pct": 4.53
  },
  {
   "ticker": "XLC",
@@ -47114,10 +45006,10 @@
   "time": "2026-10-09 03:24:29 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 83.42,
-  "pnl": -56.9,
-  "pnl_pct": -40.55,
-  "change_pct": -40.55
+  "current_price": 84.55,
+  "pnl": -55.77,
+  "pnl_pct": -39.74,
+  "change_pct": -39.74
  },
  {
   "ticker": "SOXS",
@@ -47660,10 +45552,10 @@
   "time": "2026-10-09 03:26:18 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 14.54,
-  "pnl": -0.87,
-  "pnl_pct": -5.65,
-  "change_pct": -5.65
+  "current_price": 15.69,
+  "pnl": 0.28,
+  "pnl_pct": 1.82,
+  "change_pct": 1.82
  },
  {
   "ticker": "SRPT",
@@ -47816,10 +45708,10 @@
   "time": "2026-10-09 03:26:52 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 238.96,
-  "pnl": 11.72,
-  "pnl_pct": 5.16,
-  "change_pct": 5.16
+  "current_price": 236.82,
+  "pnl": 9.58,
+  "pnl_pct": 4.22,
+  "change_pct": 4.22
  },
  {
   "ticker": "CHWY",
@@ -48063,10 +45955,10 @@
   "time": "2026-10-09 03:27:42 PM ET",
   "date": "2026-10-09",
   "result": "PENDING",
-  "current_price": 25.76,
-  "pnl": -1.31,
-  "pnl_pct": -4.84,
-  "change_pct": -4.84
+  "current_price": 25.38,
+  "pnl": -1.69,
+  "pnl_pct": -6.24,
+  "change_pct": -6.24
  },
  {
   "ticker": "MSFT",
@@ -48302,7 +46194,11 @@
   },
   "time": "2026-10-13 03:53:52 PM ET",
   "date": "2026-10-13",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 317.63,
+  "pnl": 23.78,
+  "pnl_pct": 8.09,
+  "change_pct": 8.09
  },
  {
   "ticker": "DIS",
@@ -48376,10 +46272,10 @@
   "time": "2026-10-13 03:54:00 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 111.36,
-  "pnl": 3.16,
-  "pnl_pct": 2.92,
-  "change_pct": 2.92
+  "current_price": 112.61,
+  "pnl": 4.41,
+  "pnl_pct": 4.08,
+  "change_pct": 4.08
  },
  {
   "ticker": "CAT",
@@ -48930,10 +46826,10 @@
   "time": "2026-10-13 03:55:31 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 305.95,
-  "pnl": 23.45,
-  "pnl_pct": 8.3,
-  "change_pct": 8.3
+  "current_price": 307.29,
+  "pnl": 24.79,
+  "pnl_pct": 8.78,
+  "change_pct": 8.78
  },
  {
   "ticker": "MDLZ",
@@ -49008,10 +46904,10 @@
   "time": "2026-10-13 03:55:35 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 62.51,
-  "pnl": 1.02,
-  "pnl_pct": 1.66,
-  "change_pct": 1.66
+  "current_price": 63.51,
+  "pnl": 2.02,
+  "pnl_pct": 3.29,
+  "change_pct": 3.29
  },
  {
   "ticker": "LRCX",
@@ -49241,10 +47137,10 @@
   "time": "2026-10-13 03:55:55 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 322.64,
-  "pnl": -11.6,
-  "pnl_pct": -3.47,
-  "change_pct": -3.47
+  "current_price": 315.79,
+  "pnl": -18.45,
+  "pnl_pct": -5.52,
+  "change_pct": -5.52
  },
  {
   "ticker": "ZTS",
@@ -49392,10 +47288,10 @@
   "time": "2026-10-13 03:56:37 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 212.02,
-  "pnl": 5.59,
-  "pnl_pct": 2.71,
-  "change_pct": 2.71
+  "current_price": 224.17,
+  "pnl": 17.74,
+  "pnl_pct": 8.59,
+  "change_pct": 8.59
  },
  {
   "ticker": "WELL",
@@ -49623,10 +47519,10 @@
   "time": "2026-10-13 03:57:45 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 440.25,
-  "pnl": 8.57,
-  "pnl_pct": 1.99,
-  "change_pct": 1.99
+  "current_price": 427.3,
+  "pnl": -4.38,
+  "pnl_pct": -1.01,
+  "change_pct": -1.01
  },
  {
   "ticker": "LSCC",
@@ -49934,10 +47830,10 @@
   "time": "2026-10-13 03:58:53 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 197.17,
-  "pnl": -2.67,
-  "pnl_pct": -1.34,
-  "change_pct": -1.34
+  "current_price": 202.04,
+  "pnl": 2.2,
+  "pnl_pct": 1.1,
+  "change_pct": 1.1
  },
  {
   "ticker": "ARKF",
@@ -50095,10 +47991,10 @@
   "time": "2026-10-13 03:59:19 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 33.62,
-  "pnl": -2.18,
-  "pnl_pct": -6.09,
-  "change_pct": -6.09
+  "current_price": 33.67,
+  "pnl": -2.13,
+  "pnl_pct": -5.95,
+  "change_pct": -5.95
  },
  {
   "ticker": "TNA",
@@ -50347,10 +48243,10 @@
   "time": "2026-10-13 03:59:52 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 120.87,
-  "pnl": 1.51,
-  "pnl_pct": 1.27,
-  "change_pct": 1.27
+  "current_price": 126.52,
+  "pnl": 7.16,
+  "pnl_pct": 6.0,
+  "change_pct": 6.0
  },
  {
   "ticker": "DRIP",
@@ -50577,10 +48473,10 @@
   "time": "2026-10-13 04:00:29 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 29.45,
-  "pnl": -2.63,
-  "pnl_pct": -8.2,
-  "change_pct": -8.2
+  "current_price": 29.36,
+  "pnl": -2.72,
+  "pnl_pct": -8.48,
+  "change_pct": -8.48
  },
  {
   "ticker": "DFEN",
@@ -50656,10 +48552,10 @@
   "time": "2026-10-13 04:00:34 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 43.42,
-  "pnl": -1.39,
-  "pnl_pct": -3.1,
-  "change_pct": -3.1
+  "current_price": 43.44,
+  "pnl": -1.37,
+  "pnl_pct": -3.06,
+  "change_pct": -3.06
  },
  {
   "ticker": "AMLP",
@@ -50734,10 +48630,10 @@
   "time": "2026-10-13 04:00:48 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 52.42,
-  "pnl": -0.33,
-  "pnl_pct": -0.63,
-  "change_pct": -0.63
+  "current_price": 53.27,
+  "pnl": 0.52,
+  "pnl_pct": 0.99,
+  "change_pct": 0.99
  },
  {
   "ticker": "MARA",
@@ -50819,10 +48715,10 @@
   "time": "2026-10-13 04:01:01 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 7.97,
-  "pnl": -1.15,
-  "pnl_pct": -12.61,
-  "change_pct": -12.61
+  "current_price": 7.18,
+  "pnl": -1.94,
+  "pnl_pct": -21.27,
+  "change_pct": -21.27
  },
  {
   "ticker": "VLO",
@@ -51141,10 +49037,10 @@
   "time": "2026-10-13 04:02:23 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 22.14,
-  "pnl": -6.6,
-  "pnl_pct": -22.96,
-  "change_pct": -22.96
+  "current_price": 22.72,
+  "pnl": -6.02,
+  "pnl_pct": -20.95,
+  "change_pct": -20.95
  },
  {
   "ticker": "SITM",
@@ -51378,10 +49274,10 @@
   "time": "2026-10-13 04:03:06 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 23.61,
-  "pnl": -0.21,
-  "pnl_pct": -0.88,
-  "change_pct": -0.88
+  "current_price": 23.5,
+  "pnl": -0.32,
+  "pnl_pct": -1.34,
+  "change_pct": -1.34
  },
  {
   "ticker": "LPLA",
@@ -52019,7 +49915,11 @@
   },
   "time": "2026-10-13 04:09:35 PM ET",
   "date": "2026-10-13",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 317.63,
+  "pnl": 23.7,
+  "pnl_pct": 8.06,
+  "change_pct": 8.06
  },
  {
   "ticker": "AMT",
@@ -52175,10 +50075,10 @@
   "time": "2026-10-13 04:11:36 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 322.64,
-  "pnl": -11.56,
-  "pnl_pct": -3.46,
-  "change_pct": -3.46
+  "current_price": 315.79,
+  "pnl": -18.41,
+  "pnl_pct": -5.51,
+  "change_pct": -5.51
  },
  {
   "ticker": "ZTS",
@@ -52418,10 +50318,10 @@
   "time": "2026-10-13 04:12:46 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 1141.15,
-  "pnl": 28.93,
-  "pnl_pct": 2.6,
-  "change_pct": 2.6
+  "current_price": 1097.27,
+  "pnl": -14.95,
+  "pnl_pct": -1.34,
+  "change_pct": -1.34
  },
  {
   "ticker": "FICO",
@@ -52495,10 +50395,10 @@
   "time": "2026-10-13 04:12:57 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 818.59,
-  "pnl": 96.17,
-  "pnl_pct": 13.31,
-  "change_pct": 13.31
+  "current_price": 814.16,
+  "pnl": 91.74,
+  "pnl_pct": 12.7,
+  "change_pct": 12.7
  },
  {
   "ticker": "VRSK",
@@ -52573,10 +50473,10 @@
   "time": "2026-10-13 04:13:09 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 192.03,
-  "pnl": 15.33,
-  "pnl_pct": 8.68,
-  "change_pct": 8.68
+  "current_price": 196.4,
+  "pnl": 19.7,
+  "pnl_pct": 11.15,
+  "change_pct": 11.15
  },
  {
   "ticker": "IDXX",
@@ -52654,10 +50554,10 @@
   "time": "2026-10-13 04:13:25 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 555.91,
-  "pnl": 35.68,
-  "pnl_pct": 6.86,
-  "change_pct": 6.86
+  "current_price": 560.72,
+  "pnl": 40.49,
+  "pnl_pct": 7.78,
+  "change_pct": 7.78
  },
  {
   "ticker": "MPWR",
@@ -53377,10 +51277,10 @@
   "time": "2026-10-13 04:16:08 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 197.17,
-  "pnl": -2.65,
-  "pnl_pct": -1.33,
-  "change_pct": -1.33
+  "current_price": 202.04,
+  "pnl": 2.22,
+  "pnl_pct": 1.11,
+  "change_pct": 1.11
  },
  {
   "ticker": "ARKG",
@@ -53453,10 +51353,10 @@
   "time": "2026-10-13 04:16:13 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 50.17,
-  "pnl": 1.72,
-  "pnl_pct": 3.55,
-  "change_pct": 3.55
+  "current_price": 48.04,
+  "pnl": -0.41,
+  "pnl_pct": -0.85,
+  "change_pct": -0.85
  },
  {
   "ticker": "FXI",
@@ -53933,10 +51833,10 @@
   "time": "2026-10-13 04:17:51 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 83.42,
-  "pnl": -44.21,
-  "pnl_pct": -34.64,
-  "change_pct": -34.64
+  "current_price": 84.55,
+  "pnl": -43.08,
+  "pnl_pct": -33.75,
+  "change_pct": -33.75
  },
  {
   "ticker": "TECL",
@@ -54087,10 +51987,10 @@
   "time": "2026-10-13 04:18:22 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 120.87,
-  "pnl": 1.68,
-  "pnl_pct": 1.41,
-  "change_pct": 1.41
+  "current_price": 126.52,
+  "pnl": 7.33,
+  "pnl_pct": 6.15,
+  "change_pct": 6.15
  },
  {
   "ticker": "SDOW",
@@ -54325,10 +52225,10 @@
   "time": "2026-10-13 04:19:00 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 29.45,
-  "pnl": -2.59,
-  "pnl_pct": -8.08,
-  "change_pct": -8.08
+  "current_price": 29.36,
+  "pnl": -2.68,
+  "pnl_pct": -8.36,
+  "change_pct": -8.36
  },
  {
   "ticker": "DKNG",
@@ -54490,10 +52390,10 @@
   "time": "2026-10-13 04:19:38 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 7.97,
-  "pnl": -1.15,
-  "pnl_pct": -12.61,
-  "change_pct": -12.61
+  "current_price": 7.18,
+  "pnl": -1.94,
+  "pnl_pct": -21.27,
+  "change_pct": -21.27
  },
  {
   "ticker": "TWLO",
@@ -55304,10 +53204,10 @@
   "time": "2026-10-13 04:22:48 PM ET",
   "date": "2026-10-13",
   "result": "PENDING",
-  "current_price": 3.43,
-  "pnl": -0.14,
-  "pnl_pct": -3.92,
-  "change_pct": -3.92
+  "current_price": 3.18,
+  "pnl": -0.39,
+  "pnl_pct": -10.92,
+  "change_pct": -10.92
  },
  {
   "ticker": "NIO",
@@ -55782,10 +53682,10 @@
   "time": "2026-10-14 01:59:11 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 542.09,
-  "pnl": 18.19,
-  "pnl_pct": 3.47,
-  "change_pct": 3.47
+  "current_price": 541.61,
+  "pnl": 17.71,
+  "pnl_pct": 3.38,
+  "change_pct": 3.38
  },
  {
   "ticker": "XOM",
@@ -55935,10 +53835,10 @@
   "time": "2026-10-14 02:00:11 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 153.04,
-  "pnl": -0.51,
-  "pnl_pct": -0.33,
-  "change_pct": -0.33
+  "current_price": 157.08,
+  "pnl": 3.53,
+  "pnl_pct": 2.3,
+  "change_pct": 2.3
  },
  {
   "ticker": "AMT",
@@ -56088,10 +53988,10 @@
   "time": "2026-10-14 02:00:35 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 364.49,
-  "pnl": 14.56,
-  "pnl_pct": 4.16,
-  "change_pct": 4.16
+  "current_price": 357.43,
+  "pnl": 7.5,
+  "pnl_pct": 2.14,
+  "change_pct": 2.14
  },
  {
   "ticker": "SO",
@@ -56238,10 +54138,10 @@
   "time": "2026-10-14 02:00:54 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 157.57,
-  "pnl": 2.7,
-  "pnl_pct": 1.74,
-  "change_pct": 1.74
+  "current_price": 163.75,
+  "pnl": 8.88,
+  "pnl_pct": 5.73,
+  "change_pct": 5.73
  },
  {
   "ticker": "WELL",
@@ -56391,10 +54291,10 @@
   "time": "2026-10-14 02:01:44 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 192.03,
-  "pnl": 12.22,
-  "pnl_pct": 6.8,
-  "change_pct": 6.8
+  "current_price": 196.4,
+  "pnl": 16.59,
+  "pnl_pct": 9.23,
+  "change_pct": 9.23
  },
  {
   "ticker": "XBI",
@@ -56551,10 +54451,10 @@
   "time": "2026-10-14 02:04:17 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 39.65,
-  "pnl": 3.53,
-  "pnl_pct": 9.77,
-  "change_pct": 9.77
+  "current_price": 39.43,
+  "pnl": 3.31,
+  "pnl_pct": 9.16,
+  "change_pct": 9.16
  },
  {
   "ticker": "SPXS",
@@ -57801,10 +55701,10 @@
   "time": "2026-10-14 02:23:13 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 164.12,
-  "pnl": -0.19,
-  "pnl_pct": -0.12,
-  "change_pct": -0.12
+  "current_price": 173.29,
+  "pnl": 8.98,
+  "pnl_pct": 5.47,
+  "change_pct": 5.47
  },
  {
   "ticker": "TRV",
@@ -58036,10 +55936,10 @@
   "time": "2026-10-14 02:23:35 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 542.09,
-  "pnl": 17.01,
-  "pnl_pct": 3.24,
-  "change_pct": 3.24
+  "current_price": 541.61,
+  "pnl": 16.53,
+  "pnl_pct": 3.15,
+  "change_pct": 3.15
  },
  {
   "ticker": "AMT",
@@ -58342,10 +56242,10 @@
   "time": "2026-10-14 02:25:19 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 212.02,
-  "pnl": 4.23,
-  "pnl_pct": 2.04,
-  "change_pct": 2.04
+  "current_price": 224.17,
+  "pnl": 16.38,
+  "pnl_pct": 7.88,
+  "change_pct": 7.88
  },
  {
   "ticker": "XLV",
@@ -58497,10 +56397,10 @@
   "time": "2026-10-14 02:26:27 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 89.45,
-  "pnl": 3.78,
-  "pnl_pct": 4.41,
-  "change_pct": 4.41
+  "current_price": 88.1,
+  "pnl": 2.43,
+  "pnl_pct": 2.84,
+  "change_pct": 2.84
  },
  {
   "ticker": "URA",
@@ -58961,10 +56861,10 @@
   "time": "2026-10-14 02:27:29 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 103.25,
-  "pnl": 0.47,
-  "pnl_pct": 0.46,
-  "change_pct": 0.46
+  "current_price": 103.93,
+  "pnl": 1.15,
+  "pnl_pct": 1.12,
+  "change_pct": 1.12
  },
  {
   "ticker": "BITO",
@@ -59039,10 +56939,10 @@
   "time": "2026-10-14 02:28:33 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 11.32,
-  "pnl": 0.43,
-  "pnl_pct": 3.95,
-  "change_pct": 3.95
+  "current_price": 10.88,
+  "pnl": -0.01,
+  "pnl_pct": -0.09,
+  "change_pct": -0.09
  },
  {
   "ticker": "DRIV",
@@ -59115,10 +57015,10 @@
   "time": "2026-10-14 02:28:42 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 29.45,
-  "pnl": -1.68,
-  "pnl_pct": -5.4,
-  "change_pct": -5.4
+  "current_price": 29.36,
+  "pnl": -1.77,
+  "pnl_pct": -5.69,
+  "change_pct": -5.69
  },
  {
   "ticker": "ITB",
@@ -59345,10 +57245,10 @@
   "time": "2026-10-14 02:29:21 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 6.12,
-  "pnl": 0.13,
-  "pnl_pct": 2.17,
-  "change_pct": 2.17
+  "current_price": 6.36,
+  "pnl": 0.37,
+  "pnl_pct": 6.18,
+  "change_pct": 6.18
  },
  {
   "ticker": "DDOG",
@@ -59500,10 +57400,10 @@
   "time": "2026-10-14 02:29:40 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 358.33,
-  "pnl": -0.72,
-  "pnl_pct": -0.2,
-  "change_pct": -0.2
+  "current_price": 372.86,
+  "pnl": 13.81,
+  "pnl_pct": 3.85,
+  "change_pct": 3.85
  },
  {
   "ticker": "U",
@@ -59576,10 +57476,10 @@
   "time": "2026-10-14 02:30:00 PM ET",
   "date": "2026-10-14",
   "result": "PENDING",
-  "current_price": 40.6,
-  "pnl": -1.04,
-  "pnl_pct": -2.5,
-  "change_pct": -2.5
+  "current_price": 41.3,
+  "pnl": -0.34,
+  "pnl_pct": -0.82,
+  "change_pct": -0.82
  },
  {
   "ticker": "DVN",
@@ -60346,10 +58246,10 @@
   "time": "2026-10-15 01:45:53 PM ET",
   "date": "2026-10-15",
   "result": "PENDING",
-  "current_price": 102.33,
-  "pnl": -2.09,
-  "pnl_pct": -2.0,
-  "change_pct": -2.0
+  "current_price": 103.2,
+  "pnl": -1.22,
+  "pnl_pct": -1.17,
+  "change_pct": -1.17
  },
  {
   "ticker": "XOM",
@@ -60662,10 +58562,10 @@
   "time": "2026-10-15 01:46:56 PM ET",
   "date": "2026-10-15",
   "result": "PENDING",
-  "current_price": 22.23,
-  "pnl": 0.61,
-  "pnl_pct": 2.82,
-  "change_pct": 2.82
+  "current_price": 22.75,
+  "pnl": 1.13,
+  "pnl_pct": 5.23,
+  "change_pct": 5.23
  },
  {
   "ticker": "MDLZ",
@@ -60741,10 +58641,10 @@
   "time": "2026-10-15 01:47:25 PM ET",
   "date": "2026-10-15",
   "result": "PENDING",
-  "current_price": 62.51,
-  "pnl": -1.0,
-  "pnl_pct": -1.57,
-  "change_pct": -1.57
+  "current_price": 63.51,
+  "pnl": 0.0,
+  "pnl_pct": 0.0,
+  "change_pct": 0.0
  },
  {
   "ticker": "CB",
@@ -60817,10 +58717,10 @@
   "time": "2026-10-15 01:47:52 PM ET",
   "date": "2026-10-15",
   "result": "PENDING",
-  "current_price": 364.49,
-  "pnl": 11.41,
-  "pnl_pct": 3.23,
-  "change_pct": 3.23
+  "current_price": 357.43,
+  "pnl": 4.35,
+  "pnl_pct": 1.23,
+  "change_pct": 1.23
  },
  {
   "ticker": "MO",
@@ -61208,10 +59108,10 @@
   "time": "2026-10-15 01:48:32 PM ET",
   "date": "2026-10-15",
   "result": "PENDING",
-  "current_price": 157.57,
-  "pnl": 4.6,
-  "pnl_pct": 3.01,
-  "change_pct": 3.01
+  "current_price": 163.75,
+  "pnl": 10.78,
+  "pnl_pct": 7.05,
+  "change_pct": 7.05
  },
  {
   "ticker": "WELL",
@@ -61367,10 +59267,10 @@
   "time": "2026-10-15 01:49:32 PM ET",
   "date": "2026-10-15",
   "result": "PENDING",
-  "current_price": 192.03,
-  "pnl": 3.66,
-  "pnl_pct": 1.94,
-  "change_pct": 1.94
+  "current_price": 196.4,
+  "pnl": 8.03,
+  "pnl_pct": 4.26,
+  "change_pct": 4.26
  },
  {
   "ticker": "TZA",
@@ -62324,10 +60224,10 @@
   "time": "2026-10-15 02:06:56 PM ET",
   "date": "2026-10-15",
   "result": "PENDING",
-  "current_price": 305.34,
-  "pnl": 17.91,
-  "pnl_pct": 6.23,
-  "change_pct": 6.23
+  "current_price": 306.36,
+  "pnl": 18.93,
+  "pnl_pct": 6.59,
+  "change_pct": 6.59
  },
  {
   "ticker": "DUK",
@@ -62565,10 +60465,10 @@
   "time": "2026-10-15 02:07:18 PM ET",
   "date": "2026-10-15",
   "result": "PENDING",
-  "current_price": 157.57,
-  "pnl": 4.17,
-  "pnl_pct": 2.72,
-  "change_pct": 2.72
+  "current_price": 163.75,
+  "pnl": 10.35,
+  "pnl_pct": 6.75,
+  "change_pct": 6.75
  },
  {
   "ticker": "ORLY",
@@ -62878,10 +60778,10 @@
   "time": "2026-10-16 01:20:23 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 111.36,
-  "pnl": 0.93,
-  "pnl_pct": 0.84,
-  "change_pct": 0.84
+  "current_price": 112.61,
+  "pnl": 2.18,
+  "pnl_pct": 1.97,
+  "change_pct": 1.97
  },
  {
   "ticker": "XOM",
@@ -63034,10 +60934,10 @@
   "time": "2026-10-16 01:21:02 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 1273.0,
-  "pnl": 17.27,
-  "pnl_pct": 1.38,
-  "change_pct": 1.38
+  "current_price": 1268.04,
+  "pnl": 12.31,
+  "pnl_pct": 0.98,
+  "change_pct": 0.98
  },
  {
   "ticker": "LOW",
@@ -63192,10 +61092,10 @@
   "time": "2026-10-16 01:21:50 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 1127.64,
-  "pnl": 5.37,
-  "pnl_pct": 0.48,
-  "change_pct": 0.48
+  "current_price": 1111.26,
+  "pnl": -11.01,
+  "pnl_pct": -0.98,
+  "change_pct": -0.98
  },
  {
   "ticker": "EOG",
@@ -63271,10 +61171,10 @@
   "time": "2026-10-16 01:22:37 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 157.57,
-  "pnl": 0.83,
-  "pnl_pct": 0.53,
-  "change_pct": 0.53
+  "current_price": 163.75,
+  "pnl": 7.01,
+  "pnl_pct": 4.47,
+  "change_pct": 4.47
  },
  {
   "ticker": "MCHP",
@@ -63510,10 +61410,10 @@
   "time": "2026-10-16 01:23:38 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 288.63,
-  "pnl": -1.94,
-  "pnl_pct": -0.67,
-  "change_pct": -0.67
+  "current_price": 302.17,
+  "pnl": 11.6,
+  "pnl_pct": 3.99,
+  "change_pct": 3.99
  },
  {
   "ticker": "XLE",
@@ -63827,10 +61727,10 @@
   "time": "2026-10-16 01:26:45 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 39.65,
-  "pnl": 1.04,
-  "pnl_pct": 2.69,
-  "change_pct": 2.69
+  "current_price": 39.43,
+  "pnl": 0.82,
+  "pnl_pct": 2.12,
+  "change_pct": 2.12
  },
  {
   "ticker": "LABD",
@@ -64140,10 +62040,10 @@
   "time": "2026-10-16 01:27:36 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 120.87,
-  "pnl": -1.1,
-  "pnl_pct": -0.9,
-  "change_pct": -0.9
+  "current_price": 126.52,
+  "pnl": 4.55,
+  "pnl_pct": 3.73,
+  "change_pct": 3.73
  },
  {
   "ticker": "NAIL",
@@ -64845,10 +62745,10 @@
   "time": "2026-10-16 01:52:56 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 161.84,
-  "pnl": -1.44,
-  "pnl_pct": -0.88,
-  "change_pct": -0.88
+  "current_price": 156.93,
+  "pnl": -6.35,
+  "pnl_pct": -3.89,
+  "change_pct": -3.89
  },
  {
   "ticker": "SYK",
@@ -64922,10 +62822,10 @@
   "time": "2026-10-16 01:53:01 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 305.95,
-  "pnl": 10.78,
-  "pnl_pct": 3.65,
-  "change_pct": 3.65
+  "current_price": 307.29,
+  "pnl": 12.12,
+  "pnl_pct": 4.11,
+  "change_pct": 4.11
  },
  {
   "ticker": "REGN",
@@ -65393,10 +63293,10 @@
   "time": "2026-10-16 01:54:16 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 118.06,
-  "pnl": 8.07,
-  "pnl_pct": 7.34,
-  "change_pct": 7.34
+  "current_price": 117.8,
+  "pnl": 7.81,
+  "pnl_pct": 7.1,
+  "change_pct": 7.1
  },
  {
   "ticker": "RSG",
@@ -65624,10 +63524,10 @@
   "time": "2026-10-16 01:54:49 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 70.93,
-  "pnl": 1.02,
-  "pnl_pct": 1.46,
-  "change_pct": 1.46
+  "current_price": 71.37,
+  "pnl": 1.46,
+  "pnl_pct": 2.09,
+  "change_pct": 2.09
  },
  {
   "ticker": "XYL",
@@ -66244,10 +64144,10 @@
   "time": "2026-10-16 01:56:38 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 175.63,
-  "pnl": 3.75,
-  "pnl_pct": 2.18,
-  "change_pct": 2.18
+  "current_price": 173.5,
+  "pnl": 1.62,
+  "pnl_pct": 0.94,
+  "change_pct": 0.94
  },
  {
   "ticker": "TWLO",
@@ -66706,10 +64606,10 @@
   "time": "2026-10-16 01:57:47 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 32.15,
-  "pnl": 0.45,
-  "pnl_pct": 1.42,
-  "change_pct": 1.42
+  "current_price": 33.6,
+  "pnl": 1.9,
+  "pnl_pct": 5.99,
+  "change_pct": 5.99
  },
  {
   "ticker": "SWKS",
@@ -66784,10 +64684,10 @@
   "time": "2026-10-16 01:58:00 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 82.06,
-  "pnl": 1.81,
-  "pnl_pct": 2.26,
-  "change_pct": 2.26
+  "current_price": 83.01,
+  "pnl": 2.76,
+  "pnl_pct": 3.44,
+  "change_pct": 3.44
  },
  {
   "ticker": "ACLS",
@@ -67430,10 +65330,10 @@
   "time": "2026-10-16 04:02:05 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 111.36,
-  "pnl": 0.76,
-  "pnl_pct": 0.69,
-  "change_pct": 0.69
+  "current_price": 112.61,
+  "pnl": 2.01,
+  "pnl_pct": 1.82,
+  "change_pct": 1.82
  },
  {
   "ticker": "NKE",
@@ -67682,7 +65582,11 @@
   },
   "time": "2026-10-16 04:02:26 PM ET",
   "date": "2026-10-16",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 173.29,
+  "pnl": 8.84,
+  "pnl_pct": 5.38,
+  "change_pct": 5.38
  },
  {
   "ticker": "PEP",
@@ -67931,10 +65835,10 @@
   "time": "2026-10-16 04:03:11 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 229.86,
-  "pnl": 0.83,
-  "pnl_pct": 0.36,
-  "change_pct": 0.36
+  "current_price": 227.93,
+  "pnl": -1.1,
+  "pnl_pct": -0.48,
+  "change_pct": -0.48
  },
  {
   "ticker": "ADBE",
@@ -69224,10 +67128,10 @@
   "time": "2026-10-16 04:06:40 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 55.64,
-  "pnl": 0.14,
-  "pnl_pct": 0.25,
-  "change_pct": 0.25
+  "current_price": 55.92,
+  "pnl": 0.42,
+  "pnl_pct": 0.76,
+  "change_pct": 0.76
  },
  {
   "ticker": "XLV",
@@ -69540,10 +67444,10 @@
   "time": "2026-10-16 04:07:35 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 23.18,
-  "pnl": -1.23,
-  "pnl_pct": -5.04,
-  "change_pct": -5.04
+  "current_price": 23.17,
+  "pnl": -1.24,
+  "pnl_pct": -5.08,
+  "change_pct": -5.08
  },
  {
   "ticker": "EWG",
@@ -69626,10 +67530,10 @@
   "time": "2026-10-16 04:07:49 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 41.79,
-  "pnl": 0.23,
-  "pnl_pct": 0.55,
-  "change_pct": 0.55
+  "current_price": 40.93,
+  "pnl": -0.63,
+  "pnl_pct": -1.52,
+  "change_pct": -1.52
  },
  {
   "ticker": "EWU",
@@ -70029,10 +67933,10 @@
   "time": "2026-10-16 04:08:38 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 83.42,
-  "pnl": -10.26,
-  "pnl_pct": -10.95,
-  "change_pct": -10.95
+  "current_price": 84.55,
+  "pnl": -9.13,
+  "pnl_pct": -9.75,
+  "change_pct": -9.75
  },
  {
   "ticker": "FAZ",
@@ -70198,10 +68102,10 @@
   "time": "2026-10-16 04:09:12 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 69.41,
-  "pnl": 2.85,
-  "pnl_pct": 4.28,
-  "change_pct": 4.28
+  "current_price": 67.43,
+  "pnl": 0.87,
+  "pnl_pct": 1.31,
+  "change_pct": 1.31
  },
  {
   "ticker": "DRIP",
@@ -70359,10 +68263,10 @@
   "time": "2026-10-16 04:09:37 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 96.14,
-  "pnl": 1.26,
-  "pnl_pct": 1.33,
-  "change_pct": 1.33
+  "current_price": 98.43,
+  "pnl": 3.55,
+  "pnl_pct": 3.74,
+  "change_pct": 3.74
  },
  {
   "ticker": "XRT",
@@ -71198,10 +69102,10 @@
   "time": "2026-10-16 04:12:03 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 1.37,
-  "pnl": -0.03,
-  "pnl_pct": -2.14,
-  "change_pct": -2.14
+  "current_price": 1.39,
+  "pnl": -0.01,
+  "pnl_pct": -0.71,
+  "change_pct": -0.71
  },
  {
   "ticker": "JD",
@@ -71279,10 +69183,10 @@
   "time": "2026-10-16 04:12:15 PM ET",
   "date": "2026-10-16",
   "result": "PENDING",
-  "current_price": 25.76,
-  "pnl": -1.25,
-  "pnl_pct": -4.63,
-  "change_pct": -4.63
+  "current_price": 25.38,
+  "pnl": -1.63,
+  "pnl_pct": -6.03,
+  "change_pct": -6.03
  },
  {
   "ticker": "PDD",
@@ -71992,10 +69896,10 @@
   "time": "2026-10-19 03:16:14 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 305.95,
-  "pnl": 7.06,
-  "pnl_pct": 2.36,
-  "change_pct": 2.36
+  "current_price": 307.29,
+  "pnl": 8.4,
+  "pnl_pct": 2.81,
+  "change_pct": 2.81
  },
  {
   "ticker": "CB",
@@ -72069,10 +69973,10 @@
   "time": "2026-10-19 03:16:30 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 364.49,
-  "pnl": 7.88,
-  "pnl_pct": 2.21,
-  "change_pct": 2.21
+  "current_price": 357.43,
+  "pnl": 0.82,
+  "pnl_pct": 0.23,
+  "change_pct": 0.23
  },
  {
   "ticker": "CTAS",
@@ -72147,10 +70051,10 @@
   "time": "2026-10-19 03:16:52 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 212.02,
-  "pnl": -0.07,
-  "pnl_pct": -0.03,
-  "change_pct": -0.03
+  "current_price": 224.17,
+  "pnl": 12.08,
+  "pnl_pct": 5.7,
+  "change_pct": 5.7
  },
  {
   "ticker": "WELL",
@@ -72714,10 +70618,10 @@
   "time": "2026-10-19 03:18:07 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 288.63,
-  "pnl": -4.6,
-  "pnl_pct": -1.57,
-  "change_pct": -1.57
+  "current_price": 302.17,
+  "pnl": 8.94,
+  "pnl_pct": 3.05,
+  "change_pct": 3.05
  },
  {
   "ticker": "EME",
@@ -72791,10 +70695,10 @@
   "time": "2026-10-19 03:18:14 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 656.0,
-  "pnl": -61.09,
-  "pnl_pct": -8.52,
-  "change_pct": -8.52
+  "current_price": 653.02,
+  "pnl": -64.07,
+  "pnl_pct": -8.93,
+  "change_pct": -8.93
  },
  {
   "ticker": "WST",
@@ -72866,7 +70770,11 @@
   },
   "time": "2026-10-19 03:18:23 PM ET",
   "date": "2026-10-19",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 391.07,
+  "pnl": 7.11,
+  "pnl_pct": 1.85,
+  "change_pct": 1.85
  },
  {
   "ticker": "XLF",
@@ -72940,10 +70848,10 @@
   "time": "2026-10-19 03:18:32 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 55.64,
-  "pnl": 0.52,
-  "pnl_pct": 0.94,
-  "change_pct": 0.94
+  "current_price": 55.92,
+  "pnl": 0.8,
+  "pnl_pct": 1.45,
+  "change_pct": 1.45
  },
  {
   "ticker": "XLU",
@@ -73258,10 +71166,10 @@
   "time": "2026-10-19 03:19:43 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 23.18,
-  "pnl": -1.05,
-  "pnl_pct": -4.33,
-  "change_pct": -4.33
+  "current_price": 23.17,
+  "pnl": -1.06,
+  "pnl_pct": -4.37,
+  "change_pct": -4.37
  },
  {
   "ticker": "FXI",
@@ -73565,10 +71473,10 @@
   "time": "2026-10-19 03:20:13 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 41.79,
-  "pnl": 0.71,
-  "pnl_pct": 1.73,
-  "change_pct": 1.73
+  "current_price": 40.93,
+  "pnl": -0.15,
+  "pnl_pct": -0.37,
+  "change_pct": -0.37
  },
  {
   "ticker": "EWU",
@@ -74191,10 +72099,10 @@
   "time": "2026-10-19 03:21:32 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 121.81,
-  "pnl": 14.3,
-  "pnl_pct": 13.3,
-  "change_pct": 13.3
+  "current_price": 123.11,
+  "pnl": 15.6,
+  "pnl_pct": 14.51,
+  "change_pct": 14.51
  },
  {
   "ticker": "JETS",
@@ -74344,10 +72252,10 @@
   "time": "2026-10-19 03:22:12 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 14.74,
-  "pnl": 0.35,
-  "pnl_pct": 2.43,
-  "change_pct": 2.43
+  "current_price": 14.59,
+  "pnl": 0.2,
+  "pnl_pct": 1.39,
+  "change_pct": 1.39
  },
  {
   "ticker": "HOOD",
@@ -75278,10 +73186,10 @@
   "time": "2026-10-19 03:25:06 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 123.78,
-  "pnl": 1.89,
-  "pnl_pct": 1.55,
-  "change_pct": 1.55
+  "current_price": 120.81,
+  "pnl": -1.08,
+  "pnl_pct": -0.89,
+  "change_pct": -0.89
  },
  {
   "ticker": "WMT",
@@ -75748,10 +73656,10 @@
   "time": "2026-10-19 03:43:32 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 1273.0,
-  "pnl": 25.04,
-  "pnl_pct": 2.01,
-  "change_pct": 2.01
+  "current_price": 1268.04,
+  "pnl": 20.08,
+  "pnl_pct": 1.61,
+  "change_pct": 1.61
  },
  {
   "ticker": "AMD",
@@ -76142,10 +74050,10 @@
   "time": "2026-10-19 03:44:42 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 364.49,
-  "pnl": 8.49,
-  "pnl_pct": 2.38,
-  "change_pct": 2.38
+  "current_price": 357.43,
+  "pnl": 1.43,
+  "pnl_pct": 0.4,
+  "change_pct": 0.4
  },
  {
   "ticker": "DUK",
@@ -76607,10 +74515,10 @@
   "time": "2026-10-19 03:45:42 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 1334.33,
-  "pnl": 14.16,
-  "pnl_pct": 1.07,
-  "change_pct": 1.07
+  "current_price": 1353.62,
+  "pnl": 33.45,
+  "pnl_pct": 2.53,
+  "change_pct": 2.53
  },
  {
   "ticker": "VRSK",
@@ -76686,10 +74594,10 @@
   "time": "2026-10-19 03:45:46 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 192.03,
-  "pnl": 3.16,
-  "pnl_pct": 1.67,
-  "change_pct": 1.67
+  "current_price": 196.4,
+  "pnl": 7.53,
+  "pnl_pct": 3.99,
+  "change_pct": 3.99
  },
  {
   "ticker": "TLT",
@@ -76843,10 +74751,10 @@
   "time": "2026-10-19 03:47:01 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 103.25,
-  "pnl": 0.43,
-  "pnl_pct": 0.42,
-  "change_pct": 0.42
+  "current_price": 103.93,
+  "pnl": 1.11,
+  "pnl_pct": 1.08,
+  "change_pct": 1.08
  },
  {
   "ticker": "EWU",
@@ -77470,10 +75378,10 @@
   "time": "2026-10-19 03:48:20 PM ET",
   "date": "2026-10-19",
   "result": "PENDING",
-  "current_price": 96.14,
-  "pnl": 1.85,
-  "pnl_pct": 1.96,
-  "change_pct": 1.96
+  "current_price": 98.43,
+  "pnl": 4.14,
+  "pnl_pct": 4.39,
+  "change_pct": 4.39
  },
  {
   "ticker": "ITB",
@@ -78342,10 +76250,10 @@
   "time": "2026-10-20 01:56:40 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 1127.64,
-  "pnl": -2.42,
-  "pnl_pct": -0.21,
-  "change_pct": -0.21
+  "current_price": 1111.26,
+  "pnl": -18.8,
+  "pnl_pct": -1.66,
+  "change_pct": -1.66
  },
  {
   "ticker": "CME",
@@ -78428,10 +76336,10 @@
   "time": "2026-10-20 01:56:59 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 305.34,
-  "pnl": 9.41,
-  "pnl_pct": 3.18,
-  "change_pct": 3.18
+  "current_price": 306.36,
+  "pnl": 10.43,
+  "pnl_pct": 3.52,
+  "change_pct": 3.52
  },
  {
   "ticker": "PAYX",
@@ -78512,10 +76420,10 @@
   "time": "2026-10-20 01:57:35 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 118.06,
-  "pnl": 5.12,
-  "pnl_pct": 4.53,
-  "change_pct": 4.53
+  "current_price": 117.8,
+  "pnl": 4.86,
+  "pnl_pct": 4.3,
+  "change_pct": 4.3
  },
  {
   "ticker": "FICO",
@@ -78589,10 +76497,10 @@
   "time": "2026-10-20 01:57:47 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 818.59,
-  "pnl": 27.04,
-  "pnl_pct": 3.42,
-  "change_pct": 3.42
+  "current_price": 814.16,
+  "pnl": 22.61,
+  "pnl_pct": 2.86,
+  "change_pct": 2.86
  },
  {
   "ticker": "CIBR",
@@ -78670,7 +76578,11 @@
   },
   "time": "2026-10-20 01:58:31 PM ET",
   "date": "2026-10-20",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 105.75,
+  "pnl": 5.34,
+  "pnl_pct": 5.32,
+  "change_pct": 5.32
  },
  {
   "ticker": "LABD",
@@ -79137,10 +77049,10 @@
   "time": "2026-10-20 02:25:37 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 102.33,
-  "pnl": 0.17,
-  "pnl_pct": 0.17,
-  "change_pct": 0.17
+  "current_price": 103.2,
+  "pnl": 1.04,
+  "pnl_pct": 1.02,
+  "change_pct": 1.02
  },
  {
   "ticker": "GOOGL",
@@ -79291,7 +77203,11 @@
   },
   "time": "2026-10-20 02:26:02 PM ET",
   "date": "2026-10-20",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 319.1,
+  "pnl": -17.26,
+  "pnl_pct": -5.13,
+  "change_pct": -5.13
  },
  {
   "ticker": "BLK",
@@ -79368,10 +77284,10 @@
   "time": "2026-10-20 02:26:37 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 1127.64,
-  "pnl": -0.85,
-  "pnl_pct": -0.08,
-  "change_pct": -0.08
+  "current_price": 1111.26,
+  "pnl": -17.23,
+  "pnl_pct": -1.53,
+  "change_pct": -1.53
  },
  {
   "ticker": "ZTS",
@@ -79535,10 +77451,10 @@
   "time": "2026-10-20 02:26:56 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 364.49,
-  "pnl": 7.82,
-  "pnl_pct": 2.19,
-  "change_pct": 2.19
+  "current_price": 357.43,
+  "pnl": 0.76,
+  "pnl_pct": 0.21,
+  "change_pct": 0.21
  },
  {
   "ticker": "RSG",
@@ -79698,10 +77614,10 @@
   "time": "2026-10-20 02:27:25 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 192.03,
-  "pnl": 1.12,
-  "pnl_pct": 0.59,
-  "change_pct": 0.59
+  "current_price": 196.4,
+  "pnl": 5.49,
+  "pnl_pct": 2.88,
+  "change_pct": 2.88
  },
  {
   "ticker": "PODD",
@@ -79775,10 +77691,10 @@
   "time": "2026-10-20 02:27:56 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 147.16,
-  "pnl": 4.29,
-  "pnl_pct": 3.0,
-  "change_pct": 3.0
+  "current_price": 148.52,
+  "pnl": 5.65,
+  "pnl_pct": 3.95,
+  "change_pct": 3.95
  },
  {
   "ticker": "EWW",
@@ -79853,10 +77769,10 @@
   "time": "2026-10-20 02:28:54 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 75.74,
-  "pnl": -0.05,
-  "pnl_pct": -0.07,
-  "change_pct": -0.07
+  "current_price": 75.33,
+  "pnl": -0.46,
+  "pnl_pct": -0.61,
+  "change_pct": -0.61
  },
  {
   "ticker": "LABD",
@@ -80082,10 +77998,10 @@
   "time": "2026-10-20 02:30:05 PM ET",
   "date": "2026-10-20",
   "result": "PENDING",
-  "current_price": 33.15,
-  "pnl": -0.14,
-  "pnl_pct": -0.42,
-  "change_pct": -0.42
+  "current_price": 34.96,
+  "pnl": 1.67,
+  "pnl_pct": 5.02,
+  "change_pct": 5.02
  },
  {
   "ticker": "ARM",
@@ -80480,10 +78396,10 @@
   "time": "2026-10-21 02:01:48 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 542.09,
-  "pnl": 0.68,
-  "pnl_pct": 0.13,
-  "change_pct": 0.13
+  "current_price": 541.61,
+  "pnl": 0.2,
+  "pnl_pct": 0.04,
+  "change_pct": 0.04
  },
  {
   "ticker": "PEP",
@@ -80793,10 +78709,10 @@
   "time": "2026-10-21 02:02:22 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 178.02,
-  "pnl": 0.84,
-  "pnl_pct": 0.47,
-  "change_pct": 0.47
+  "current_price": 174.75,
+  "pnl": -2.43,
+  "pnl_pct": -1.37,
+  "change_pct": -1.37
  },
  {
   "ticker": "MDLZ",
@@ -80871,10 +78787,10 @@
   "time": "2026-10-21 02:02:37 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 62.51,
-  "pnl": 0.05,
-  "pnl_pct": 0.08,
-  "change_pct": 0.08
+  "current_price": 63.51,
+  "pnl": 1.05,
+  "pnl_pct": 1.68,
+  "change_pct": 1.68
  },
  {
   "ticker": "LRCX",
@@ -81097,10 +79013,10 @@
   "time": "2026-10-21 02:03:54 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 818.59,
-  "pnl": 24.76,
-  "pnl_pct": 3.12,
-  "change_pct": 3.12
+  "current_price": 814.16,
+  "pnl": 20.33,
+  "pnl_pct": 2.56,
+  "change_pct": 2.56
  },
  {
   "ticker": "SLV",
@@ -81408,7 +79324,11 @@
   },
   "time": "2026-10-21 02:06:52 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 6.36,
+  "pnl": -0.02,
+  "pnl_pct": -0.31,
+  "change_pct": -0.31
  },
  {
   "ticker": "SNOW",
@@ -81566,7 +79486,11 @@
   },
   "time": "2026-10-21 02:07:38 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 15.69,
+  "pnl": -0.24,
+  "pnl_pct": -1.51,
+  "change_pct": -1.51
  },
  {
   "ticker": "UPST",
@@ -81639,10 +79563,10 @@
   "time": "2026-10-21 02:08:14 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 23.61,
-  "pnl": -0.22,
-  "pnl_pct": -0.92,
-  "change_pct": -0.92
+  "current_price": 23.5,
+  "pnl": -0.33,
+  "pnl_pct": -1.38,
+  "change_pct": -1.38
  },
  {
   "ticker": "NDAQ",
@@ -81873,7 +79797,11 @@
   },
   "time": "2026-10-21 02:28:02 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 173.29,
+  "pnl": -0.72,
+  "pnl_pct": -0.41,
+  "change_pct": -0.41
  },
  {
   "ticker": "UPS",
@@ -82181,10 +80109,10 @@
   "time": "2026-10-21 02:28:49 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 62.51,
-  "pnl": 0.04,
-  "pnl_pct": 0.06,
-  "change_pct": 0.06
+  "current_price": 63.51,
+  "pnl": 1.04,
+  "pnl_pct": 1.66,
+  "change_pct": 1.66
  },
  {
   "ticker": "REGN",
@@ -82418,7 +80346,11 @@
   },
   "time": "2026-10-21 02:29:06 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 315.79,
+  "pnl": -15.11,
+  "pnl_pct": -4.57,
+  "change_pct": -4.57
  },
  {
   "ticker": "FICO",
@@ -82501,10 +80433,10 @@
   "time": "2026-10-21 02:29:25 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 818.59,
-  "pnl": 16.76,
-  "pnl_pct": 2.09,
-  "change_pct": 2.09
+  "current_price": 814.16,
+  "pnl": 12.33,
+  "pnl_pct": 1.54,
+  "change_pct": 1.54
  },
  {
   "ticker": "EW",
@@ -82734,10 +80666,10 @@
   "time": "2026-10-21 02:29:49 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 656.0,
-  "pnl": -45.97,
-  "pnl_pct": -6.55,
-  "change_pct": -6.55
+  "current_price": 653.02,
+  "pnl": -48.95,
+  "pnl_pct": -6.97,
+  "change_pct": -6.97
  },
  {
   "ticker": "VMC",
@@ -83415,7 +81347,11 @@
   },
   "time": "2026-10-21 02:30:53 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 366.28,
+  "pnl": -13.17,
+  "pnl_pct": -3.47,
+  "change_pct": -3.47
  },
  {
   "ticker": "SPXL",
@@ -83795,10 +81731,10 @@
   "time": "2026-10-21 02:31:29 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 69.41,
-  "pnl": -0.28,
-  "pnl_pct": -0.4,
-  "change_pct": -0.4
+  "current_price": 67.43,
+  "pnl": -2.26,
+  "pnl_pct": -3.24,
+  "change_pct": -3.24
  },
  {
   "ticker": "SDOW",
@@ -83948,10 +81884,10 @@
   "time": "2026-10-21 02:31:45 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 11.32,
-  "pnl": 0.0,
-  "pnl_pct": 0.0,
-  "change_pct": 0.0
+  "current_price": 10.88,
+  "pnl": -0.44,
+  "pnl_pct": -3.89,
+  "change_pct": -3.89
  },
  {
   "ticker": "XHB",
@@ -84025,7 +81961,11 @@
   },
   "time": "2026-10-21 02:31:58 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 98.43,
+  "pnl": 2.4,
+  "pnl_pct": 2.5,
+  "change_pct": 2.5
  },
  {
   "ticker": "OIH",
@@ -84173,7 +82113,11 @@
   },
   "time": "2026-10-21 02:32:17 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 6.36,
+  "pnl": 0.0,
+  "pnl_pct": 0.0,
+  "change_pct": 0.0
  },
  {
   "ticker": "ROKU",
@@ -84321,10 +82265,10 @@
   "time": "2026-10-21 02:32:36 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 53.17,
-  "pnl": 0.32,
-  "pnl_pct": 0.61,
-  "change_pct": 0.61
+  "current_price": 53.05,
+  "pnl": 0.2,
+  "pnl_pct": 0.38,
+  "change_pct": 0.38
  },
  {
   "ticker": "HUBS",
@@ -84625,7 +82569,11 @@
   },
   "time": "2026-10-21 02:33:12 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 15.69,
+  "pnl": -0.25,
+  "pnl_pct": -1.57,
+  "change_pct": -1.57
  },
  {
   "ticker": "SMCI",
@@ -84699,7 +82647,11 @@
   },
   "time": "2026-10-21 02:33:26 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 33.6,
+  "pnl": -1.74,
+  "pnl_pct": -4.92,
+  "change_pct": -4.92
  },
  {
   "ticker": "SWKS",
@@ -84771,7 +82723,11 @@
   },
   "time": "2026-10-21 02:33:31 PM ET",
   "date": "2026-10-21",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 83.01,
+  "pnl": 0.19,
+  "pnl_pct": 0.23,
+  "change_pct": 0.23
  },
  {
   "ticker": "CRUS",
@@ -84921,10 +82877,10 @@
   "time": "2026-10-21 02:33:46 PM ET",
   "date": "2026-10-21",
   "result": "PENDING",
-  "current_price": 238.96,
-  "pnl": -3.5,
-  "pnl_pct": -1.44,
-  "change_pct": -1.44
+  "current_price": 236.82,
+  "pnl": -5.64,
+  "pnl_pct": -2.33,
+  "change_pct": -2.33
  },
  {
   "ticker": "DG",
@@ -85304,7 +83260,11 @@
   },
   "time": "2026-10-22 01:57:55 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 317.63,
+  "pnl": -8.26,
+  "pnl_pct": -2.53,
+  "change_pct": -2.53
  },
  {
   "ticker": "MCD",
@@ -85688,10 +83648,10 @@
   "time": "2026-10-22 01:59:12 PM ET",
   "date": "2026-10-22",
   "result": "PENDING",
-  "current_price": 440.43,
-  "pnl": -2.67,
-  "pnl_pct": -0.6,
-  "change_pct": -0.6
+  "current_price": 454.8,
+  "pnl": 11.7,
+  "pnl_pct": 2.64,
+  "change_pct": 2.64
  },
  {
   "ticker": "BLK",
@@ -85765,7 +83725,11 @@
   },
   "time": "2026-10-22 01:59:28 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 1111.26,
+  "pnl": -28.63,
+  "pnl_pct": -2.51,
+  "change_pct": -2.51
  },
  {
   "ticker": "APD",
@@ -86295,7 +84259,11 @@
   },
   "time": "2026-10-22 02:01:03 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 1353.62,
+  "pnl": 7.8,
+  "pnl_pct": 0.58,
+  "change_pct": 0.58
  },
  {
   "ticker": "ONTO",
@@ -86817,7 +84785,11 @@
   },
   "time": "2026-10-22 02:03:00 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 103.93,
+  "pnl": -0.49,
+  "pnl_pct": -0.47,
+  "change_pct": -0.47
  },
  {
   "ticker": "DRIP",
@@ -86966,7 +84938,11 @@
   },
   "time": "2026-10-22 02:04:42 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 7.18,
+  "pnl": 0.0,
+  "pnl_pct": 0.0,
+  "change_pct": 0.0
  },
  {
   "ticker": "RIOT",
@@ -87183,7 +85159,11 @@
   },
   "time": "2026-10-22 02:04:58 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 6.36,
+  "pnl": -0.07,
+  "pnl_pct": -1.09,
+  "change_pct": -1.09
  },
  {
   "ticker": "SHOP",
@@ -87256,10 +85236,10 @@
   "time": "2026-10-22 02:05:03 PM ET",
   "date": "2026-10-22",
   "result": "PENDING",
-  "current_price": 165.97,
-  "pnl": -0.96,
-  "pnl_pct": -0.58,
-  "change_pct": -0.58
+  "current_price": 169.68,
+  "pnl": 2.75,
+  "pnl_pct": 1.65,
+  "change_pct": 1.65
  },
  {
   "ticker": "DVN",
@@ -87779,7 +85759,11 @@
   },
   "time": "2026-10-22 02:06:35 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 228.6,
+  "pnl": 7.5,
+  "pnl_pct": 3.39,
+  "change_pct": 3.39
  },
  {
   "ticker": "GFS",
@@ -88238,7 +86222,11 @@
   },
   "time": "2026-10-22 02:24:01 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 1111.26,
+  "pnl": -31.18,
+  "pnl_pct": -2.73,
+  "change_pct": -2.73
  },
  {
   "ticker": "SLB",
@@ -88319,7 +86307,11 @@
   },
   "time": "2026-10-22 02:24:35 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 53.06,
+  "pnl": 3.67,
+  "pnl_pct": 7.43,
+  "change_pct": 7.43
  },
  {
   "ticker": "PH",
@@ -88839,7 +86831,11 @@
   },
   "time": "2026-10-22 02:26:58 PM ET",
   "date": "2026-10-22",
-  "result": "PENDING"
+  "result": "PENDING",
+  "current_price": 366.28,
+  "pnl": -3.61,
+  "pnl_pct": -0.98,
+  "change_pct": -0.98
  },
  {
   "ticker": "EWA",
@@ -89151,5 +87147,752 @@
   "pnl": 0.0,
   "pnl_pct": 0.0,
   "change_pct": 0.0
+ },
+ {
+  "ticker": "ABT",
+  "signal": "TOP",
+  "confidence": 80,
+  "alert_price": 103.4,
+  "rsi": 72.3,
+  "mfi": 55.8,
+  "cmf": 0.08,
+  "pcr": 0.88,
+  "regime": "BEARISH",
+  "sector": "XLV",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "REVERSAL",
+  "trend_3d": 0.93,
+  "trend_5d": -1.42,
+  "volume_expansion": 1.18,
+  "signals": [
+   "BearDiv",
+   "MACD-",
+   "RSI=72.3",
+   "BBReject",
+   "ShootStar",
+   "RQG=63/VALID_REVERSAL",
+   "RQG_DeepAboveVWAP2\u03c3",
+   "RQG_UpperBandLocation",
+   "RQG_BearishDivergence",
+   "RQG_RSI2ExhaustedHigh"
+  ],
+  "mtf_status": "5m+15m+30m+60m",
+  "c5": 66,
+  "c15": 82,
+  "c30": 86,
+  "c60": 86,
+  "rqg_score": 63,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "DeepAboveVWAP2\u03c3",
+   "UpperBandLocation",
+   "BearishDivergence",
+   "RSI2ExhaustedHigh",
+   "MACDHistWeakening",
+   "BackInsideUpperBand",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "RR>=2"
+  ],
+  "rqg_buckets": {
+   "location": 20,
+   "divergence": 20,
+   "volume": 0,
+   "reclaim": 4,
+   "context": 9,
+   "risk_reward": 10
+  },
+  "rqg_details": {
+   "price": 103.39,
+   "vwap": 101.77,
+   "vwap_z": 3.9,
+   "rsi2": 100.0,
+   "rsi14": 71.7,
+   "macd_hist": -0.0034,
+   "macd_hist_prev": 0.001,
+   "vol_ratio": 0.32,
+   "rr": 12.82,
+   "vwap_slope_8bars_pct": 0.01,
+   "ema20_slope_8bars_pct": 0.163,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:50:00 PM ET",
+   "age_min": 2.2
+  },
+  "time": "2026-10-23 01:52:13 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING",
+  "current_price": 103.2,
+  "pnl": -0.2,
+  "pnl_pct": -0.19,
+  "change_pct": -0.19
+ },
+ {
+  "ticker": "TMO",
+  "signal": "TOP",
+  "confidence": 77,
+  "alert_price": 670.9,
+  "rsi": 69.5,
+  "mfi": 67.9,
+  "cmf": 0.04,
+  "pcr": 1.04,
+  "regime": "BEARISH",
+  "sector": "XLV",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "LEADERSHIP",
+  "trend_3d": -2.4,
+  "trend_5d": -2.77,
+  "volume_expansion": 1.07,
+  "signals": [
+   "Trend3d-",
+   "StrongTrend3d",
+   "Trend5d-",
+   "StrongTrend5d",
+   "RS3d-",
+   "RS5d-",
+   "BelowVWAP",
+   "RQG=44/VALID_REVERSAL",
+   "RQG_UpperBandLocation",
+   "RQG_RSI2ExhaustedHigh",
+   "RQG_BackInsideUpperBand",
+   "RQG_LostVWAP"
+  ],
+  "mtf_status": "5m+15m+30m",
+  "c5": 69,
+  "c15": 82,
+  "c30": 82,
+  "c60": 0,
+  "rqg_score": 44,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "UpperBandLocation",
+   "RSI2ExhaustedHigh",
+   "BackInsideUpperBand",
+   "LostVWAP",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "NegativeRelativeStrength",
+   "RR>=2"
+  ],
+  "rqg_buckets": {
+   "location": 8,
+   "divergence": 6,
+   "volume": 0,
+   "reclaim": 8,
+   "context": 12,
+   "risk_reward": 10
+  },
+  "rqg_details": {
+   "price": 670.9,
+   "vwap": 684.95,
+   "vwap_z": -7.79,
+   "rsi2": 100.0,
+   "rsi14": 69.5,
+   "macd_hist": 0.3099,
+   "macd_hist_prev": 0.2712,
+   "vol_ratio": 0.57,
+   "rr": 9.86,
+   "vwap_slope_8bars_pct": -0.012,
+   "ema20_slope_8bars_pct": 0.11,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:50:00 PM ET",
+   "age_min": 2.6
+  },
+  "time": "2026-10-23 01:52:36 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING"
+ },
+ {
+  "ticker": "TAN",
+  "signal": "TOP",
+  "confidence": 68,
+  "alert_price": 41.06,
+  "rsi": 58.6,
+  "mfi": 61.5,
+  "cmf": 0,
+  "pcr": 0.63,
+  "regime": "BEARISH",
+  "sector": "SPY",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "HYBRID",
+  "trend_3d": -1.67,
+  "trend_5d": -1.9,
+  "volume_expansion": 0.59,
+  "signals": [
+   "BearDiv",
+   "MACD-",
+   "BBReject",
+   "LH",
+   "RQG=46/VALID_REVERSAL",
+   "RQG_UpperBandLocation",
+   "RQG_BearishDivergence",
+   "RQG_CloseBelowPriorLow",
+   "RQG_BackInsideUpperBand"
+  ],
+  "mtf_status": "5m+15m+30m",
+  "c5": 61,
+  "c15": 61,
+  "c30": 82,
+  "c60": 0,
+  "rqg_score": 46,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "UpperBandLocation",
+   "BearishDivergence",
+   "CloseBelowPriorLow",
+   "BackInsideUpperBand",
+   "LostVWAP",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "NegativeRelativeStrength"
+  ],
+  "rqg_buckets": {
+   "location": 8,
+   "divergence": 10,
+   "volume": 0,
+   "reclaim": 16,
+   "context": 12,
+   "risk_reward": 0
+  },
+  "rqg_details": {
+   "price": 41.06,
+   "vwap": 41.47,
+   "vwap_z": -1.99,
+   "rsi2": 62.5,
+   "rsi14": 57.4,
+   "macd_hist": 0.0038,
+   "macd_hist_prev": 0.0037,
+   "vol_ratio": 0.0,
+   "rr": 0.89,
+   "vwap_slope_8bars_pct": -0.002,
+   "ema20_slope_8bars_pct": 0.086,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:50:00 PM ET",
+   "age_min": 4.1
+  },
+  "time": "2026-10-23 01:54:04 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING"
+ },
+ {
+  "ticker": "URA",
+  "signal": "TOP",
+  "confidence": 69,
+  "alert_price": 34.04,
+  "rsi": 54.5,
+  "mfi": 42.5,
+  "cmf": 0.176,
+  "pcr": 1.9,
+  "regime": "BEARISH",
+  "sector": "SPY",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "LEADERSHIP",
+  "trend_3d": -3.24,
+  "trend_5d": -3.92,
+  "volume_expansion": 0.74,
+  "signals": [
+   "Trend3d-",
+   "StrongTrend3d",
+   "Trend5d-",
+   "StrongTrend5d",
+   "RS3d-",
+   "RS5d-",
+   "RSI_Trend",
+   "BelowVWAP",
+   "MFI_Healthy",
+   "RQG=56/VALID_REVERSAL",
+   "RQG_UpperBandLocation",
+   "RQG_BearishDivergence",
+   "RQG_RSI2ExhaustedHigh",
+   "RQG_UpthrustAttempt"
+  ],
+  "mtf_status": "5m+15m+30m",
+  "c5": 82,
+  "c15": 40,
+  "c30": 85,
+  "c60": 0,
+  "rqg_score": 56,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "UpperBandLocation",
+   "BearishDivergence",
+   "RSI2ExhaustedHigh",
+   "UpthrustAttempt",
+   "BackInsideUpperBand",
+   "LostVWAP",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "NegativeRelativeStrength",
+   "RR>=2"
+  ],
+  "rqg_buckets": {
+   "location": 8,
+   "divergence": 16,
+   "volume": 2,
+   "reclaim": 8,
+   "context": 12,
+   "risk_reward": 10
+  },
+  "rqg_details": {
+   "price": 34.04,
+   "vwap": 34.93,
+   "vwap_z": -5.09,
+   "rsi2": 100.0,
+   "rsi14": 54.5,
+   "macd_hist": -0.0014,
+   "macd_hist_prev": -0.0054,
+   "vol_ratio": 0.91,
+   "rr": 2.7,
+   "vwap_slope_8bars_pct": -0.014,
+   "ema20_slope_8bars_pct": 0.027,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:50:00 PM ET",
+   "age_min": 4.2
+  },
+  "time": "2026-10-23 01:54:09 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING"
+ },
+ {
+  "ticker": "HACK",
+  "signal": "TOP",
+  "confidence": 50,
+  "alert_price": 127.29,
+  "rsi": 54.8,
+  "mfi": 63.5,
+  "cmf": 0,
+  "pcr": 1.3,
+  "regime": "BEARISH",
+  "sector": "SPY",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "REVERSAL",
+  "trend_3d": 7.53,
+  "trend_5d": 8.71,
+  "volume_expansion": 0.88,
+  "signals": [
+   "BearDiv",
+   "Stoch=100",
+   "BBReject",
+   "WR=-0",
+   "RQG=59/VALID_REVERSAL",
+   "RQG_DeepAboveVWAP2\u03c3",
+   "RQG_UpperBandLocation",
+   "RQG_BearishDivergence",
+   "RQG_RSI2ExhaustedHigh"
+  ],
+  "mtf_status": "5m+15m+30m+60m",
+  "c5": 48,
+  "c15": 54,
+  "c30": 49,
+  "c60": 51,
+  "rqg_score": 59,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "DeepAboveVWAP2\u03c3",
+   "UpperBandLocation",
+   "BearishDivergence",
+   "RSI2ExhaustedHigh",
+   "BackInsideUpperBand",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "RR>=2"
+  ],
+  "rqg_buckets": {
+   "location": 20,
+   "divergence": 16,
+   "volume": 0,
+   "reclaim": 4,
+   "context": 9,
+   "risk_reward": 10
+  },
+  "rqg_details": {
+   "price": 127.29,
+   "vwap": 120.94,
+   "vwap_z": 7.05,
+   "rsi2": 100.0,
+   "rsi14": 54.8,
+   "macd_hist": -0.044,
+   "macd_hist_prev": -0.0604,
+   "vol_ratio": 0.0,
+   "rr": 347.02,
+   "vwap_slope_8bars_pct": 0.048,
+   "ema20_slope_8bars_pct": 0.139,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:50:00 PM ET",
+   "age_min": 4.2
+  },
+  "time": "2026-10-23 01:54:14 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING"
+ },
+ {
+  "ticker": "ICLN",
+  "signal": "TOP",
+  "confidence": 75,
+  "alert_price": 16.0,
+  "rsi": 50.4,
+  "mfi": 61.6,
+  "cmf": 0.26,
+  "pcr": 2.17,
+  "regime": "BEARISH",
+  "sector": "SPY",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "LEADERSHIP",
+  "trend_3d": -2.05,
+  "trend_5d": -2.05,
+  "volume_expansion": 0.95,
+  "signals": [
+   "Trend3d-",
+   "StrongTrend3d",
+   "Trend5d-",
+   "RS3d-",
+   "RS5d-",
+   "RSI_Trend",
+   "BelowVWAP",
+   "RQG=43/VALID_REVERSAL",
+   "RQG_UpperBandLocation",
+   "RQG_RSI2ExhaustedHigh",
+   "RQG_VolumeExpansion",
+   "RQG_BackInsideUpperBand"
+  ],
+  "mtf_status": "5m+15m+30m",
+  "c5": 69,
+  "c15": 74,
+  "c30": 82,
+  "c60": 0,
+  "rqg_score": 43,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "UpperBandLocation",
+   "RSI2ExhaustedHigh",
+   "VolumeExpansion",
+   "BackInsideUpperBand",
+   "LostVWAP",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "NegativeRelativeStrength",
+   "RR>=1"
+  ],
+  "rqg_buckets": {
+   "location": 8,
+   "divergence": 6,
+   "volume": 5,
+   "reclaim": 8,
+   "context": 12,
+   "risk_reward": 4
+  },
+  "rqg_details": {
+   "price": 16.0,
+   "vwap": 16.26,
+   "vwap_z": -7.02,
+   "rsi2": 100.0,
+   "rsi14": 50.4,
+   "macd_hist": 0.0022,
+   "macd_hist_prev": 0.001,
+   "vol_ratio": 1.43,
+   "rr": 1.46,
+   "vwap_slope_8bars_pct": -0.022,
+   "ema20_slope_8bars_pct": -0.021,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:50:00 PM ET",
+   "age_min": 4.3
+  },
+  "time": "2026-10-23 01:54:19 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING"
+ },
+ {
+  "ticker": "PBW",
+  "signal": "TOP",
+  "confidence": 54,
+  "alert_price": 24.59,
+  "rsi": 57.1,
+  "mfi": 76.7,
+  "cmf": 0,
+  "pcr": 5.0,
+  "regime": "BEARISH",
+  "sector": "SPY",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "HYBRID",
+  "trend_3d": -2.23,
+  "trend_5d": -2.3,
+  "volume_expansion": 0.79,
+  "signals": [
+   "BearDiv",
+   "Stoch=100",
+   "BBReject",
+   "WR=-0",
+   "RQG=54/VALID_REVERSAL",
+   "RQG_UpperBandLocation",
+   "RQG_BearishDivergence",
+   "RQG_RSI2ExhaustedHigh",
+   "RQG_BackInsideUpperBand"
+  ],
+  "mtf_status": "5m+15m+30m",
+  "c5": 55,
+  "c15": 40,
+  "c30": 69,
+  "c60": 0,
+  "rqg_score": 54,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "UpperBandLocation",
+   "BearishDivergence",
+   "RSI2ExhaustedHigh",
+   "BackInsideUpperBand",
+   "LostVWAP",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "NegativeRelativeStrength",
+   "RR>=2"
+  ],
+  "rqg_buckets": {
+   "location": 8,
+   "divergence": 16,
+   "volume": 0,
+   "reclaim": 8,
+   "context": 12,
+   "risk_reward": 10
+  },
+  "rqg_details": {
+   "price": 24.59,
+   "vwap": 24.89,
+   "vwap_z": -1.66,
+   "rsi2": 100.0,
+   "rsi14": 57.1,
+   "macd_hist": 0.0017,
+   "macd_hist_prev": -0.0006,
+   "vol_ratio": 0.0,
+   "rr": 6.45,
+   "vwap_slope_8bars_pct": -0.009,
+   "ema20_slope_8bars_pct": 0.085,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:50:00 PM ET",
+   "age_min": 4.5
+  },
+  "time": "2026-10-23 01:54:32 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING"
+ },
+ {
+  "ticker": "EWT",
+  "signal": "TOP",
+  "confidence": 67,
+  "alert_price": 104.82,
+  "rsi": 49.2,
+  "mfi": 85.2,
+  "cmf": -0.029,
+  "pcr": 5.0,
+  "regime": "BEARISH",
+  "sector": "SPY",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "HYBRID",
+  "trend_3d": -2.34,
+  "trend_5d": -1.35,
+  "volume_expansion": 0.69,
+  "signals": [
+   "BearDiv",
+   "Stoch=82",
+   "BBReject",
+   "WR=-18",
+   "LH",
+   "MFI=85",
+   "RQG=45/VALID_REVERSAL",
+   "RQG_UpperBandLocation",
+   "RQG_BearishDivergence",
+   "RQG_BackInsideUpperBand",
+   "RQG_LostVWAP"
+  ],
+  "mtf_status": "5m+15m+30m",
+  "c5": 76,
+  "c15": 61,
+  "c30": 66,
+  "c60": 0,
+  "rqg_score": 45,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "UpperBandLocation",
+   "BearishDivergence",
+   "BackInsideUpperBand",
+   "LostVWAP",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "NegativeRelativeStrength",
+   "RR>=1.5"
+  ],
+  "rqg_buckets": {
+   "location": 8,
+   "divergence": 10,
+   "volume": 0,
+   "reclaim": 8,
+   "context": 12,
+   "risk_reward": 7
+  },
+  "rqg_details": {
+   "price": 104.82,
+   "vwap": 106.55,
+   "vwap_z": -6.42,
+   "rsi2": 77.1,
+   "rsi14": 49.2,
+   "macd_hist": 0.0088,
+   "macd_hist_prev": 0.0047,
+   "vol_ratio": 0.43,
+   "rr": 1.57,
+   "vwap_slope_8bars_pct": -0.029,
+   "ema20_slope_8bars_pct": 0.041,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:50:00 PM ET",
+   "age_min": 4.8
+  },
+  "time": "2026-10-23 01:54:50 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING"
+ },
+ {
+  "ticker": "EWW",
+  "signal": "TOP",
+  "confidence": 68,
+  "alert_price": 75.35,
+  "rsi": 70.2,
+  "mfi": 9.1,
+  "cmf": -0.099,
+  "pcr": 0.89,
+  "regime": "BEARISH",
+  "sector": "SPY",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "REVERSAL",
+  "trend_3d": -0.2,
+  "trend_5d": 0.55,
+  "volume_expansion": 0.86,
+  "signals": [
+   "StochX",
+   "RSI=70.2",
+   "WR=-1",
+   "SellVol=93%",
+   "CMF-",
+   "RQG=48/VALID_REVERSAL",
+   "RQG_UpperBandLocation",
+   "RQG_BearishDivergence",
+   "RQG_RSI2ExhaustedHigh",
+   "RQG_SellVolumeImproving"
+  ],
+  "mtf_status": "5m+15m+30m",
+  "c5": 56,
+  "c15": 79,
+  "c30": 69,
+  "c60": 0,
+  "rqg_score": 48,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "UpperBandLocation",
+   "BearishDivergence",
+   "RSI2ExhaustedHigh",
+   "SellVolumeImproving",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "RR>=2"
+  ],
+  "rqg_buckets": {
+   "location": 8,
+   "divergence": 16,
+   "volume": 5,
+   "reclaim": 0,
+   "context": 9,
+   "risk_reward": 10
+  },
+  "rqg_details": {
+   "price": 75.35,
+   "vwap": 75.3,
+   "vwap_z": 0.4,
+   "rsi2": 100.0,
+   "rsi14": 70.2,
+   "macd_hist": 0.0326,
+   "macd_hist_prev": 0.0212,
+   "vol_ratio": 0.47,
+   "rr": 23.6,
+   "vwap_slope_8bars_pct": -0.001,
+   "ema20_slope_8bars_pct": 0.09,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:50:00 PM ET",
+   "age_min": 4.9
+  },
+  "time": "2026-10-23 01:54:55 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING",
+  "current_price": 75.33,
+  "pnl": -0.02,
+  "pnl_pct": -0.03,
+  "change_pct": -0.03
+ },
+ {
+  "ticker": "DDOG",
+  "signal": "TOP",
+  "confidence": 55,
+  "alert_price": 272.64,
+  "rsi": 55.8,
+  "mfi": 71.9,
+  "cmf": 0,
+  "pcr": 0.91,
+  "regime": "BEARISH",
+  "sector": "SPY",
+  "sector_strength": "NEUTRAL",
+  "setup_type": "REVERSAL",
+  "trend_3d": 6.32,
+  "trend_5d": 10.33,
+  "volume_expansion": 0.97,
+  "signals": [
+   "StochX",
+   "BBReject",
+   "WR=-18",
+   "LH",
+   "RQG=56/VALID_REVERSAL",
+   "RQG_DeepAboveVWAP2\u03c3",
+   "RQG_UpperBandLocation",
+   "RQG_BearishDivergence",
+   "RQG_RSI2High"
+  ],
+  "mtf_status": "5m+15m+30m",
+  "c5": 57,
+  "c15": 49,
+  "c30": 59,
+  "c60": 0,
+  "rqg_score": 56,
+  "rqg_label": "VALID_REVERSAL",
+  "rqg_reasons": [
+   "DeepAboveVWAP2\u03c3",
+   "UpperBandLocation",
+   "BearishDivergence",
+   "RSI2High",
+   "BackInsideUpperBand",
+   "SectorNeutral",
+   "MarketNotBullish",
+   "RR>=2"
+  ],
+  "rqg_buckets": {
+   "location": 20,
+   "divergence": 13,
+   "volume": 0,
+   "reclaim": 4,
+   "context": 9,
+   "risk_reward": 10
+  },
+  "rqg_details": {
+   "price": 272.98,
+   "vwap": 264.1,
+   "vwap_z": 2.96,
+   "rsi2": 94.5,
+   "rsi14": 58.6,
+   "macd_hist": -0.1324,
+   "macd_hist_prev": -0.1738,
+   "vol_ratio": 0.0,
+   "rr": 93.13,
+   "vwap_slope_8bars_pct": 0.025,
+   "ema20_slope_8bars_pct": 0.202,
+   "source": "yfinance",
+   "latest": "2026-10-23 01:55:00 PM ET",
+   "age_min": 0.8
+  },
+  "time": "2026-10-23 01:55:51 PM ET",
+  "date": "2026-10-23",
+  "result": "PENDING"
  }
 ]
