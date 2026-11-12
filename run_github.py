@@ -824,6 +824,89 @@ renderSummary();renderAlerts();renderSectors();renderBlocked();renderHistory();r
         html = html.replace(k,v)
     return html
 
+
+# Reporting-only export. Does not alter signal scoring or trading thresholds.
+def export_report_payload(docs_dir, alerts, regime, spy_rsi, summary, options):
+    from zoneinfo import ZoneInfo
+    et = ZoneInfo("America/New_York")
+    completed = datetime.now(et)
+    instruments = {
+        "SPY":"Equity ETF", "QQQ":"Equity ETF", "IWM":"Equity ETF",
+        "BTC-USD":"Crypto spot", "ETH-USD":"Crypto spot", "SOL-USD":"Crypto spot",
+        "GLD":"Gold ETF proxy", "SLV":"Silver ETF proxy", "USO":"Oil ETF proxy",
+        "UNG":"Natural gas ETF proxy", "COPX":"Copper miners ETF proxy",
+        "URA":"Uranium equities ETF proxy", "LIT":"Battery/lithium equities ETF proxy",
+        "DX-Y.NYB":"Dollar index", "^TNX":"10-year yield index; provider units, not normalized",
+        "TLT":"Treasury ETF", "HYG":"High-yield bond ETF", "^VIX":"Volatility index"
+    }
+    quotes = {}
+    for ticker, kind in instruments.items():
+        row = {"ticker":ticker,"instrument_type":kind,"price":None,"market_timestamp":None,"status":"UNAVAILABLE"}
+        try:
+            df = patched_yf_download(ticker, period="5d", interval="5m", progress=False, auto_adjust=True, threads=False)
+            if df is not None and not df.empty:
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = df.columns.get_level_values(0)
+                close = df["Close"].dropna()
+                if not close.empty:
+                    value = float(close.iloc[-1])
+                    ts = pd.Timestamp(close.index[-1])
+                    # Do not guess a timezone for a naive quote timestamp.
+                    stamp = ts.tz_convert(et).isoformat() if ts.tzinfo is not None else None
+                    if math.isfinite(value) and value > 0:
+                        row.update(price=round(value,4),market_timestamp=stamp,status="TIMESTAMPED" if stamp else "UNVERIFIED")
+        except Exception as exc:
+            row["error"] = str(exc)[:160]
+        quotes[ticker] = row
+    clean_alerts = []
+    for original in alerts:
+        row = dict(original)
+        # Legacy PCR may be capped or defaulted to 1.0 by the scanner dependency.
+        row["legacy_pcr"] = row.pop("pcr",None)
+        row["legacy_pcr_status"] = "UNVERIFIED: legacy helper defaults failures to 1.0 and caps at 5.0"
+        row["pcr"] = None
+        row["pcr_status"] = "NOT_VERIFIED"
+        clean_alerts.append(row)
+    compact_options = {}
+    for ticker, original in options.items():
+        row = {k:original.get(k) for k in ("ticker","spot","expiration","dte","avg_iv","unusual","error")}
+        row["retrieved_at"] = completed.isoformat()
+        row["quote_timestamp_status"] = "NOT_PROVIDED_BY_EXISTING_OPTIONS_FETCHER"
+        row["pcr"] = None
+        row["pcr_status"] = "UNVERIFIED_LEGACY_DEFAULT"
+        # Existing chain PCR of exactly 1.0 cannot be distinguished from its fallback.
+        value = original.get("pcr")
+        if value is not None and value != 1.0 and not original.get("error"):
+            row["pcr"] = value
+            row["pcr_status"] = "CHAIN_VOLUME_RATIO_SELECTED_EXPIRATION"
+        compact_options[ticker] = row
+        for alert in clean_alerts:
+            if alert.get("ticker") == ticker and row["pcr"] is not None:
+                alert["pcr"] = row["pcr"]
+                alert["pcr_status"] = row["pcr_status"]
+                alert["pcr_expiration"] = row.get("expiration")
+    payload = {
+        "schema_version":"reporting-1.0", "scan_time":summary.get("scan_time"),
+        "completed_at":completed.isoformat(), "regime":regime,"spy_rsi":spy_rsi,
+        "alerts":clean_alerts,"options":compact_options,"cross_assets":quotes,
+        "summary":{k:summary.get(k) for k in ("scan_time","stocks_scanned","filtered","alerts","blocked","candidates","blocked_alerts","sectors","leaders_recent","laggards_recent","near_miss","rqg_threshold","pending_total","pending_by_stage","pending_by_sector")},
+        "prices":summary.get("prices",{}),
+        "warnings":["Legacy prices have no individual quote timestamp.","Blocked setups do not establish outflows.","ETF proxies are not spot commodity prices.","Options fetched only for first five alerts; unavailable does not mean zero.","Scan generation time is not market-data time."]
+    }
+    def clean(value):
+        if isinstance(value,dict): return {str(k):clean(v) for k,v in value.items()}
+        if isinstance(value,(list,tuple)): return [clean(v) for v in value]
+        if isinstance(value,(float,np.floating)): return float(value) if math.isfinite(float(value)) else None
+        if isinstance(value,np.integer): return int(value)
+        return value
+    payload = clean(payload)
+    target = os.path.join(docs_dir,"report_scan.json")
+    temporary = target + ".tmp"
+    with open(temporary,"w",encoding="utf-8") as fh:
+        json.dump(payload,fh,ensure_ascii=False,allow_nan=False,separators=(",",":"))
+    os.replace(temporary,target)
+    logger.info("Reporting payload saved: %s",target)
+
 def main():
     logger.info("=" * 65)
     logger.info("MARKET SCANNER v5.6 - GITHUB ACTIONS SPEED + NEAR-MISS")
@@ -1001,6 +1084,7 @@ def main():
                    "prices": prices_data}, f, indent=2)
 
     logger.info("All GitHub Pages data files updated with prices!")
+    export_report_payload(docs_dir, alerts, regime, spy_rsi, scan_summary, options)
 
 
 
