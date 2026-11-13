@@ -110,7 +110,7 @@ jobs:
         run: |
           set -e
           echo "Starting Market Scanner v5.6 - Single Scan Mode..."
-          python run_github.py
+          python run_snapshot.py
           echo "Scanner complete."
           echo "did_run=true" >> "$GITHUB_OUTPUT"
 
