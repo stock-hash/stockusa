@@ -465,16 +465,17 @@ def fetch_options_data(ticker, signal="BOTTOM"):
         exps = t.options
         if not exps:
             return {"ticker": ticker, "spot": spot, "error": "No options available"}
-        now = datetime.now()
+        from zoneinfo import ZoneInfo
+        now = datetime.now(ZoneInfo("America/New_York"))
         target_exp = None
         for exp in exps:
-            dte = (datetime.strptime(exp, "%Y-%m-%d") - now).days
+            dte = (datetime.strptime(exp, "%Y-%m-%d").date() - now.date()).days
             if 7 <= dte <= 45:
                 target_exp = exp; break
         if target_exp is None:
             target_exp = exps[0]
         exp_dt = datetime.strptime(target_exp, "%Y-%m-%d")
-        dte = (exp_dt - now).days
+        dte = (exp_dt.date() - now.date()).days
         T = max(dte / 365.0, 0.01)
         chain = t.option_chain(target_exp)
         cdf = chain.calls; pdf = chain.puts
@@ -485,9 +486,14 @@ def fetch_options_data(ticker, signal="BOTTOM"):
                 all_ivs.extend(df["impliedVolatility"].dropna().tolist())
         avg_iv = round(float(np.mean(all_ivs)) * 100, 1) if all_ivs else 0
         # PCR
-        cv = safe_float(cdf["volume"].sum()) if "volume" in cdf.columns else 0
-        pv = safe_float(pdf["volume"].sum()) if "volume" in pdf.columns else 0
-        pcr = round(float(pv / cv), 2) if cv and cv > 0 and not pd.isna(cv) else 1.0
+        cv = float(cdf["volume"].sum(min_count=1)) if "volume" in cdf.columns else float("nan")
+        pv = float(pdf["volume"].sum(min_count=1)) if "volume" in pdf.columns else float("nan")
+        pcr = round(pv/cv, 2) if math.isfinite(cv) and math.isfinite(pv) and cv>0 and pv>=0 else None
+        pcr_status = "CHAIN_VOLUME_RATIO_SELECTED_EXPIRATION" if pcr is not None else "VOLUME_MISSING_OR_ZERO_CALL_DENOMINATOR"
+        trade_times=[]
+        for side in (cdf,pdf):
+            if "lastTradeDate" in side.columns:
+                trade_times.extend(pd.to_datetime(side["lastTradeDate"],utc=True,errors="coerce").dropna().tolist())
         # Greeks helper
         def ncdf(x):
             return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
@@ -589,6 +595,9 @@ def fetch_options_data(ticker, signal="BOTTOM"):
         return {
             "ticker": ticker, "spot": spot, "signal": signal,
             "expiration": target_exp, "dte": dte, "avg_iv": avg_iv, "pcr": pcr,
+            "pcr_status":pcr_status,"call_volume":cv if math.isfinite(cv) else None,"put_volume":pv if math.isfinite(pv) else None,
+            "retrieved_at":now.isoformat(),"latest_option_trade":max(trade_times).isoformat() if trade_times else None,
+            "quote_timestamp_status":"Quote timestamp not supplied; last trade is not a quote",
             "calls": calls[:15], "puts": puts[-15:],
             "unusual": unusual[:8], "strategies": strategies, "payoff": payoff,
         }
@@ -830,34 +839,27 @@ def export_report_payload(docs_dir, alerts, regime, spy_rsi, summary, options):
     from zoneinfo import ZoneInfo
     et = ZoneInfo("America/New_York")
     completed = datetime.now(et)
-    instruments = {
-        "SPY":"Equity ETF", "QQQ":"Equity ETF", "IWM":"Equity ETF",
-        "BTC-USD":"Crypto spot", "ETH-USD":"Crypto spot", "SOL-USD":"Crypto spot",
-        "GLD":"Gold ETF proxy", "SLV":"Silver ETF proxy", "USO":"Oil ETF proxy",
-        "UNG":"Natural gas ETF proxy", "COPX":"Copper miners ETF proxy",
-        "URA":"Uranium equities ETF proxy", "LIT":"Battery/lithium equities ETF proxy",
-        "DX-Y.NYB":"Dollar index", "^TNX":"10-year yield index; provider units, not normalized",
-        "TLT":"Treasury ETF", "HYG":"High-yield bond ETF", "^VIX":"Volatility index"
-    }
-    quotes = {}
-    for ticker, kind in instruments.items():
-        row = {"ticker":ticker,"instrument_type":kind,"price":None,"market_timestamp":None,"status":"UNAVAILABLE"}
+    from a1_market_intelligence import CROSS_ASSET_GROUPS
+    from a1_quality import frame_for
+    tickers=list(dict.fromkeys(t for group in CROSS_ASSET_GROUPS.values() for t in group))
+    quotes={}
+    try:
+        raw=patched_yf_download(tickers,period="5d",interval="5m",progress=False,auto_adjust=True,threads=False)
+    except Exception as exc:
+        raw=None
+        logger.warning("Cross-asset batch failed: %s",exc)
+    for ticker in tickers:
+        kind="Crypto spot" if ticker.endswith("-USD") else "Index value (not USD)" if ticker in {"^TNX","^VIX","DX-Y.NYB"} else "US-listed ETF proxy"
+        row={"ticker":ticker,"instrument_type":kind,"price":None,"market_timestamp":None,"status":"NO_QUOTE_RETURNED"}
         try:
-            df = patched_yf_download(ticker, period="5d", interval="5m", progress=False, auto_adjust=True, threads=False)
-            if df is not None and not df.empty:
-                if isinstance(df.columns, pd.MultiIndex):
-                    df.columns = df.columns.get_level_values(0)
-                close = df["Close"].dropna()
-                if not close.empty:
-                    value = float(close.iloc[-1])
-                    ts = pd.Timestamp(close.index[-1])
-                    # Do not guess a timezone for a naive quote timestamp.
-                    stamp = ts.tz_convert(et).isoformat() if ts.tzinfo is not None else None
-                    if math.isfinite(value) and value > 0:
-                        row.update(price=round(value,4),market_timestamp=stamp,status="TIMESTAMPED" if stamp else "UNVERIFIED")
-        except Exception as exc:
-            row["error"] = str(exc)[:160]
-        quotes[ticker] = row
+            df=frame_for(raw,ticker,len(tickers)==1)
+            close=df["Close"].dropna()
+            if close.empty:raise ValueError("No valid Close bars")
+            value=float(close.iloc[-1]);ts=pd.Timestamp(close.index[-1])
+            if not math.isfinite(value) or value<=0:raise ValueError("Nonpositive/nonfinite price")
+            row.update(price=round(value,4),market_timestamp=ts.tz_convert(et).isoformat() if ts.tzinfo else None,status="TIMESTAMPED_BAR" if ts.tzinfo else "TIMEZONE_NOT_SUPPLIED",price_basis="ADJUSTED 5-MINUTE BAR")
+        except Exception as exc:row["error"]=str(exc)[:160]
+        quotes[ticker]=row
     clean_alerts = []
     for original in alerts:
         row = dict(original)
@@ -869,14 +871,14 @@ def export_report_payload(docs_dir, alerts, regime, spy_rsi, summary, options):
         clean_alerts.append(row)
     compact_options = {}
     for ticker, original in options.items():
-        row = {k:original.get(k) for k in ("ticker","spot","expiration","dte","avg_iv","unusual","error")}
-        row["retrieved_at"] = completed.isoformat()
-        row["quote_timestamp_status"] = "NOT_PROVIDED_BY_EXISTING_OPTIONS_FETCHER"
+        row = {k:original.get(k) for k in ("ticker","spot","expiration","dte","avg_iv","unusual","error","call_volume","put_volume","latest_option_trade")}
+        row["retrieved_at"] = original.get("retrieved_at",completed.isoformat())
+        row["quote_timestamp_status"] = original.get("quote_timestamp_status","Quote timestamp not supplied by provider")
         row["pcr"] = None
-        row["pcr_status"] = "UNVERIFIED_LEGACY_DEFAULT"
+        row["pcr_status"] = original.get("pcr_status","VOLUME_NOT_VERIFIED")
         # Existing chain PCR of exactly 1.0 cannot be distinguished from its fallback.
         value = original.get("pcr")
-        if value is not None and value != 1.0 and not original.get("error"):
+        if value is not None and original.get("pcr_status")=="CHAIN_VOLUME_RATIO_SELECTED_EXPIRATION" and not original.get("error"):
             row["pcr"] = value
             row["pcr_status"] = "CHAIN_VOLUME_RATIO_SELECTED_EXPIRATION"
         compact_options[ticker] = row
@@ -963,7 +965,8 @@ def main():
                         if isinstance(d.columns, pd.MultiIndex):
                             for t in chunk:
                                 try:
-                                    val = d[t]["Close"].iloc[-1]
+                                    from a1_quality import frame_for
+                                    val = frame_for(d,t,len(chunk)==1)["Close"].dropna().iloc[-1]
                                     if hasattr(val, 'iloc'): val = val.iloc[0]
                                     fv = safe_float(val, 0)
                                     if fv > 0: prices_data[t] = round(fv, 2)
