@@ -2,10 +2,8 @@ name: Market Scanner v5.6 Fixed
 
 on:
   schedule:
-    # EDT window (UTC-4): 9:35 AM-4:10 PM ET = 13:35-20:10 UTC
-    - cron: '5,20,35,50 13-20 * * 1-5'
-    # EST window (UTC-5): 9:35 AM-4:10 PM ET = 14:35-21:10 UTC
-    - cron: '5,20,35,50 14-21 * * 1-5'
+    # UTC envelope covers both EST and EDT. NYSE calendar below gates execution.
+    - cron: '5,20,35,50 13-21 * * 1-5'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +20,9 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 35
-
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,315 +35,186 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
+          # No pip cache: this repository may not contain requirements.txt.
+
+      - name: Set up Node for dashboard validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Install dependencies
         run: |
+          set -euo pipefail
           python -m pip install --upgrade pip
-          pip install yfinance pandas numpy pytz python-dotenv peewee
+          pip install yfinance pandas numpy pytz python-dotenv peewee pandas_market_calendars==5.6.0
 
-      - name: Debug trigger info
-        run: |
-          echo "Event: ${{ github.event_name }}"
-          echo "Schedule: ${{ github.event.schedule }}"
-          echo "UTC time:"
-          date -u
-          echo "New York time:"
-          TZ=America/New_York date
-
-      - name: Check market hours
+      - name: Check NYSE session and trigger
         id: market_check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
         run: |
-          python3 << 'PYEOF'
+          python - <<'PY'
           import os
-          import pytz
-          from datetime import datetime
+          from datetime import datetime, timedelta
+          from zoneinfo import ZoneInfo
+          import pandas_market_calendars as mcal
+          now = datetime.now(ZoneInfo('America/New_York'))
+          schedule = mcal.get_calendar('NYSE').schedule(start_date=now.date(), end_date=now.date())
+          eligible = False
+          if not schedule.empty:
+              opening = schedule.iloc[0]['market_open'].to_pydatetime() - timedelta(minutes=5)
+              closing = schedule.iloc[0]['market_close'].to_pydatetime() + timedelta(minutes=15)
+              eligible = opening <= now <= closing
+          manual = os.environ['EVENT_NAME'] == 'workflow_dispatch'
+          print('Event:', os.environ['EVENT_NAME'])
+          print('Schedule:', os.environ.get('EVENT_SCHEDULE', ''))
+          print('Current ET:', now.isoformat())
+          print('Scheduled session eligible:', eligible)
+          print('Manual override:', manual)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('run=' + ('true' if eligible or manual else 'false') + '\n')
+          PY
 
-          et = pytz.timezone("US/Eastern")
-          now = datetime.now(et)
-
-          mkt_open = now.replace(hour=9, minute=25, second=0, microsecond=0)
-          mkt_close = now.replace(hour=16, minute=15, second=0, microsecond=0)
-
-          is_weekday = now.weekday() < 5
-          in_hours = is_weekday and (mkt_open <= now <= mkt_close)
-
-          print("Current ET:", now.strftime("%Y-%m-%d %I:%M:%S %p %Z"))
-          print("Weekday:", is_weekday)
-          print("In hours:", in_hours)
-
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
-              fh.write("run=%s\n" % ("true" if in_hours else "false"))
-          PYEOF
-
-      - name: Auto-patch run_github.py dashboard CSS only if exact known bug exists
+      - name: Verify uploaded A1 files and Python syntax
+        if: steps.market_check.outputs.run == 'true'
         run: |
-          python3 << 'PYEOF'
+          python - <<'PY'
+          import ast, json
           from pathlib import Path
+          files = ['run_github.py', 'market_scanner_v5.py', 'snapshot_upgrade.py',
+                   'run_a1.py', 'a1_market_intelligence.py', 'a1_quality.py',
+                   'a1_changes.py', 'test_a1_quality.py', 'test_section11.py']
+          for name in files:
+              p = Path(name)
+              if not p.is_file():
+                  raise SystemExit('Required file missing: ' + name)
+              ast.parse(p.read_text(encoding='utf-8-sig'), filename=name)
+          for name in ['a1_reference_universes.json', 'a1_universes.json']:
+              json.loads(Path(name).read_text(encoding='utf-8-sig'))
+          print('Required files and syntax OK')
+          PY
 
-          p = Path("run_github.py")
-          if not p.exists():
-              print("run_github.py not found, skipping CSS patch")
-              raise SystemExit(0)
-
-          text = p.read_text(encoding="utf-8", errors="replace")
-          old = ".page{display:none;padding:20px 22px}.page.activetable"
-          new = ".page{display:none;padding:20px 22px}.page.active{display:block}table"
-
-          if old in text:
-              p.write_text(text.replace(old, new), encoding="utf-8")
-              print("CSS PATCHED in run_github.py")
-          elif ".page.active{display:block}" in text:
-              print("run_github.py already contains .page.active display rule")
+      - name: Apply exact known dashboard CSS repair
+        if: steps.market_check.outputs.run == 'true'
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('run_github.py')
+          s = p.read_text(encoding='utf-8')
+          old = '.page{display:none;padding:20px 22px}.page.activetable'
+          new = '.page{display:none;padding:20px 22px}.page.active{display:block}table'
+          if old in s:
+              p.write_text(s.replace(old, new), encoding='utf-8')
+              print('Applied exact known CSS repair locally')
           else:
-              print("Known CSS bug pattern not found. No source file changes made.")
-          PYEOF
+              print('No known CSS repair needed')
+          PY
 
-      - name: Run market scanner
+      - name: Run offline A1 regression tests
+        if: steps.market_check.outputs.run == 'true'
+        run: python -m unittest test_a1_quality test_section11 -v
+
+      - name: Run market scanner and A1 Section 11
         id: scanner
-        if: steps.market_check.outputs.run == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.market_check.outputs.run == 'true'
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           RECIPIENT_EMAILS: ${{ secrets.RECIPIENT_EMAILS }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
         run: |
-          set -e
-          echo "Starting Market Scanner v5.6 - Single Scan Mode..."
+          set -euo pipefail
+          date -u +%Y-%m-%dT%H:%M:%SZ > "$RUNNER_TEMP/a1_started_at"
           python run_a1.py
-          echo "Scanner complete."
           echo "did_run=true" >> "$GITHUB_OUTPUT"
 
-      - name: Safety audit generated docs
+      - name: Validate current outputs and Section 11 audit
         if: steps.scanner.outputs.did_run == 'true'
         run: |
-          set -e
-          echo "=== Output files after scanner ==="
-
-          if [ ! -d docs ]; then
-            echo "ERROR: docs directory missing after scanner run."
-            exit 1
-          fi
-
-          ls -la docs/
-
-          if [ ! -f docs/TopBottom_Universal.html ]; then
-            echo "ERROR: docs/TopBottom_Universal.html missing after scanner run."
-            exit 1
-          fi
-
-          DASH_BYTES=$(wc -c < docs/TopBottom_Universal.html)
-          echo "Dashboard bytes: ${DASH_BYTES}"
-
-          # Guardrail: do not publish a tiny broken dashboard or redirect wrapper.
-          if [ "$DASH_BYTES" -lt 20000 ]; then
-            echo "ERROR: Dashboard file is too small (${DASH_BYTES} bytes)."
-            echo "This usually means the full dashboard was overwritten by a partial page or redirect."
-            exit 1
-          fi
-
-          # Guardrail: make sure the page has the tab/page activation CSS rule.
-          if grep -q ".page.active" docs/TopBottom_Universal.html; then
-            echo "OK: Dashboard contains .page.active CSS/JS support."
-          else
-            echo "ERROR: .page.active not found in dashboard HTML. Tabs may not display correctly."
-            exit 1
-          fi
-
-          # Guardrail: verify JSON output if available, but do not fail for optional files.
-          if [ -f docs/latest_scan.json ]; then
-            echo "latest_scan.json bytes: $(wc -c < docs/latest_scan.json)"
-            python3 << 'PYEOF'
-          import json
+          python - <<'PY'
+          import json, os, re, subprocess, tempfile
           from pathlib import Path
+          from datetime import datetime, timezone, timedelta
+          docs = Path('docs')
+          required = ['TopBottom_Universal.html', 'latest_scan.json', 'prices.json',
+                      'charts.json', 'a1_tables.html', 'a1_ai.json', 'a1_audit.json',
+                      'a1_changes.json', 'a1_comparison_baseline.json']
+          data = {}
+          for name in required:
+              p = docs / name
+              if not p.is_file() or p.stat().st_size == 0:
+                  raise SystemExit('Required output missing or empty: ' + str(p))
+              if p.suffix == '.json':
+                  data[name] = json.loads(p.read_text(encoding='utf-8'))
+          audit = data['a1_audit.json']
+          if audit.get('publish_ok') is not True:
+              raise SystemExit('A1 audit rejected publication')
+          started = datetime.fromisoformat(Path(os.environ['RUNNER_TEMP'], 'a1_started_at').read_text().strip().replace('Z', '+00:00'))
+          generated = datetime.fromisoformat(audit['generated_at'].replace('Z', '+00:00'))
+          if generated.tzinfo is None or not started - timedelta(seconds=5) <= generated <= datetime.now(timezone.utc) + timedelta(minutes=2):
+              raise SystemExit('Audit timestamp is not from this scanner run')
+          changes = data['a1_changes.json']
+          if changes.get('status') not in ['FIRST_RUN', 'NO_CHANGE', 'CHANGES']:
+              raise SystemExit('Section 11 comparison requires attention: ' + str(changes.get('status')))
+          if changes.get('current_generated_at') != audit['generated_at']:
+              raise SystemExit('Section 11 is not from this A1 report')
+          if data['a1_comparison_baseline.json'].get('generated_at') != audit['generated_at']:
+              raise SystemExit('Section 11 baseline did not advance')
+          ai_bytes = (docs / 'a1_ai.json').stat().st_size
+          if ai_bytes > int(os.environ.get('A1_AI_MAX_BYTES', '26000')):
+              raise SystemExit('AI payload exceeds byte budget')
+          a1_html = (docs / 'a1_tables.html').read_text(encoding='utf-8')
+          if len(a1_html.encode()) < 5000 or 'Changes since prior successful scan' not in a1_html:
+              raise SystemExit('A1 HTML or Section 11 is missing')
+          html = (docs / 'TopBottom_Universal.html').read_text(encoding='utf-8')
+          if len(html.encode()) < 20000 or '.page.active' not in html:
+              raise SystemExit('Original dashboard size/CSS audit failed')
+          for marker in ['renderSummary', 'renderAlerts', 'renderSectors', 'renderBlocked', 'renderHistory', 'function show']:
+              if marker not in html:
+                  raise SystemExit('Original dashboard marker missing: ' + marker)
+          scripts = [s.strip() for s in re.findall(r'<script\b[^>]*>(.*?)</script\s*>', html, re.S | re.I) if s.strip()]
+          if not scripts:
+              raise SystemExit('No inline dashboard JavaScript found')
+          with tempfile.TemporaryDirectory() as tmp:
+              for i, script in enumerate(scripts):
+                  p = Path(tmp) / ('dashboard_' + str(i) + '.js')
+                  p.write_text(script, encoding='utf-8')
+                  subprocess.run(['node', '--check', str(p)], check=True)
+          print('A1 generated:', audit['generated_at'])
+          print('Section 11:', changes['status'], 'events:', len(changes.get('events', [])))
+          print('AI bytes:', ai_bytes)
+          print('Original dashboard and A1 validations passed')
+          PY
 
-          p = Path("docs/latest_scan.json")
-          d = json.loads(p.read_text(encoding="utf-8"))
-
-          summary = d.get("summary", {}) if isinstance(d.get("summary", {}), dict) else {}
-          alerts = d.get("alerts", [])
-          if not isinstance(alerts, list):
-              alerts = []
-
-          scan_time = d.get("scan_time") or summary.get("scan_time") or "N/A"
-          total_alerts = d.get("total_alerts")
-          if total_alerts is None:
-              total_alerts = len(alerts)
-
-          near_miss = d.get("near_miss_count")
-          if near_miss is None:
-              near_miss = summary.get("near_miss_count", 0)
-
-          print("Scan time:", scan_time)
-          print("Alerts:", total_alerts)
-          print("Near-miss:", near_miss)
-          PYEOF
-          else
-            echo "WARNING: docs/latest_scan.json missing. Continuing because some scanner versions embed data directly in HTML."
-          fi
-
-          if [ -f docs/prices.json ]; then
-            echo "prices.json bytes: $(wc -c < docs/prices.json)"
-          else
-            echo "WARNING: docs/prices.json missing."
-          fi
-
-          if [ -f docs/charts.json ]; then
-            echo "charts.json bytes: $(wc -c < docs/charts.json)"
-          else
-            echo "WARNING: docs/charts.json missing."
-          fi
-
-      - name: Validate generated dashboard JavaScript
+      - name: Commit and push validated docs only
         if: steps.scanner.outputs.did_run == 'true'
         run: |
-          set -e
-          echo "=== Validate generated dashboard JavaScript ==="
-
-          if [ ! -f docs/TopBottom_Universal.html ]; then
-            echo "ERROR: docs/TopBottom_Universal.html missing."
-            exit 1
-          fi
-
-          python3 << 'PYEOF'
-          import re
-          import subprocess
-          from pathlib import Path
-
-          html_path = Path("docs/TopBottom_Universal.html")
-          html = html_path.read_text(encoding="utf-8", errors="replace")
-
-          scripts = re.findall(r"<script[^>]*>(.*?)</script>", html, re.S | re.I)
-          inline_scripts = [s.strip() for s in scripts if s.strip()]
-
-          if not inline_scripts:
-              raise SystemExit("ERROR: No inline dashboard script found in TopBottom_Universal.html")
-
-          # Validate each inline script separately. This catches broken quote escaping
-          # that causes the visible header/cards to load but the body/tabs to stay blank.
-          for idx, js in enumerate(inline_scripts, start=1):
-              js_path = Path(f"dashboard_check_{idx}.js")
-              js_path.write_text(js, encoding="utf-8")
-
-              result = subprocess.run(
-                  ["node", "--check", str(js_path)],
-                  text=True,
-                  capture_output=True
-              )
-
-              if result.stdout:
-                  print(result.stdout)
-              if result.stderr:
-                  print(result.stderr)
-
-              if result.returncode != 0:
-                  raise SystemExit(f"ERROR: Dashboard JavaScript syntax check failed in inline script #{idx}")
-
-          print(f"OK: {len(inline_scripts)} inline dashboard script block(s) passed JavaScript syntax check.")
-          PYEOF
-
-      - name: Validate dashboard has render functions
-        if: steps.scanner.outputs.did_run == 'true'
-        run: |
-          set -e
-          echo "=== Validate dashboard render function names ==="
-
-          DASH="docs/TopBottom_Universal.html"
-
-          for NEEDLE in "renderSummary" "renderAlerts" "renderSectors" "renderBlocked" "renderHistory" "function show"; do
-            if grep -q "$NEEDLE" "$DASH"; then
-              echo "OK: Found $NEEDLE"
-            else
-              echo "ERROR: Missing required dashboard function/string: $NEEDLE"
-              exit 1
-            fi
-          done
-
-          echo "OK: Dashboard render function audit passed."
-
-      - name: Commit and push generated dashboard files
-        if: steps.scanner.outputs.did_run == 'true'
-        run: |
-          set -e
-
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          echo "=== Save generated docs to temp ==="
-          rm -rf /tmp/generated_docs
-          mkdir -p /tmp/generated_docs
-          cp -R docs/. /tmp/generated_docs/
-
-          echo "=== Sync local repo with latest origin/main ==="
-          git fetch origin main
-          git reset --hard origin/main
-
-          echo "=== Restore newly generated docs over latest repo ==="
-          mkdir -p docs
-          rm -rf docs/*
-          cp -R /tmp/generated_docs/. docs/
-
-          echo "=== Git status after restoring generated docs ==="
-          git status --short
-
-          echo "=== Stage docs files ==="
           git add docs/
-
           if git diff --cached --quiet; then
-            echo "No dashboard changes to commit."
+            echo "No generated changes to publish."
             exit 0
           fi
-
+          # Refuse to overwrite results built from older code or an older baseline.
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "main changed during this scan. Nothing pushed; rerun from latest main."
+            exit 1
+          fi
           SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
-
-          ALERTS=$(python3 - << 'PYEOF'
-          import json
-          from pathlib import Path
-          try:
-              d = json.loads(Path("docs/latest_scan.json").read_text(encoding="utf-8"))
-              alerts = d.get("total_alerts")
-              if alerts is None:
-                  raw = d.get("alerts", [])
-                  alerts = len(raw) if isinstance(raw, list) else 0
-              print(alerts)
-          except Exception:
-              print(0)
-          PYEOF
-          )
-
-          NEARMISS=$(python3 - << 'PYEOF'
-          import json
-          from pathlib import Path
-          try:
-              d = json.loads(Path("docs/latest_scan.json").read_text(encoding="utf-8"))
-              summary = d.get("summary", {}) if isinstance(d.get("summary", {}), dict) else {}
-              print(d.get("near_miss_count", summary.get("near_miss_count", 0)))
-          except Exception:
-              print(0)
-          PYEOF
-          )
-
-          git commit -m "Scan: ${SCAN_TIME} - ${ALERTS} alerts, ${NEARMISS} near-miss"
-
-          echo "=== Push dashboard update ==="
+          git commit -m "A1 scan: ${SCAN_TIME} - validated report and Section 11 baseline"
           git push origin HEAD:main
-
-          echo "Results pushed to GitHub Pages source branch."
 
       - name: Final verification summary
         if: steps.scanner.outputs.did_run == 'true'
         run: |
-          echo "Workflow completed."
-          echo "This workflow does NOT rebuild or replace your full dashboard HTML outside run_github.py."
-          echo "It preserves whatever run_github.py generated into docs/."
-          echo "It now blocks publishing if the generated dashboard JavaScript is broken."
-          echo "Check these files after GitHub Pages refresh:"
-          echo "https://stock-hash.github.io/stockusa/latest_scan.json"
-          echo "https://stock-hash.github.io/stockusa/prices.json"
-          echo "https://stock-hash.github.io/stockusa/charts.json"
-          echo "https://stock-hash.github.io/stockusa/TopBottom_Universal.html?v=20260705fix1"
+          echo "Validated original dashboard, A1 report and Section 11 baseline published."
+          echo "Inspect docs/a1_audit.json and docs/a1_changes.json before the email test."
+          echo "Power Automate continues using a1_ai.json and a1_tables.html."
 
-      - name: No scan outside market hours
-        if: steps.market_check.outputs.run != 'true' && github.event_name != 'workflow_dispatch'
-        run: |
-          echo "Outside market hours. Scheduled run skipped."
+      - name: Scheduled scan skipped
+        if: steps.market_check.outputs.run != 'true'
+        run: echo "Outside the NYSE session window or exchange holiday; scheduled scan skipped."
