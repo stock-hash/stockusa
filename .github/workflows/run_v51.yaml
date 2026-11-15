@@ -96,7 +96,8 @@ jobs:
               'install_a1_layout.py',
               'a1_ultimate_dashboard.py',
               'install_ultimate_dashboard.py',
-              'test_ultimate_dashboard.py'
+              'test_ultimate_dashboard.py',
+              'install_final_dashboard_fix.py'
           ]
 
           for name in files:
@@ -142,6 +143,7 @@ jobs:
           date -u +%Y-%m-%dT%H:%M:%SZ > "$RUNNER_TEMP/a1_started_at"
           python install_a1_layout.py
           python install_ultimate_dashboard.py
+          python install_final_dashboard_fix.py
           python run_a1.py
           echo "did_run=true" >> "$GITHUB_OUTPUT"
 
