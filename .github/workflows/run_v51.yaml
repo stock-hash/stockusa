@@ -82,9 +82,20 @@ jobs:
           python - <<'PY'
           import ast, json
           from pathlib import Path
-          files = ['run_github.py', 'market_scanner_v5.py', 'snapshot_upgrade.py',
-                   'run_a1.py', 'a1_market_intelligence.py', 'a1_quality.py',
-                   'a1_changes.py', 'test_a1_quality.py', 'test_section11.py']
+                    files = [
+              'run_github.py',
+              'market_scanner_v5.py',
+              'snapshot_upgrade.py',
+              'run_a1.py',
+              'a1_market_intelligence.py',
+              'a1_quality.py',
+              'a1_changes.py',
+              'test_a1_quality.py',
+              'test_section11.py',
+              'a1_restore_layout.py',
+              'install_a1_layout.py'
+          ]
+
           for name in files:
               p = Path(name)
               if not p.is_file():
@@ -126,6 +137,7 @@ jobs:
         run: |
           set -euo pipefail
           date -u +%Y-%m-%dT%H:%M:%SZ > "$RUNNER_TEMP/a1_started_at"
+          python install_a1_layout.py
           python run_a1.py
           echo "did_run=true" >> "$GITHUB_OUTPUT"
 
