@@ -14,7 +14,7 @@ C={
  'gray':'#EEF2F6','dark':'#1F2937','muted':'#5F6B7A','white':'#FFFFFF','border':'#CBD5E1'}
 SECTOR_NAMES={'XLK':'Technology','XLF':'Financials','XLV':'Health Care','XLI':'Industrials','XLY':'Consumer Discretionary','XLP':'Consumer Staples','XLE':'Energy','XLU':'Utilities','XLB':'Materials','XLRE':'Real Estate','XLC':'Communication Services'}
 SECTOR_ORDER=list(SECTOR_NAMES)
-MARKER='<!-- A1_ULTIMATE_DASHBOARD_V1 -->'
+MARKER='<!-- A1_ULTIMATE_DASHBOARD_V1_1 -->'
 
 def load(path,default):
  try:return json.loads(Path(path).read_text(encoding='utf-8'))
@@ -51,6 +51,9 @@ def freshness_color(text):
 
 def cell(text,bg=None,bold=False,align='left'):
  return '<td bgcolor="{0}" style="background:{0};border:1px solid {1};padding:7px 8px;vertical-align:middle;text-align:{2};font-weight:{3};color:{4}">{5}</td>'.format(bg or C['white'],C['border'],align,'700' if bold else '400',C['dark'],e(text))
+def raw_cell(trusted_html,bg=None,align='left'):
+ # Only locally generated trend_strip HTML may use this function.
+ return '<td bgcolor="{0}" style="background:{0};border:1px solid {1};padding:7px 8px;vertical-align:middle;text-align:{2};color:{3}">{4}</td>'.format(bg or C['white'],C['border'],align,C['dark'],trusted_html)
 def th(text):return '<th bgcolor="{0}" style="background:{0};color:white;border:1px solid {1};padding:8px;text-align:left;font-weight:700">{2}</th>'.format(C['blue'],C['border'],e(text))
 def heading(text,sub=''):
  return '<h2 style="margin:22px 0 5px;color:{0};font:700 18px Segoe UI,Arial">{1}</h2>{2}'.format(C['navy'],e(text),'<div style="font:12px Segoe UI,Arial;color:'+C['muted']+';margin-bottom:8px">'+e(sub)+'</div>' if sub else '')
@@ -110,9 +113,10 @@ def build(docs_dir):
  docs=Path(docs_dir);original=(docs/'a1_tables.html').read_text(encoding='utf-8')
  if MARKER in original:return {'status':'ALREADY_BUILT'}
  report=load(docs/'report_scan.json',{});snap=load(docs/'snapshot_full.json',{});audit=load(docs/'a1_audit.json',{});changes=load(docs/'a1_changes.json',{})
+ ai=load(docs/'a1_ai.json',{});archive=load(docs/'a1_full_archive.json',{})
  if audit.get('publish_ok') is not True:raise RuntimeError('A1 audit failed; ultimate dashboard not published')
  features=snap.get('daily_features') or [];by={r.get('ticker'):r for r in features if r.get('ticker')}
- alerts=report.get('alerts') or [];blocked=(report.get('summary') or {}).get('blocked_alerts') or [];sectors=(report.get('summary') or {}).get('sectors') or []
+ alerts=((archive.get('report') or {}).get('alerts') or report.get('alerts') or []);blocked=(report.get('summary') or {}).get('blocked_alerts') or [];sectors=(report.get('summary') or {}).get('sectors') or []
  cross=report.get('cross_assets') or {};options=report.get('options') or {}
  improving=[r for r in features if r.get('panel')=='stock_or_other' and r.get('improving') and r.get('higher_low')]
  improving.sort(key=lambda r:(num(r.get('technical_score')) or -1,num(r.get('relative_20d_vs_spy_pp')) or -999),reverse=True)
@@ -120,19 +124,32 @@ def build(docs_dir):
  hist,hist_errors=history_fetch(selected)
  bullish=sum(1 for r in alerts if r.get('signal')=='BOTTOM');bearish=sum(1 for r in alerts if r.get('signal')=='TOP')
  failures=len(snap.get('failures') or [])
- strong=[r.get('sector') for r in sectors if r.get('strength')=='STRONG'];weak=[r.get('sector') for r in sectors if r.get('strength')=='WEAK']
+ strong=[];weak=[]
  generated=audit.get('generated_at');scan=report.get('scan_time')
  out=MARKER+'<html><body style="margin:0;background:#F3F6F9;font-family:Segoe UI,Arial;color:'+C['dark']+'"><div style="max-width:1180px;margin:auto;background:white">'
  out+='<div style="background:linear-gradient(135deg,'+C['navy']+','+C['blue']+');background-color:'+C['navy']+';padding:22px;color:white"><div style="font-size:27px;font-weight:800">A1 PROFESSIONAL MARKET DASHBOARD</div><div style="font-size:12px;margin-top:6px">Assessed '+e(generated)+' | Scanner '+e(scan)+'</div></div><div style="padding:16px">'
- out+=cards([('Regime',report.get('regime','N/A'),C['cyan'],'Scanner classification'),('SPY RSI','{:.1f}'.format(num(report.get('spy_rsi')) or 0),C['yellow'],'Indicator, not forecast'),('Bullish setups',bullish,C['green'],'BOTTOM scanner signals'),('Bearish setups',bearish,C['red'],'TOP scanner signals'),('Early research',len(improving),C['cyan'],'Daily watch, not entries'),('Data failures',failures,C['gray'],'Visible in full appendix')])
- out+='<div style="background:'+C['yellow']+';border-left:5px solid '+C['amber']+';padding:10px;margin:10px 0;font-size:12px"><b>Data integrity:</b> equities use instrument-specific session labels; crypto ages continuously. Near-close bars are not official closes. Daily observations and intraday bars are never silently mixed. Missing values remain visible.</div>'
+ out+=cards([('Regime',report.get('regime','N/A'),C['cyan'],'Scanner classification'),('SPY RSI','{:.1f}'.format(num(report.get('spy_rsi')) or 0),C['yellow'],'Indicator, not forecast'),('Bullish setups',bullish,C['green'],'BOTTOM scanner signals'),('Bearish setups',bearish,C['red'],'TOP scanner signals'),('Screen matches',len(improving),C['cyan'],'Early-improving daily screen; appendix may use stricter criteria'),('Data failures',failures,C['gray'],'Visible in full appendix')])
+ out+='<div style="background:'+C['yellow']+';border-left:5px solid '+C['amber']+';padding:10px;margin:10px 0;font-size:12px"><b>Data integrity:</b> equities use instrument-specific session labels; crypto ages continuously. Near-close bars are not official closes. Daily observations and intraday bars are never silently mixed. Missing values remain visible. Broad coverage does not mean uniform freshness: index observations and option timestamps can remain limited.</div>'
  # Sector heatmap + 7 sessions
  out+=section_bar('1. Sector Rotation Heatmap','All 11 GICS sector ETFs, relative return vs SPY, scan-to-scan change, and optional seven-session adjusted close strip.')
- sec_by={r.get('sector'):r for r in sectors}
+ raw_sec_by={r.get('sector'):r for r in sectors}
+ calc_sec_by={r.get('ticker'):r for r in (ai.get('sectors') or [])}
+ sec_by={}
+ for ticker in SECTOR_ORDER:
+  merged=dict(raw_sec_by.get(ticker,{}) or {})
+  calculated=calc_sec_by.get(ticker,{}) or {}
+  if 'relative_pp' in calculated:merged['diff']=calculated.get('relative_pp')
+  if 'change_pp' in calculated:merged['change_pp']=calculated.get('change_pp')
+  if calculated.get('stage') is not None:merged['stage']=calculated.get('stage')
+  if calculated.get('timestamp'):merged['latest']=calculated.get('timestamp')
+  if calculated.get('strength'):merged['strength']=calculated.get('strength')
+  sec_by[ticker]=merged
+ strong=[t for t,r in sec_by.items() if r.get('strength')=='STRONG']
+ weak=[t for t,r in sec_by.items() if r.get('strength')=='WEAK']
  rows=[]
  for t in SECTOR_ORDER:
   r=sec_by.get(t,{})
-  rows.append([cell(t,C['blue'] if r else C['gray'],True),cell(SECTOR_NAMES[t]),cell(r.get('strength'),C['green'] if r.get('strength')=='STRONG' else C['red'] if r.get('strength')=='WEAK' else C['yellow'],True),cell(pp(r.get('diff')),bg_for(r.get('diff'),'change')),cell(pp(r.get('change_pp')),bg_for(r.get('change_pp'),'change')),cell(r.get('stage')),cell(r.get('latest')),cell(trend_strip(hist.get(t)))])
+  rows.append([cell(t,C['blue'] if r else C['gray'],True),cell(SECTOR_NAMES[t]),cell(r.get('strength'),C['green'] if r.get('strength')=='STRONG' else C['red'] if r.get('strength')=='WEAK' else C['yellow'],True),cell(pp(r.get('diff')),bg_for(r.get('diff'),'change')),cell(pp(r.get('change_pp')),bg_for(r.get('change_pp'),'change')),cell(r.get('stage') if r.get('stage') is not None else 'No calculated stage'),cell(r.get('latest') or 'Bar time not supplied'),raw_cell(trend_strip(hist.get(t)))])
  out+=table(['ETF','Sector','Strength','RS vs SPY','Change','Stage','Bar time','7-session strip'],rows)
  out+='<div style="font-size:11px;color:'+C['muted']+'"><b>Leaders:</b> '+e(', '.join(strong) or 'none classified')+' &nbsp; <b>Laggards:</b> '+e(', '.join(weak) or 'none classified')+'</div>'
  # Change since prior scan
@@ -150,7 +167,9 @@ def build(docs_dir):
  for r in alerts:
   bg=C['green'] if r.get('signal')=='BOTTOM' else C['red']
   d=r.get('rqg_details') or {}
-  setup_rows.append([cell(r.get('ticker'),bg,True),cell(r.get('signal'),bg,True),cell(r.get('setup_type')),cell(money(r.get('alert_price'))),cell(score(r.get('rqg_score')),bg_for(r.get('rqg_score'),'score')),cell(score(r.get('confidence')),bg_for(r.get('confidence'),'score')),cell(r.get('rsi')),cell(r.get('mfi')),cell(r.get('cmf')),cell(r.get('freshness'),freshness_color(r.get('freshness'))),cell(r.get('entry_readiness'),freshness_color(r.get('entry_readiness'))),cell(trend_strip(hist.get(r.get('ticker'))))])
+  freshness=r.get('freshness') or ('Bar time supplied; freshness not calculated' if d.get('latest') else 'Signal bar timestamp not supplied')
+  readiness=r.get('entry_readiness') or ('Last-session signal - reconfirm' if 'LATEST SESSION' in freshness else 'Intraday confirmation required')
+  setup_rows.append([cell(r.get('ticker'),bg,True),cell(r.get('signal'),bg,True),cell(r.get('setup_type') or 'Setup type not supplied'),cell(money(r.get('alert_price'))),cell(score(r.get('rqg_score')),bg_for(r.get('rqg_score'),'score')),cell(score(r.get('confidence')),bg_for(r.get('confidence'),'score')),cell(r.get('rsi') if r.get('rsi') is not None else 'RSI not supplied'),cell(r.get('mfi') if r.get('mfi') is not None else 'MFI not supplied'),cell(r.get('cmf') if r.get('cmf') is not None else 'CMF not supplied'),cell(freshness,freshness_color(freshness)),cell(readiness,freshness_color(readiness)),raw_cell(trend_strip(hist.get(r.get('ticker'))))])
  out+=table(['Ticker','Signal','Setup','Alert price','RQG','Confidence*','RSI','MFI','CMF','Freshness','Readiness','7-session strip'],setup_rows)
  out+='<div style="font-size:10px;color:'+C['muted']+'">* Scanner confidence is a heuristic score, not a probability. Full reasons remain in the evidence appendix.</div>'
  # Early research
@@ -158,7 +177,7 @@ def build(docs_dir):
  research=[]
  for r in improving[:12]:
   status=r.get('entry_readiness') or r.get('status');sbg=C['red'] if 'OVEREXTENDED' in str(status) else C['yellow']
-  research.append([cell(r.get('ticker'),C['cyan'],True),cell(money(r.get('price'))),cell(score(r.get('technical_score')),bg_for(r.get('technical_score'),'score')),cell(pct(r.get('return_3d')),bg_for(r.get('return_3d'))),cell(pct(r.get('return_5d')),bg_for(r.get('return_5d'))),cell(pct(r.get('return_20d')),bg_for(r.get('return_20d'))),cell(pp(r.get('relative_20d_vs_spy_pp')),bg_for(r.get('relative_20d_vs_spy_pp'),'change')),cell(r.get('daily_bar_volume_ratio')),cell(r.get('extension_atr')),cell(status,sbg),cell(trend_strip(hist.get(r.get('ticker'))))])
+  research.append([cell(r.get('ticker'),C['cyan'],True),cell(money(r.get('price'))),cell(score(r.get('technical_score')),bg_for(r.get('technical_score'),'score')),cell(pct(r.get('return_3d')),bg_for(r.get('return_3d'))),cell(pct(r.get('return_5d')),bg_for(r.get('return_5d'))),cell(pct(r.get('return_20d')),bg_for(r.get('return_20d'))),cell(pp(r.get('relative_20d_vs_spy_pp')),bg_for(r.get('relative_20d_vs_spy_pp'),'change')),cell(r.get('daily_bar_volume_ratio')),cell(r.get('extension_atr')),cell(status,sbg),raw_cell(trend_strip(hist.get(r.get('ticker'))))])
  out+=table(['Ticker','Price','Score','3D','5D','20D','RS vs SPY','Daily vol','ATR ext.','Research status','7-session strip'],research)
  # Cross assets compact heatmap
  out+=section_bar('5. Cross-Asset Confirmation','Equities, crypto, metals, energy, rates, credit, dollar and volatility with source basis and freshness.')
@@ -166,13 +185,13 @@ def build(docs_dir):
  groups={'Equity benchmarks':['SPY','QQQ','DIA','IWM','RSP'],'Crypto':['BTC-USD','ETH-USD','SOL-USD','IBIT','BITO','ETHA','BLOK'],'Metals':['GLD','SLV','GDX','SIL'],'Energy/materials':['USO','UNG','URA','URNM','COPX','LIT'],'Rates/credit':['^TNX','TLT','HYG','LQD','SHY'],'Currency/volatility':['DX-Y.NYB','UUP','^VIX']}
  for group,names in groups.items():
   for t in names:
-   q=cross.get(t,{}) or {};d=by.get(t,{}) or {};price=q.get('price',d.get('price'));stamp=q.get('market_timestamp') or str(d.get('bar_timestamp',''))[:10];status=q.get('status') or d.get('daily_status') or 'Not supplied';basis=q.get('price_basis') or d.get('price_basis') or q.get('instrument_type') or 'Not supplied'
+   q=cross.get(t,{}) or {};d=by.get(t,{}) or {};price=q.get('price',d.get('price'));stamp=q.get('market_timestamp') or str(d.get('bar_timestamp',''))[:10];status=q.get('status') or d.get('daily_status') or 'Status not supplied';basis=q.get('price_basis') or d.get('price_basis') or q.get('instrument_type') or 'Price basis not supplied'
    cross_rows.append([cell(group,C['gray']),cell(t,C['cyan'],True),cell('{:,.2f}'.format(price) if t in {'^TNX','^VIX','DX-Y.NYB'} and num(price) is not None else money(price)),cell(pct(d.get('return_3d')),bg_for(d.get('return_3d'))),cell(pct(d.get('return_20d')),bg_for(d.get('return_20d'))),cell(stamp),cell(status,freshness_color(status)),cell(basis)])
  out+=table(['Group','Instrument','Price / index','3D','20D','Time/date','Status','Basis'],cross_rows)
  # Options, tactical, country concise
  out+=section_bar('6. Options Coverage','Selected-expiration volume ratios. PCR does not establish buyer intent or institutional positioning.')
  opt=[]
- for t,v in options.items():opt.append([cell(t,C['purple'],True),cell(v.get('expiration')),cell(v.get('dte')),cell(v.get('pcr'),bg_for(-1 if num(v.get('pcr')) and num(v.get('pcr'))>1 else 1)),cell(v.get('avg_iv')),cell(v.get('pcr_status')),cell(v.get('quote_timestamp_status'))])
+ for t,v in options.items():opt.append([cell(t,C['purple'],True),cell(v.get('expiration')),cell(v.get('dte')),cell(v.get('pcr'),bg_for(-1 if num(v.get('pcr')) and num(v.get('pcr'))>1 else 1)),cell(v.get('avg_iv')),cell(v.get('pcr_status')),cell(v.get('quote_timestamp_status') or 'Option quote timestamp not supplied by source')])
  out+=table(['Ticker','Expiration','DTE','PCR','Avg IV','Calculation status','Quote-time status'],opt)
  out+=section_bar('7. Tactical, Country and Theme Monitor','Tactical products remain separate from long-term research. Complete tables are retained in the appendix.')
  country=[r for r in features if r.get('panel')=='country'][:12];tactical=[r for r in features if r.get('panel')=='tactical'][:12]
@@ -189,6 +208,20 @@ def build(docs_dir):
  appendix=re.sub(r'^.*?<body[^>]*>','',original,count=1,flags=re.S|re.I);appendix=re.sub(r'</body>.*$','',appendix,count=1,flags=re.S|re.I)
  out+=appendix
  out+='<div style="background:'+C['navy']+';color:white;padding:12px;margin-top:20px;font-size:11px">Research only. No automatic trade execution. Colors communicate category/status, not certainty. Verify current market conditions before acting.</div></div></div></body></html>'
+ # Reader-friendly machine-label presentation. Source JSON remains unchanged.
+ label_map={
+  'HISTORICAL_RESEARCH_NOT_ENTRY_READY':'Daily research - not entry-ready',
+  'NOT_EVALUATED':'Not evaluated by a fundamental-data feed',
+  'CHAIN_VOLUME_RATIO_SELECTED_EXPIRATION':'Selected-expiration put/call volume ratio',
+  'VALID_REVERSAL':'Valid scanner reversal gate',
+  'WATCH_ONLY':'Watch only',
+  'REJECT_LOW_QUALITY':'Rejected by quality gate',
+  'REJECT_TREND_DANGER':'Rejected: trend danger'
+ }
+ for machine_label,friendly_label in label_map.items():out=out.replace(machine_label,friendly_label)
+ # Final integrity checks.
+ if len(sec_by)!=11 or any(sec_by[t].get('stage') is None or 'change_pp' not in sec_by[t] for t in SECTOR_ORDER):raise RuntimeError('Ultimate dashboard sector join incomplete')
+ if '&lt;span title=' in out or '\\<span title=' in out:raise RuntimeError('Seven-session strip was escaped instead of rendered')
  if len(out.encode())<len(original.encode()):raise RuntimeError('Ultimate report lost content; refusing publication')
  backup=docs/'a1_tables_pre_ultimate.html';backup.write_text(original,encoding='utf-8')
  atomic(docs/'a1_tables.html',out)
@@ -197,7 +230,9 @@ def build(docs_dir):
  script='''<script>(function(){var q=document.getElementById('a1-search'),c=document.getElementById('a1-clear'),o=document.getElementById('a1-count');function f(){var x=(q.value||'').toLowerCase(),n=0;document.querySelectorAll('table tr').forEach(function(r,i){if(r.querySelector('th'))return;var show=!x||r.textContent.toLowerCase().indexOf(x)>=0;r.style.display=show?'':'none';if(show)n++;});o.textContent=n+' visible data rows';}q.addEventListener('input',f);c.addEventListener('click',function(){q.value='';f();q.focus();});f();})();</script>'''
  browser=out.replace('<body ', '<body ').replace('<div style="max-width:1180px',controls+'<div style="max-width:1180px',1).replace('</body></html>',script+'</body></html>')
  atomic(docs/'a1_dashboard.html',browser)
- details={'version':'ultimate-v1','generated_at':datetime.now(timezone.utc).isoformat(),'prior_html_bytes':len(original.encode()),'ultimate_html_bytes':len(out.encode()),'history_symbols':len(hist),'history_failures':hist_errors,'all_prior_html_retained':appendix in out,'browser_dashboard_bytes':len(browser.encode()),'sections':['sector heatmap','changes','scanner setups','bottom-up research','cross-assets','options','country/tactical','quality','complete appendix']}
+ details={'version':'ultimate-v1.1-final','generated_at':datetime.now(timezone.utc).isoformat(),'prior_html_bytes':len(original.encode()),'ultimate_html_bytes':len(out.encode()),'sector_calculated_fields_complete':all(sec_by[t].get('stage') is not None and 'change_pp' in sec_by[t] for t in SECTOR_ORDER),'trend_strips_rendered_as_html':('&lt;span title=' not in out),'alert_rows_with_explicit_freshness':sum(1 for r in alerts if r.get('freshness') or (r.get('rqg_details') or {}).get('latest')),'history_symbols':len(hist),'history_failures':hist_errors,'all_prior_html_retained':appendix in out,'browser_dashboard_bytes':len(browser.encode()),'sections':['sector heatmap','changes','scanner setups','bottom-up research','cross-assets','options','country/tactical','quality','complete appendix']}
  atomic_json(docs/'a1_ultimate_audit.json',details)
  audit['ultimate_dashboard']=details;audit['html_bytes']=len(out.encode());atomic_json(docs/'a1_audit.json',audit)
  return details
+
+# A1_ULTIMATE_DASHBOARD_V1_1
