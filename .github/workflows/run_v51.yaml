@@ -93,7 +93,10 @@ jobs:
               'test_a1_quality.py',
               'test_section11.py',
               'a1_restore_layout.py',
-              'install_a1_layout.py'
+              'install_a1_layout.py',
+              'a1_ultimate_dashboard.py',
+              'install_ultimate_dashboard.py',
+              'test_ultimate_dashboard.py'
           ]
 
           for name in files:
@@ -124,7 +127,7 @@ jobs:
 
       - name: Run offline A1 regression tests
         if: steps.market_check.outputs.run == 'true'
-        run: python -m unittest test_a1_quality test_section11 -v
+        run: python -m unittest test_a1_quality test_section11 test_ultimate_dashboard -v
 
       - name: Run market scanner and A1 Section 11
         id: scanner
@@ -138,7 +141,8 @@ jobs:
           set -euo pipefail
           date -u +%Y-%m-%dT%H:%M:%SZ > "$RUNNER_TEMP/a1_started_at"
           python install_a1_layout.py
-          python run_a1.py
+          python install_ultimate_dashboard.py
+          python run_a1.pyy
           echo "did_run=true" >> "$GITHUB_OUTPUT"
 
       - name: Validate current outputs and Section 11 audit
