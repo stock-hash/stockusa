@@ -21,7 +21,7 @@ from zoneinfo import ZoneInfo
 ET = ZoneInfo('America/New_York')
 DOCS = Path('docs')
 STATE = DOCS / 'a1_email_state.json'
-SEND_AFTER = (15, 30)          # 3:30 PM Eastern
+SEND_AFTER = (14, 00)          # 3:30 PM Eastern
 MAX_REPORT_AGE_MIN = 90        # never email an old report
 SECTOR_NAMES = {'XLK': 'Technology', 'XLF': 'Financials', 'XLV': 'Health Care', 'XLI': 'Industrials',
                 'XLY': 'Consumer Discretionary', 'XLP': 'Consumer Staples', 'XLE': 'Energy',
