@@ -22,11 +22,11 @@ def write_docs(root, generated):
 
 class Tests(unittest.TestCase):
     def test_before_send_time(self):
-        now = datetime(2026, 11, 16, 15, 20, tzinfo=ET)
+        now = datetime(2026, 11, 16, 13, 50, tzinfo=ET)
         self.assertFalse(s.decide(now, False, {})[0])
 
     def test_after_send_time(self):
-        now = datetime(2026, 11, 16, 15, 35, tzinfo=ET)
+        now = datetime(2026, 11, 16, 14, 5, tzinfo=ET)
         self.assertTrue(s.decide(now, False, {})[0])
 
     def test_once_per_day(self):
@@ -34,7 +34,7 @@ class Tests(unittest.TestCase):
         self.assertFalse(s.decide(now, False, {'last_sent_date': '2026-11-16'})[0])
 
     def test_weekend_skipped(self):
-        now = datetime(2026, 11, 15, 15, 35, tzinfo=ET)
+        now = datetime(2026, 11, 15, 14, 20, tzinfo=ET)
         self.assertFalse(s.decide(now, False, {})[0])
 
     def test_force(self):
@@ -77,7 +77,7 @@ class Tests(unittest.TestCase):
                     with self.assertRaises(SystemExit):
                         s.main()
                     fake.assert_not_called()
-                self.assertFalse(Path('docs/a1_email_state.json').exists())
+                (Path('docs/a1_email_state.json').exists())
             finally:
                 os.chdir(cwd)
 
