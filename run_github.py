@@ -351,6 +351,11 @@ def run_single_scan(previous_summaries=None):
             try: check_sector_strength(sec)
             except Exception as e: logger.warning("Sector check failed %s: %s", sec, e)
             checked.add(sec); time.sleep(0.2)
+            for sec in ["XLK","XLF","XLV","XLI","XLY","XLP","XLE","XLU","XLB","XLRE","XLC"]:
+        if sec not in checked:
+            try: check_sector_strength(sec)
+            except Exception as e: logger.warning("Sector check failed %s: %s", sec, e)
+            checked.add(sec); time.sleep(0.2)
     alerts=[]; blocked=[]; candidates=[]
     for ticker in filtered:
         try:
