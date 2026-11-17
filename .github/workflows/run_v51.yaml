@@ -2,7 +2,10 @@ name: Market Scanner v5.6 Fixed
 
 on:
   schedule:
-    - cron: '5,20,35,50 13-21 * * 1-5'
+    # EDT window (UTC-4): 9:35 AM-4:10 PM ET = 13:35-20:10 UTC
+    - cron: '5,20,35,50 13-20 * * 1-5'
+    # EST window (UTC-5): 9:35 AM-4:10 PM ET = 14:35-21:10 UTC
+    - cron: '5,20,35,50 14-21 * * 1-5'
   workflow_dispatch:
     inputs:
       send_email:
