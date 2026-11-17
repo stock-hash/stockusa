@@ -345,13 +345,14 @@ def run_single_scan(previous_summaries=None):
     filtered = batch_quick_scan(ALL_STOCKS)
     logger.info("Pass 1: %d/%d passed | Regime=%s RSI=%.1f | TimeQuality=%s", len(filtered), len(ALL_STOCKS), regime, spy_rsi, tq_name)
     checked=set()
-    for t in filtered:
+        for t in filtered:
         sec=get_stock_sector(t)
         if sec not in checked and sec != "SPY":
             try: check_sector_strength(sec)
             except Exception as e: logger.warning("Sector check failed %s: %s", sec, e)
             checked.add(sec); time.sleep(0.2)
-            for sec in ["XLK","XLF","XLV","XLI","XLY","XLP","XLE","XLU","XLB","XLRE","XLC"]:
+    # Always measure all 11 sector ETFs, even if no stock from a sector passed the filter.
+    for sec in ["XLK","XLF","XLV","XLI","XLY","XLP","XLE","XLU","XLB","XLRE","XLC"]:
         if sec not in checked:
             try: check_sector_strength(sec)
             except Exception as e: logger.warning("Sector check failed %s: %s", sec, e)
