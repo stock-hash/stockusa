@@ -2,12 +2,9 @@ name: Market Scanner v5.6 Fixed
 
 on:
   schedule:
-    # Afternoon runs only. Email goes out from the first run after 2:00 PM ET.
-    - cron: '5,35 18-20 * * 1-5'
-    # EDT window (UTC-4): 9:35 AM-4:10 PM ET = 13:35-20:10 UTC
-    #- cron: '5,20,35,50 13-20 * * 1-5'
-    # EST window (UTC-5): 9:35 AM-4:10 PM ET = 14:35-21:10 UTC
-    #- cron: '5,20,35,50 14-21 * * 1-5'
+    # 2:00 PM Eastern, Monday-Friday; timezone handles EST/EDT.
+    - cron: '0 14 * * 1-5'
+      timezone: America/New_York
   workflow_dispatch:
     inputs:
       send_email:
@@ -32,7 +29,6 @@ jobs:
     defaults:
       run:
         shell: bash
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -71,22 +67,19 @@ jobs:
 
           now = datetime.now(ZoneInfo('America/New_York'))
           schedule = mcal.get_calendar('NYSE').schedule(
-              start_date=now.date(),
-              end_date=now.date()
+              start_date=now.date(), end_date=now.date()
           )
           eligible = False
           if not schedule.empty:
               opening = schedule.iloc[0]['market_open'].to_pydatetime() - timedelta(minutes=5)
               closing = schedule.iloc[0]['market_close'].to_pydatetime() + timedelta(minutes=15)
               eligible = opening <= now <= closing
-
           manual = os.environ['EVENT_NAME'] == 'workflow_dispatch'
           print('Event:', os.environ['EVENT_NAME'])
           print('Schedule:', os.environ.get('EVENT_SCHEDULE', ''))
           print('Current ET:', now.isoformat())
           print('Scheduled session eligible:', eligible)
           print('Manual override:', manual)
-
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
               fh.write('run=' + ('true' if eligible or manual else 'false') + '\n')
           PY
@@ -100,40 +93,27 @@ jobs:
           from pathlib import Path
 
           files = [
-              'run_github.py',
-              'market_scanner_v5.py',
-              'snapshot_upgrade.py',
-              'run_a1.py',
-              'a1_market_intelligence.py',
-              'a1_quality.py',
-              'a1_changes.py',
-              'test_a1_quality.py',
-              'test_section11.py',
-              'a1_restore_layout.py',
-              'install_a1_layout.py',
-              'a1_ultimate_dashboard.py',
-              'install_ultimate_dashboard.py',
-              'test_ultimate_dashboard.py',
-              'a1_email_sender.py',
+              'run_github.py', 'market_scanner_v5.py', 'snapshot_upgrade.py',
+              'run_a1.py', 'a1_market_intelligence.py', 'a1_quality.py',
+              'a1_changes.py', 'test_a1_quality.py', 'test_section11.py',
+              'a1_restore_layout.py', 'install_a1_layout.py',
+              'a1_ultimate_dashboard.py', 'install_ultimate_dashboard.py',
+              'test_ultimate_dashboard.py', 'a1_email_sender.py',
               'test_a1_email_sender.py'
           ]
-
           for name in files:
               path = Path(name)
               if not path.is_file():
                   raise SystemExit('Required file missing: ' + name)
               ast.parse(path.read_text(encoding='utf-8-sig'), filename=name)
-
           for name in ['a1_reference_universes.json', 'a1_universes.json']:
               path = Path(name)
               if not path.is_file():
                   raise SystemExit('Required configuration missing: ' + name)
               json.loads(path.read_text(encoding='utf-8-sig'))
-
           dashboard = Path('a1_ultimate_dashboard.py').read_text(encoding='utf-8-sig')
           if 'A1_ULTIMATE_DASHBOARD_V1_1' not in dashboard:
               raise SystemExit('Final dashboard v1.1 file is not installed')
-
           print('Required A1 files, syntax, JSON and dashboard version passed')
           PY
 
@@ -142,7 +122,6 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-
           path = Path('run_github.py')
           source = path.read_text(encoding='utf-8')
           old = '.page{display:none;padding:20px 22px}.page.activetable'
@@ -162,8 +141,6 @@ jobs:
         id: scanner
         if: steps.market_check.outputs.run == 'true'
         env:
-          # Old in-scanner email is switched off. The final email is sent by the
-          # "Send dashboard email" step below, after all validations pass.
           SEND_EMAIL_REPORT: 'false'
         run: |
           set -euo pipefail
@@ -187,19 +164,11 @@ jobs:
 
           docs = Path('docs')
           required = [
-              'TopBottom_Universal.html',
-              'latest_scan.json',
-              'prices.json',
-              'charts.json',
-              'a1_tables.html',
-              'a1_ai.json',
-              'a1_audit.json',
-              'a1_changes.json',
-              'a1_comparison_baseline.json',
-              'a1_ultimate_audit.json',
-              'a1_dashboard.html'
+              'TopBottom_Universal.html', 'latest_scan.json', 'prices.json',
+              'charts.json', 'a1_tables.html', 'a1_ai.json', 'a1_audit.json',
+              'a1_changes.json', 'a1_comparison_baseline.json',
+              'a1_ultimate_audit.json', 'a1_dashboard.html'
           ]
-
           data = {}
           for name in required:
               path = docs / name
@@ -207,40 +176,29 @@ jobs:
                   raise SystemExit('Required output missing or empty: ' + str(path))
               if path.suffix == '.json':
                   data[name] = json.loads(path.read_text(encoding='utf-8'))
-
           audit = data['a1_audit.json']
           if audit.get('publish_ok') is not True:
               raise SystemExit('A1 audit rejected publication')
-
           started = datetime.fromisoformat(
               (Path(os.environ['RUNNER_TEMP']) / 'a1_started_at')
-              .read_text()
-              .strip()
-              .replace('Z', '+00:00')
+              .read_text().strip().replace('Z', '+00:00')
           )
           generated = datetime.fromisoformat(audit['generated_at'].replace('Z', '+00:00'))
           if generated.tzinfo is None or not (
-              started - timedelta(seconds=5)
-              <= generated
+              started - timedelta(seconds=5) <= generated
               <= datetime.now(timezone.utc) + timedelta(minutes=2)
           ):
               raise SystemExit('Audit timestamp is not from this scanner run')
-
           changes = data['a1_changes.json']
           if changes.get('status') not in ['FIRST_RUN', 'NO_CHANGE', 'CHANGES']:
-              raise SystemExit(
-                  'Section 11 comparison requires attention: '
-                  + str(changes.get('status'))
-              )
+              raise SystemExit('Section 11 comparison requires attention: ' + str(changes.get('status')))
           if changes.get('current_generated_at') != audit['generated_at']:
               raise SystemExit('Section 11 is not from this A1 report')
           if data['a1_comparison_baseline.json'].get('generated_at') != audit['generated_at']:
               raise SystemExit('Section 11 baseline did not advance')
-
           ai_bytes = (docs / 'a1_ai.json').stat().st_size
           if ai_bytes > int(os.environ.get('A1_AI_MAX_BYTES', '26000')):
               raise SystemExit('AI payload exceeds byte budget')
-
           ultimate = data['a1_ultimate_audit.json']
           if ultimate.get('version') != 'ultimate-v1.1-final':
               raise SystemExit('Final dashboard version is not ultimate-v1.1-final')
@@ -252,54 +210,39 @@ jobs:
               raise SystemExit('Prior A1 evidence appendix was not retained')
           if ultimate.get('ultimate_html_bytes', 0) < ultimate.get('prior_html_bytes', 0):
               raise SystemExit('Ultimate dashboard is smaller than prior report')
-
           a1_html = (docs / 'a1_tables.html').read_text(encoding='utf-8')
           if len(a1_html.encode()) < 5000:
               raise SystemExit('A1 HTML is unexpectedly small')
           for marker in [
-              'A1 PROFESSIONAL MARKET DASHBOARD',
-              'Sector Rotation Heatmap',
-              'What Changed Since the Prior Successful Scan',
-              'Seven-session',
+              'A1 PROFESSIONAL MARKET DASHBOARD', 'Sector Rotation Heatmap',
+              'What Changed Since the Prior Successful Scan', 'Seven-session',
               'Daily research - not entry-ready'
           ]:
               if marker not in a1_html:
                   raise SystemExit('Final dashboard marker missing: ' + marker)
-          if '&lt;span title=' in a1_html or '\\<span title=' in a1_html:
+          # Build the escaped marker without HTML entities in the YAML source.
+          escaped_span = chr(38) + 'lt;span title='
+          if escaped_span in a1_html or '\\<span title=' in a1_html:
               raise SystemExit('Seven-session strip markup is escaped in final HTML')
-
           original_html = (docs / 'TopBottom_Universal.html').read_text(encoding='utf-8')
           if len(original_html.encode()) < 20000 or '.page.active' not in original_html:
               raise SystemExit('Original dashboard size/CSS audit failed')
           for marker in [
-              'renderSummary',
-              'renderAlerts',
-              'renderSectors',
-              'renderBlocked',
-              'renderHistory',
-              'function show'
+              'renderSummary', 'renderAlerts', 'renderSectors',
+              'renderBlocked', 'renderHistory', 'function show'
           ]:
               if marker not in original_html:
                   raise SystemExit('Original dashboard marker missing: ' + marker)
-
-          scripts = [
-              script.strip()
-              for script in re.findall(
-                  r'<script\b[^>]*>(.*?)</script\s*>',
-                  original_html,
-                  re.S | re.I
-              )
-              if script.strip()
-          ]
+          scripts = [s.strip() for s in re.findall(
+              r'<script\b[^>]*>(.*?)</script\s*>', original_html, re.S | re.I
+          ) if s.strip()]
           if not scripts:
               raise SystemExit('No inline dashboard JavaScript found')
-
           with tempfile.TemporaryDirectory() as tmp:
               for index, script in enumerate(scripts):
                   path = Path(tmp) / ('dashboard_' + str(index) + '.js')
                   path.write_text(script, encoding='utf-8')
                   subprocess.run(['node', '--check', str(path)], check=True)
-
           print('A1 generated:', audit['generated_at'])
           print('Section 11:', changes['status'], 'events:', len(changes.get('events', [])))
           print('Ultimate dashboard:', ultimate['version'])
@@ -308,8 +251,8 @@ jobs:
           PY
 
       - name: Send dashboard email
+        id: email
         if: steps.scanner.outputs.did_run == 'true'
-        # An email problem never blocks publishing the dashboard.
         continue-on-error: true
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
@@ -326,28 +269,32 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/
-
           if git diff --cached --quiet; then
             echo "No generated changes to publish."
             exit 0
           fi
-
           git fetch origin main
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
             echo "main changed during this scan. Nothing pushed; rerun from latest main."
             exit 1
           fi
-
           SCAN_TIME=$(TZ=America/New_York date +"%Y-%m-%d %H:%M ET")
           git commit -m "A1 scan: ${SCAN_TIME} - final validated dashboard"
           git push origin HEAD:main
 
       - name: Final verification summary
         if: steps.scanner.outputs.did_run == 'true'
+        env:
+          EMAIL_OUTCOME: ${{ steps.email.outcome }}
         run: |
           echo "Validated dashboard published."
-          echo "Email: sent once per trading day at the first scan after 3:30 PM ET (see 'Send dashboard email' step)."
-          echo "Email is sent by GitHub. Power Automate is optional and not required."
+          echo "Scheduled scan target: 2:00 PM Eastern, Monday-Friday."
+          echo "Email step outcome: $EMAIL_OUTCOME (open its log for SEND or SKIP)."
+          echo "Email eligibility is controlled by SEND_AFTER in a1_email_sender.py."
+          echo "Power Automate is optional and not required."
+          if [ "$EMAIL_OUTCOME" = "failure" ]; then
+            echo "::warning::Dashboard published, but email failed. Open Send dashboard email."
+          fi
 
       - name: Scheduled scan skipped
         if: steps.market_check.outputs.run != 'true'
