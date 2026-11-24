@@ -1,4 +1,8 @@
-"""A1 evidence briefing R2. Presentation only; no downloads or source-data writes."""
+"""A1 evidence briefing R2.1. Presentation only; no downloads/source-data writes.
+
+Hotfix: Section 11 event records are validated before sorting or rendering.
+Non-object entries are counted and disclosed, never interpreted as events.
+"""
 import json
 import math
 import re
@@ -6,7 +10,7 @@ from datetime import datetime
 from html import escape, unescape
 from pathlib import Path
 
-VERSION = 'evidence-briefing-r2'
+VERSION = 'evidence-briefing-r2.1'
 SECTORS = {'XLK':'Technology','XLF':'Financials','XLV':'Health Care',
            'XLI':'Industrials','XLY':'Consumer Discretionary','XLP':'Staples',
            'XLE':'Energy','XLU':'Utilities','XLB':'Materials',
@@ -68,7 +72,6 @@ def reason_label(value):
 
 
 def ranked(rows):
-    # Existing scores only. Display order is not a new strategy or probability.
     return sorted(rows, key=lambda r: (-(number(r.get('rqg_score')) or 0), -(number(r.get('confidence')) or 0), str(r.get('ticker', ''))))
 
 
@@ -107,7 +110,6 @@ def observations(report, ai, snapshot):
 
 
 def comparison(alert, observed):
-    """Only compare observations when timestamps and price bases support it."""
     ticker = alert.get('ticker')
     latest = observed.get(ticker) or {}
     before = number(alert.get('alert_price'))
@@ -118,8 +120,6 @@ def comparison(alert, observed):
     if after is None or not stamp:
         return sentence + ' No separate timestamped latest observation; no change calculated.'
     sentence += ' Latest supplied ' + fmt(after, '$') + ' at ' + str(stamp) + ' (' + str(latest.get('basis') or 'basis not recorded') + ').'
-    # Alert adjustment basis is not recorded by the supplied schema. Do not mix it
-    # with adjusted quotes just to produce an attractive return percentage.
     basis = alert.get('price_basis')
     if basis and basis == latest.get('basis') and before and parse_time(alert_time) and parse_time(stamp) and parse_time(stamp) >= parse_time(alert_time):
         sentence += ' Change since alert ' + fmt((after / before - 1) * 100, '%') + '; not a trade outcome.'
@@ -163,8 +163,7 @@ def alert_card(alert, observed):
     body += field('What conflicts / needs checking', text('; '.join(conflicts(alert))), COLORS['watch'])
     body += field('Then versus latest supplied', text(comparison(alert, observed)))
     body += field('Next verification', 'Confirm current bar, executable trigger, invalidation and target. Scanner direction is not an order; no entry approval is inferred.')
-    body += '</div>'
-    return body
+    return body + '</div>'
 
 
 def research_card(row):
@@ -185,8 +184,7 @@ def research_card(row):
     history = [number(x) for x in (row.get('price_history_5bars') or [])]
     if history and all(x is not None for x in history):
         body += field('Recent daily observations', ' &rarr; '.join(text(fmt(x, '$')) for x in history) + ' <small>(oldest to newest; final bar may be partial)</small>')
-    body += '</div>'
-    return body
+    return body + '</div>'
 
 
 def sector_rows(report, ai):
@@ -207,12 +205,36 @@ def sector_rows(report, ai):
     return rows
 
 
+def normalize_events(raw):
+    """Return renderable event objects and an explicit schema-warning message.
+
+    Do not guess whether integers are event counts, placeholders or identifiers.
+    Valid objects retain their original fields and values, including zero.
+    """
+    if raw is None:
+        return [], ''
+    if not isinstance(raw, list):
+        return [], 'Section 11 event details unavailable: expected a list of event objects, received ' + type(raw).__name__ + '. No event details inferred.'
+    valid = [item for item in raw if isinstance(item, dict)]
+    skipped = len(raw) - len(valid)
+    warning = ''
+    if skipped:
+        warning = 'Section 11 data warning: ' + str(skipped) + ' non-object event entries omitted; ' + str(len(valid)) + ' event objects available. No event details inferred for omitted entries.'
+    return valid, warning
+
+
 def event_order(event):
+    # Defensive even when called independently of build().
+    if not isinstance(event, dict):
+        return (99, 0, '')
     priority = {'NEW SCANNER ALERT':0, 'ALERT NO LONGER RETURNED':1,
                 'RESEARCH STATUS CHANGE':2, 'SCORE CHANGE':3,
                 'PRICE OBSERVATION CHANGE':4}
-    return (priority.get(event.get('event'), 9),
-            -abs(number(event.get('change')) or 0) if event.get('event') == 'SCORE CHANGE' else 0,
+    event_type = event.get('event')
+    if not isinstance(event_type, str):
+        event_type = ''
+    return (priority.get(event_type, 9),
+            -abs(number(event.get('change')) or 0) if event_type == 'SCORE CHANGE' else 0,
             str(event.get('ticker', '')))
 
 
@@ -230,7 +252,14 @@ def build(docs):
     observed = observations(report, ai, snapshot)
     metadata = ai.get('metadata') or {}
     ordered = sorted(SECTORS, key=lambda t: -(number(sectors.get(t, {}).get('diff')) if number(sectors.get(t, {}).get('diff')) is not None else -1e12))
-    events = changes.get('events') or []
+    # R2.1 hotfix: do not call .get() on integers or other non-event records.
+    if isinstance(changes, dict):
+        raw_events = changes.get('events')
+        events, event_warning = normalize_events(raw_events)
+    else:
+        changes = {}
+        events = []
+        event_warning = 'Section 11 data warning: comparison document is not an object. No event details inferred.'
     chosen_events = sorted(events, key=event_order)[:4]
     features = snapshot.get('daily_features')
     complete_research = isinstance(features, list)
@@ -267,11 +296,13 @@ def build(docs):
         bg = '#e7f4ec' if value is not None and value > 0 else '#fbeaec' if value is not None and value < 0 else '#f2f4f6'
         rows.append(['<span style="background:'+bg+';padding:3px"><b>'+text(ticker)+'</b></span><br>'+text(SECTORS[ticker]), tone(row.get('diff'),' pp')+'<br><small>change '+text(fmt(row.get('change_pp'),' pp'))+'</small>', text(row.get('stage') or row.get('strength'))+'<br><small>'+text(row.get('latest'))+'</small>'])
     h += panel('3. All-sector rotation', table(['Sector','RS vs SPY / change','Stage / observation'], rows) + '<p style="font-size:11px">Relative performance uses the scanner\'s recent window, not a one-day return. Change is versus the prior sector snapshot. Missing comparisons stay missing; zero is a valid value. No flow inference.</p>')
-    body = '<p style="font-size:12px">' + text(changes.get('status')) + ' | ' + text(changes.get('previous_generated_at')) + ' to ' + text(changes.get('current_generated_at')) + '. Showing ' + str(len(chosen_events)) + ' of ' + str(len(events)) + ' events.</p>'
+    body = '<p style="font-size:12px">' + text(changes.get('status')) + ' | ' + text(changes.get('previous_generated_at')) + ' to ' + text(changes.get('current_generated_at')) + '. Showing ' + str(len(chosen_events)) + ' of ' + str(len(events)) + ' event objects.</p>'
+    if event_warning:
+        body += '<p style="background:#fff3d4;padding:9px;color:#785000">' + text(event_warning) + '</p>'
     for event in chosen_events:
         body += '<div style="border-left:4px solid #1976a3;padding:5px 10px;margin:7px 0"><b>'+text(event.get('ticker'))+' | '+text(event.get('event'))+'</b><br>'+text(event.get('previous'))+' &rarr; '+text(event.get('current'))+'<br><small>'+text(event.get('note'))+'</small></div>'
     if not chosen_events:
-        body += '<p>' + text(changes.get('message') or 'No event details supplied; do not infer NO_CHANGE.') + '</p>'
+        body += '<p>' + text(changes.get('message') or 'No renderable event details supplied; do not infer NO_CHANGE.') + '</p>'
     body += '<p style="font-size:11px">An alert no longer returned is not automatically invalidated. FIRST_RUN means a new baseline, not no change. Full Section 11 remains attached.</p>'
     h += panel('4. What materially changed', body)
     groups = {}
