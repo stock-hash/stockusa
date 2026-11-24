@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
-"""A1 GitHub email sender. Replaces Power Automate.
-
-Sends the final validated A1 dashboard (docs/a1_tables.html) once per trading day,
-at the first successful scan at or after 3:30 PM ET (or at the close on early-close
-days). A deterministic summary built from the report data replaces the AI commentary.
-Nothing in the scanner, scores or report data is changed.
-
-Required GitHub secrets: EMAIL_ADDRESS, EMAIL_PASSWORD, RECIPIENT_EMAILS.
-Optional: SMTP_SERVER (default smtp.gmail.com), SMTP_PORT (default 587).
-Manual run with A1_FORCE_EMAIL=true sends immediately, even if already sent today.
+"""A1 GitHub sender: concise evidence briefing plus unchanged full dashboard attachment.
+Existing send eligibility, report checks, SMTP secrets and state are preserved.
+The workflow may set A1_FORCE_EMAIL for validated daily/weekend delivery.
+No scanner or dashboard-generation logic is changed.
 """
 import json, os, smtplib, ssl, sys
 from datetime import datetime, timedelta, timezone
@@ -21,7 +15,7 @@ from zoneinfo import ZoneInfo
 ET = ZoneInfo('America/New_York')
 DOCS = Path('docs')
 STATE = DOCS / 'a1_email_state.json'
-SEND_AFTER = (14, 00)          # 3:30 PM Eastern
+SEND_AFTER = (14, 00)          # 2:00 PM Eastern
 MAX_REPORT_AGE_MIN = 90        # never email an old report
 SECTOR_NAMES = {'XLK': 'Technology', 'XLF': 'Financials', 'XLV': 'Health Care', 'XLI': 'Industrials',
                 'XLY': 'Consumer Discretionary', 'XLP': 'Consumer Staples', 'XLE': 'Energy',
@@ -44,7 +38,7 @@ def num(value):
 
 
 def send_time_today(now_et):
-    """3:30 PM ET, or the market close if the exchange closes earlier that day."""
+    """2:00 PM ET, or the market close if the exchange closes earlier that day."""
     target = now_et.replace(hour=SEND_AFTER[0], minute=SEND_AFTER[1], second=0, microsecond=0)
     try:
         import pandas_market_calendars as mcal
@@ -136,7 +130,7 @@ def build_message(html, summary_html, summary_text, subject, sender, recipients)
     msg['Subject'] = subject
     msg['From'] = sender
     msg['To'] = ', '.join(recipients)
-    msg.attach(MIMEText(summary_text + '\n\nOpen this email in an HTML-capable client to see the full dashboard.', 'plain', 'utf-8'))
+    msg.attach(MIMEText(summary_text + '\n\nOpen this email in an HTML-capable client for the briefing. The complete dashboard is attached.', 'plain', 'utf-8'))
     msg.attach(MIMEText(body, 'html', 'utf-8'))
     return msg
 
@@ -172,10 +166,22 @@ def main():
     if missing:
         raise SystemExit('Not sending: missing GitHub secret(s): ' + ', '.join(missing))
     audit, ultimate, html = check_report(now_utc)
-    summary_html, summary_text, regime = summary(audit, ultimate)
-    subject = 'A1 Market Dashboard - %s - %s - Top: %s' % (
-        now_et.strftime('%a %b %d %I:%M %p ET'), regime, ultimate.get('top_ranked') or 'none')
-    msg = build_message(html, summary_html, summary_text, subject, sender, recipients)
+    from a1_email_briefing import build as build_briefing
+    from email.mime.application import MIMEApplication
+    briefing_html, briefing_text, regime = build_briefing(DOCS)
+    subject = 'A1 Market Briefing - %s - %s' % (
+        now_et.strftime('%a %b %d %I:%M %p ET'), regime)
+    alternative = build_message(
+        briefing_html, '', briefing_text, subject, sender, recipients)
+    msg = MIMEMultipart('mixed')
+    for key in ('Subject', 'From', 'To'):
+        msg[key] = alternative[key]
+        del alternative[key]
+    msg.attach(alternative)
+    attachment = MIMEApplication(html.encode('utf-8'), _subtype='octet-stream')
+    attachment.add_header('Content-Disposition', 'attachment',
+                          filename='A1_Full_Dashboard.html')
+    msg.attach(attachment)
     send(msg, sender, password, recipients)
     # Record only after the mail server accepted the message.
     STATE.write_text(json.dumps({'last_sent_date': now_et.date().isoformat(),
