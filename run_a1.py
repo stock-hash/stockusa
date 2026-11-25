@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""A1 1.1 coordinated correction plus persistent Section 11 comparisons."""
+"""A1 1.1 coordinated correction plus persistent Section 11 comparisons.
+GitHub reliability R1 integration. Existing layout installers remain required.
+"""
 import os,json
 from pathlib import Path
+from github_engine_reliability import install,attach_runner,attach_history_retention
+_engine_r1=install()
 import run_github
+attach_runner(run_github,_engine_r1)
+attach_history_retention(run_github)
 from snapshot_upgrade import run as build_snapshot
 from a1_market_intelligence import build,CROSS_ASSET_GROUPS
 from a1_quality import resolve_universes,json_write
