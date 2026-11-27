@@ -3,7 +3,7 @@ name: Market Scanner v5.6 Fixed
 on:
   schedule:
     # Every day at 2:00 PM Eastern, including weekends and holidays.
-    - cron: '0 14 * * *'
+    - cron: '5 14 * * *'
       timezone: America/New_York
 
   workflow_dispatch:
